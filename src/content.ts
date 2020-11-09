@@ -70,7 +70,7 @@ function makeContextMenu(d: LinkData) {
 }
 
 let linkElms = Array.from(document.querySelectorAll("#bodyContent a[href*='/wiki/']"));
-let links = linkElms.flatMap((e) => e.getAttribute("href") ?? []).concat([window.location.href]);
+let links = linkElms.flatMap((e) => e.getAttribute("href") || []).concat([window.location.href]);
 
 links.push(window.location.href);
 chrome.runtime.sendMessage({
