@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "outDir": "./dist/",
+        "sourceMap": true,
+        "strict": true,
+        "noImplicitReturns": true,
+        "noImplicitAny": true,
+        "module": "esnext",
+        "moduleResolution": "node",
+        "target": "esnext",
+        "allowJs": true,
+        "baseUrl": "./src",
+        "paths": {
+            "~*": ["./*"]
+        }
+    },
+    "include": [
+        "./src/**/*"
+    ]
+}

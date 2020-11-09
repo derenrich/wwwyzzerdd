@@ -1,0 +1,41 @@
+{
+    "manifest_version": 2,
+    "name": "Wwwyzzerdd for Wikidata",
+    "version": "0.0.0.1",
+    "description": "A plain text description",
+    "icons": { },
+    "page_action": { },
+    "commands": { },
+    "content_scripts": [{
+        "matches": ["*://*.wikipedia.org/*"],
+        "js": ["content.ts", "common.ts"],
+        "css": ["content.scss"],
+        "run_at": "document_idle"
+    }],
+    "event_rules": [],
+    "externally_connectable": {
+        "matches": []
+    },
+    "file_browser_handlers": [ ],
+    "file_system_provider_capabilities": {
+        "configurable": false,
+        "multiple_mounts": false,
+        "source": "file"
+    },
+    "homepage_url": "http://path/to/homepage",
+    "offline_enabled": false,
+    "permissions": ["storage",
+                    "activeTab",
+                    "https://www.wikidata.org/*",
+                    "https://*.wikipedia.org/*"                  
+                   ],
+    "requirements": {},
+    "sandbox": [],
+    "short_name": "wwwyzzerdd",
+    "storage": {},
+    "web_accessible_resources": [],
+    "background": {
+        "scripts": ["background.ts"],
+        "persistent": false
+    }
+}
