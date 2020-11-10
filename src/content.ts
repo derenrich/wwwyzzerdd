@@ -7,13 +7,67 @@ import {Popover, Tooltip} from 'bootstrap'
 import 'jquery';
 import * as $ from "jquery";
 
-function handleInput(evt: any) {
-    console.log(evt);
+let port = chrome.runtime.connect();
+
+port.onMessage.addListener(itemListener);
+
+let linkedItems: { [key: string]: any[]; } = {};
+let propDescs: { [key: string]: any; } = {};
+let curUrl = new URL(document.baseURI);
+
+function fixedEncodeURIComponent(str: string) {
+  return encodeURIComponent(str).replace(/[!'*]/g, function(c) {
+    return '%' + c.charCodeAt(0).toString(16);
+  });
+}
+
+
+function itemListener(msg: any) {
+    if ("props" in msg) {
+        propDescs = msg.props;
+        return;
+    }
+    let qid = msg.body.title;
+    console.log(msg.title, qid);
+    if (curUrl.pathname.endsWith("wiki/" + fixedEncodeURIComponent(msg.title))) {
+        document.body.setAttribute("qid", qid);
+        extractLinkedItems(msg.body.claims);
+    }
+    var count = 0;
+    for (let l of linkElms) {
+        let href = l.getAttribute("href") || "";
+        if (href.endsWith("wiki/" + fixedEncodeURIComponent(msg.title)) ||
+            href.endsWith("wiki/" + msg.title)) {
+            markupLink(l, msg.body);
+            count += 1;
+        }
+    }
+    if (count == 0) {
+       // console.log("no match", msg);
+    }
+}
+
+function extractLinkedItems(claims: any) {
+    for (let prop of Object.keys(claims)) {
+        for (let claim of claims[prop]) {
+            if (claim['type'] == 'statement' && claim['mainsnak']["datatype"] == ["wikibase-item"]) {
+                let linkedItem = claim['mainsnak']["datavalue"]["value"]["id"];
+                if (!(linkedItem in linkedItems)) {
+                    linkedItems[linkedItem] = [];
+                }
+                linkedItems[linkedItem].push(prop);
+            }
+        }
+    }    
+}
+
+
+function searchProp(evt: any) {
     chrome.runtime.sendMessage({
         reqType: RequestType.GET_PROP_REC,
         payload: {entity: document.body.getAttribute("qid"), text: evt.target.value}
     }, (res: any) => {
-        if (res.success) {
+        if (res && res.success) {
             let optionDiv = document.getElementById("prop-options");
             if (optionDiv) {
             optionDiv.innerHTML = "";
@@ -22,8 +76,26 @@ function handleInput(evt: any) {
                 button.type = "button";
                 button.classList.add("btn");
                 button.classList.add("btn-outline-primary");
-                button.classList.add("btn-lg");                                
+                button.classList.add("btn-lg");                   
                 button.textContent = prop.label;
+                button.setAttribute("pid", prop.id);
+                button.onclick = (evt) => {
+                    let qid = document.body.getAttribute("qid");
+                    let pid = prop.id;
+                    let targetQid = popDiv.getAttribute("qid");
+
+                    chrome.runtime.sendMessage({
+                        reqType: RequestType.ADD_CLAIM,
+                        payload: {
+                            sourceItem: qid,
+                            property: pid,
+                            targetItem: targetQid
+                        }
+                    });
+                    
+                    console.log(`saving link: ${qid} - ${pid} - ${targetQid}`);
+                    dismissPopover();
+                }
                 let row = document.createElement("div");
                 row.classList.add("d-flex");
                 row.classList.add("flex-row");
@@ -38,6 +110,9 @@ function handleInput(evt: any) {
 
 function makePopDiv() {
     let popDiv = document.createElement('div');
+    popDiv.onclick = (evt) => {
+        evt.stopPropagation();
+    }
     let input = document.createElement("input");
     input.type = "text";
     input.setAttribute("class", "form-control");
@@ -49,97 +124,98 @@ function makePopDiv() {
     buttonDiv.classList.add("text-center");
     buttonDiv.classList.add("flex-column");    
     popDiv.appendChild(buttonDiv)
-    input.oninput = handleInput;
+    input.oninput = searchProp;
     return popDiv;
 }
 
 let popDiv = makePopDiv();
 
-function makeContextMenu(d: LinkData) {
+let curPopover: (Popover | null) = null;
+
+document.body.onclick = (e) => {
+    dismissPopover();
+};
+
+function dismissPopover() {
+    if (curPopover) {
+        curPopover.hide();
+        (popDiv.children[0] as HTMLInputElement).value = "";
+    }    
+}
+
+function makeContextMenu(d: any) {
     function contextMenu(evt: any): boolean {
         evt.preventDefault();
-        console.log(d);
-        console.log(evt);
-        popDiv.setAttribute("qid", d.qid);
-        let p = new Popover(evt.target, {content: popDiv, placement: "right", trigger: "manual", sanitize: false, html:true});
-        p.show();
-        handleInput({target: popDiv.children[0]});
+        popDiv.setAttribute("qid", d.title);
+        dismissPopover();
+        curPopover = new Popover(evt.target, {
+            content: popDiv,
+            placement: "right",
+            trigger: "manual",
+            sanitize: false,
+            html:true,
+            title: d.labels.en.value
+        });
+        curPopover.show();
+        searchProp({target: popDiv.children[0]});
         return false;
     }
     return contextMenu;
 }
 
 let linkElms = Array.from(document.querySelectorAll("#bodyContent a[href*='/wiki/']"));
-let links = linkElms.flatMap((e) => e.getAttribute("href") || []).concat([window.location.href]);
-
-links.push(window.location.href);
-chrome.runtime.sendMessage({
-    reqType: RequestType.GET_WD_IDS,
-    payload: {urls: links}
-}, handleReply);
+let links = [window.location.href].concat(
+    linkElms.flatMap((e) => e.getAttribute("href") || [])
+        .map((url) => new URL(url, document.baseURI).href));
 
 
-function handleReply(resp: any) {
-    if (resp) {
-        // everything is ok        
-        populateLinkedItems();        
-        
-    } else {
-        console.log(resp);
-        console.log("Failed to get data");
+function boot() {
+    if (document.baseURI.indexOf("wiki/Special:") < 0) {
+        linkElms.forEach((l: any) => l.setAttribute("title", ""));
+        port.postMessage({
+            reqType: RequestType.GET_WD_IDS,
+            payload: {urls: [window.location.href], full: true}
+        });
+        port.postMessage({
+            reqType: RequestType.GET_WD_IDS,
+            payload: {urls: links, full: false}
+        });
     }
 }
 
-let linkedItems: { [key: string]: any; } = {};
-let propDescs: { [key: string]: any; } = {};
+boot();
 
-function populateLinkedItems() {
-    chrome.runtime.sendMessage({
-        reqType: RequestType.GET_LINK_DATA,
-        payload: { url: window.location.href}
-    }, function (resp: any) {
-        console.log(resp);
-        document.body.setAttribute("qid", resp.qid);
-        for (let prop of Object.keys(resp.claims)) {
-            for (let claim of resp.claims[prop]) {
-                if (claim['type'] == 'statement' && claim['mainsnak']["datatype"] == ["wikibase-item"]) {
-                    linkedItems[claim['mainsnak']["datavalue"]["value"]["id"]] = prop;
-                }
-            }
-            chrome.runtime.sendMessage({
-                reqType: RequestType.GET_PROP_DATA,
-                payload: { prop: prop }
-            }, function(propDesc: any) {
-                propDescs[prop] = propDesc;
-            });
-        }
-        markupLinks();
-    });
+function appendString(title: string, ap: string): string {
+    if (title) {
+        return title + " & " + ap;
+    } else {
+        return ap;
+    }
 }
 
-function markupLinks() {
-    for (let link of linkElms) {
-        chrome.runtime.sendMessage({
-            reqType: RequestType.GET_LINK_DATA,
-            payload: { url: link.getAttribute("href")}
-        }, function (resp: any) {
-            if (resp) {
-                link.addEventListener("contextmenu", makeContextMenu(resp));
-                link.classList.add("badge");
-                if (resp.qid in linkedItems) {
-                    link.classList.add("badge-success");
-                    link.setAttribute("data-toggle","tooltip");
+function markupLink(link: Element, resp: any) {
+    let qid = resp.title;
+    link.setAttribute("qid", qid);
+    link.addEventListener("contextmenu", makeContextMenu(resp));
+    link.classList.add("badge");
+    addTooltip(link, qid);
+ }
 
-                    if (linkedItems[resp.qid] in propDescs) {
-                        link.setAttribute("title", propDescs[linkedItems[resp.qid]]);
-                    } else {
-                        link.setAttribute("title", linkedItems[resp.qid]);
-                    }
-                    new Tooltip(link);
-                } else {
-                    link.classList.add("badge-info");
-                }
+
+function addTooltip(link: Element, qid: string) {
+   if (qid in linkedItems) {
+       link.classList.add("badge-success");
+       link.setAttribute("data-toggle","tooltip");
+       for (let pid of new Set(linkedItems[qid])) {
+           let curTitle = link.getAttribute("title") || "";
+            if (pid in propDescs) {
+                link.setAttribute("title", appendString(curTitle, propDescs[pid]));
+            } else {
+                link.setAttribute("title", appendString(curTitle, pid));
             }
-        });
+        }
+        new Tooltip(link);
+    } else {
+        link.classList.add("badge-info");
     }
 }

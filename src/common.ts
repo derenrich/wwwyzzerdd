@@ -2,9 +2,9 @@ export enum RequestType {
     GET_WD_IDS,
     GET_LINK_DATA,
     GET_PROP_DATA,
-    GET_PROP_REC
+    GET_PROP_REC,
+    ADD_CLAIM
 }
-
 
 export interface BackgroundRequest {
     reqType: RequestType;
@@ -13,6 +13,7 @@ export interface BackgroundRequest {
 
 export interface GetWikidataIds {
     urls: string[];
+    full: boolean;
 }
 
 export interface GetLinkData {
@@ -28,7 +29,14 @@ export interface GetPropRec {
     text: string;
 }
 
+export interface AddClaim {
+    sourceItem: string;
+    property: string;
+    targetItem: string;
+}
+
 export interface LinkData {
+    url: string;
     qid: string;
     label: string;
     description: string;

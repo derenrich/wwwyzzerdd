@@ -1,5 +1,5 @@
-// code for reading from wikidata in a nice way
 const WBK = require('wikibase-sdk');
+import { getOrCompute } from "./cache";
 
 const wdk = WBK({
   instance: 'https://www.wikidata.org',
@@ -17,7 +17,7 @@ class TriggerMap<x, y> extends Map<x, y> {
     }
     
     set(a: x, b: y) {
-        console.log("set called");
+        this.callback(a, b);
         return super.set(a, b);
     }
 }
@@ -33,15 +33,28 @@ class WikidataReader {
 
     booted: Promise<any>;
     
-    constructor() {
+    constructor(onNewItem: CacheCallback<string, any>) {
+        this.wdCache = new TriggerMap(onNewItem);
         this.qCache = new Map();
         this.pCache = new Map();
-        this.wdCache = new Map();
         this.booted = this.init();
     }
 
     async init() {
-        await this.loadProps();
+        await this.loadPropsCached();
+    }
+
+    async loadPropsCached() {
+        let PROP_KEY = "WD_PROPS";
+        let res = getOrCompute(PROP_KEY, async () => {
+            await this.loadProps();
+            let x = Object.fromEntries(this.pCache.entries());
+            return x;
+        });
+        let props = await res;
+        if(!this.pCache.size) {
+            this.pCache = new Map(Object.entries(props));
+        }
     }
     
     async loadProps() { 
@@ -53,7 +66,7 @@ WHERE {
   FILTER(LANG(?label) = "en").  
 }`;
         const url = wdk.sparqlQuery(propQuery);
-        fetch(url).then((x) => x.json()).then((res) => {
+        await fetch(url).then((x) => x.json()).then((res) => {
             for(let prop of res.results.bindings) {
                 let propUrl = prop.p.value;
                 let splitUrl = propUrl.split("/");
@@ -65,47 +78,71 @@ WHERE {
     }
 
     
-    lookupWikiUrls(urls: string[]) {
+    lookupWikiUrls(urls: string[], full?: boolean) {
         // parse urls and filter out invalid ones
         let parsedUrls = urls.map(parseWikiUrl).filter(filterName);
         // remove duplicates
         let uniqUrls = Array.from(new Set(parsedUrls));
 
         for (let i = 0; i < uniqUrls.length; i += REQ_LIMIT) {
-            let urlChunk = uniqUrls.slice(i, i + REQ_LIMIT);        
+            let urlChunk = uniqUrls.slice(i, i + REQ_LIMIT);
             let reqPath = wdk.getEntitiesFromSitelinks({
                 titles: urlChunk,
                 sites: 'enwiki',
                 languages: ['en'],
-                props: ITEM_PROPS
-            });        
-            let res = fetch(repairUrl(reqPath)).then(r => r.json()).then(this.handleWikiUrlResults);
+                props: full ? FULL_ITEM_PROPS : ITEM_PROPS
+            });
+            let res = fetch(repairUrl(reqPath)).then(r => r.json()).then(this.handleWikiUrlResults.bind(this));
         }
     }
 
+
+    lookupSingleWikiPage(title: string) {
+        if (filterName(title)) {
+            let reqPath = wdk.getEntitiesFromSitelinks({
+                titles: title,
+                sites: 'enwiki',
+                languages: ['en'],
+                props: ITEM_PROPS,
+                normalize: true                
+            });
+            let res = fetch(repairUrl(reqPath)).then(r => r.json()).then(this.handleWikiUrlResults.bind(this));    
+        }
+    }
+    
     handleWikiUrlResults(res: any) {
         if (res.success != 1) {
             return;
         }
-        let failedLookups = []
+        let failedLookups = [];
         for(let k of Object.keys(res.entities)){
             if (Number.parseInt(k) < 0) {
                 failedLookups.push(res.entities[k].title);
             } else {
                 this.qCache.set(k, res.entities[k]);
                 let enwikiTitle = this.qCache.get(k).sitelinks.enwiki.title.replaceAll(" ", "_");
-                this.wdCache.set(enwikiTitle, k);
+                this.wdCache.set(enwikiTitle, res.entities[k]);                
+                if (("normalized" in res)) {
+                    console.log(res);
+                    let oldTitle = res.normalized.n['from'];
+                    this.wdCache.set(oldTitle.replaceAll(" ", "_"), res.entities[k]);
+                }
             }
         }
-        for (let k of failedLookups) {
-            // retry
+        if (Object.keys(res.entities).length > 1) {
+            for (let k of failedLookups) {
+                console.log(k);
+                this.lookupSingleWikiPage(k);
+            }
         }
     }
 
-    async getProp(propId: string): Promise<any> {
+    async getProps(): Promise<any> {
+        console.log("await boot");
         await this.booted;
-        return this.pCache.get(propId);
-    }    
+        console.log(this.pCache);
+        return Object.fromEntries(this.pCache.entries());
+    }
 }
 
 function parseWikiUrl(url: string): string {
@@ -113,7 +150,7 @@ function parseWikiUrl(url: string): string {
 }
 
 function filterName(path: string): boolean {
-    if (path.startsWith("File:") || path.startsWith("Template:") || path.startsWith("Special:") || path.startsWith("Template_talk:") || path.startsWith("Help:") || path.startsWith("Wikipedia:")) {
+    if (path.startsWith("File:") || path.startsWith("Template:") || path.startsWith("Special:") || path.startsWith("Template_talk:") || path.startsWith("Help:") || path.startsWith("Wikipedia:") || path.startsWith("Talk:")) {
         return false;
     }
     return true;
@@ -131,6 +168,7 @@ function repairUrl(url: string): string {
 }
 
 let REQ_LIMIT = 50;
-let ITEM_PROPS = ['info', 'descriptions', 'aliases', 'labels', 'sitelinks', 'claims'];
+let FULL_ITEM_PROPS = ['info', 'descriptions', 'aliases', 'labels', 'sitelinks', 'claims'];
+let ITEM_PROPS = ['info', 'descriptions', 'aliases', 'labels', 'sitelinks'];
 
 export { WikidataReader };
