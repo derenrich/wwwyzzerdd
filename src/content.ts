@@ -1,6 +1,4 @@
 import { BackgroundRequest, RequestType, LinkData } from "./common";
-import Popper from 'popper.js';
-
 
 import 'bootstrap';
 import {Popover, Tooltip} from 'bootstrap'
