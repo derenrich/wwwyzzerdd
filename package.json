@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "clean": "rm dist/bundle.js",
+    "clean": "rm dist/*",
     "start": "parcel src/index.html src/manifest.json",
     "build-prod": "parcel build src/index.html src/manifest.json",
     "check": "tsc --noEmit"
