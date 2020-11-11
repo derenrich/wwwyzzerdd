@@ -33,6 +33,7 @@ export interface AddClaim {
     sourceItem: string;
     property: string;
     targetItem: string;
+    sourceUrl?: string;
 }
 
 export interface LinkData {

@@ -1,0 +1,7 @@
+- warn users of the type they are linking (e.g. disambig)
+- show item description when linking
+- fix linking of existing linked things
+- don't require refresh to see the link
+- undo?
+- link unlinked text / dates / values
+- use text fragment links see https://github.com/GoogleChromeLabs/link-to-text-fragment

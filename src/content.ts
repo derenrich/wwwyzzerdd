@@ -61,6 +61,14 @@ function extractLinkedItems(claims: any) {
     }    
 }
 
+function getSourceUrl(): (string | null) {
+    let link = document.querySelector("#t-permalink a")
+    if (link) {
+        return (link as HTMLAnchorElement).href;
+    } else {
+        return null;
+    }
+}
 
 function searchProp(evt: any) {
     chrome.runtime.sendMessage({
@@ -89,7 +97,8 @@ function searchProp(evt: any) {
                         payload: {
                             sourceItem: qid,
                             property: pid,
-                            targetItem: targetQid
+                            targetItem: targetQid,
+                            sourceUrl: getSourceUrl()
                         }
                     });
                     

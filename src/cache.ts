@@ -9,12 +9,16 @@ function now(): number {
     return d.getTime();
 }
 
-function get(key: string): Promise<any> {
+function get(key: string, maxAge: number = 3600): Promise<any> {
     return new Promise((resolve) => {
         chrome.storage.local.get([key], function(result: any) {
             if (key in result) {
                 let item = result[key] as CachedItem;
-                return resolve(item.data);
+                if ((now() - item.fetchTime)/1000.0 >= maxAge) {
+                    return resolve(undefined);
+                } else {
+                    return resolve(item.data);
+                }
             } else {
                 return resolve(undefined);
             }
@@ -22,7 +26,7 @@ function get(key: string): Promise<any> {
     });
 }
 
-export async function getOrCompute(key: string, compute: () => Promise<any>): Promise<any> {
+export async function getOrCompute(key: string, compute: () => Promise<any>, maxAge: number = 3600): Promise<any> {
     let value = await get(key)
     if (value) {
         return Promise.resolve(value);
