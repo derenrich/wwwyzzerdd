@@ -48,7 +48,11 @@ function itemListener(msg: any) {
 function extractLinkedItems(claims: any) {
     for (let prop of Object.keys(claims)) {
         for (let claim of claims[prop]) {
-            if (claim['type'] == 'statement' && claim['mainsnak']["datatype"] == ["wikibase-item"]) {
+            if (claim['type'] == 'statement' &&
+                (claim['rank'] == 'normal' || claim['rank'] == 'preferred') &&
+                (claim['mainsnak']['snaktype'] == "value") &&
+                claim['mainsnak']["datatype"] == ["wikibase-item"]) {
+                
                 let linkedItem = claim['mainsnak']["datavalue"]["value"]["id"];
                 if (!(linkedItem in linkedItems)) {
                     linkedItems[linkedItem] = [];
@@ -147,6 +151,7 @@ function dismissPopover() {
     if (curPopover) {
         curPopover.hide();
         (popDiv.children[0] as HTMLInputElement).value = "";
+        (popDiv.children[1] as HTMLDivElement).innerHTML = "";
     }    
 }
 
