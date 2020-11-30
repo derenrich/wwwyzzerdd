@@ -20,7 +20,7 @@ function onNewItem(url: string, body: any) {
 let wdr = new WikidataReader(onNewItem);
 
 function portHandler(msg: BackgroundRequest) {
-    switch(msg.reqType) {           
+    switch(msg.reqType) {
         case RequestType.GET_WD_IDS:
             wdr.lookupWikiUrls(msg.payload.urls, msg.payload.full);
     }

@@ -14,9 +14,11 @@ let propDescs: { [key: string]: any; } = {};
 let curUrl = new URL(document.baseURI);
 
 function fixedEncodeURIComponent(str: string) {
-  return encodeURIComponent(str).replace(/[!'*]/g, function(c) {
-    return '%' + c.charCodeAt(0).toString(16);
-  });
+    return str.replace(/[^a-zA-Z:,_0-9()!$*./;@-]/g, function(c) {
+        return encodeURIComponent(c);
+    }).replace(/[']/g, function(c) {
+        return '%' + c.charCodeAt(0).toString(16).toUpperCase();
+    });
 }
 
 
@@ -26,8 +28,7 @@ function itemListener(msg: any) {
         return;
     }
     let qid = msg.body.title;
-    console.log(msg.title, qid);
-    if (curUrl.pathname.endsWith("wiki/" + fixedEncodeURIComponent(msg.title))) {
+    if (curUrl.pathname.endsWith("wiki/" + fixedEncodeURIComponent(msg.title)) && msg.body.claims) {
         document.body.setAttribute("qid", qid);
         extractLinkedItems(msg.body.claims);
     }
@@ -127,14 +128,14 @@ function makePopDiv() {
     let input = document.createElement("input");
     input.type = "text";
     input.setAttribute("class", "form-control");
-    popDiv.appendChild(input)
+    popDiv.appendChild(input);
     let buttonDiv = document.createElement('div');
     buttonDiv.setAttribute("id", "prop-options");
     buttonDiv.classList.add("d-flex");
     buttonDiv.classList.add("p-1");
     buttonDiv.classList.add("text-center");
     buttonDiv.classList.add("flex-column");    
-    popDiv.appendChild(buttonDiv)
+    popDiv.appendChild(buttonDiv);
     input.oninput = searchProp;
     return popDiv;
 }
@@ -219,14 +220,14 @@ function addTooltip(link: Element, qid: string) {
        link.classList.add("badge-success");
        link.setAttribute("data-toggle","tooltip");
        for (let pid of new Set(linkedItems[qid])) {
-           let curTitle = link.getAttribute("title") || "";
+           let curTitle = link.getAttribute("wd-prop") || "";
             if (pid in propDescs) {
-                link.setAttribute("title", appendString(curTitle, propDescs[pid]));
+                link.setAttribute("wd-prop", appendString(curTitle, propDescs[pid]));
             } else {
-                link.setAttribute("title", appendString(curTitle, pid));
+                link.setAttribute("wd-prop", appendString(curTitle, pid));
             }
-        }
-        new Tooltip(link);
+       }
+       new Tooltip(link, {title: function(){ return this.getAttribute("wd-prop") || "" ;}});
     } else {
         link.classList.add("badge-info");
     }

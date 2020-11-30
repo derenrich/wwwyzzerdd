@@ -32,6 +32,9 @@ export function getCachedToken(): Promise<string> {
 }
 
 
+// invalid csrf
+//{"error":{"code":"badtoken","info":"Invalid CSRF token.","*":"See https://www.wikidata.org/w/api.php for API usage. Subscribe to the mediawiki-api-announce mailing list at &lt;https://lists.wikimedia.org/mailman/listinfo/mediawiki-api-announce&gt; for notice of API deprecations and breaking changes."},"servedby":"mw1340"}
+
 export async function addItemClaim(entity: string, property: string, qid: string): Promise<any> {
     return addClaim(entity, property, {"entity-type": "item", "id": qid});
 }

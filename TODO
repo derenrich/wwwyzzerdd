@@ -5,3 +5,4 @@
 - undo?
 - link unlinked text / dates / values
 - use text fragment links see https://github.com/GoogleChromeLabs/link-to-text-fragment
+- handle weird article names (incl '!')
