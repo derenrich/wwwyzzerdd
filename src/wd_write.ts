@@ -28,7 +28,8 @@ async function getCSRF(): Promise<string> {
 
 export function getCachedToken(): Promise<string> {
     let TOKEN_KEY = "WD_TOKEN";
-    return getOrCompute(TOKEN_KEY, getCSRF);
+    let TEN_MINUTES = 60 * 10;
+    return getOrCompute(TOKEN_KEY, getCSRF, TEN_MINUTES);
 }
 
 

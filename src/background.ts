@@ -35,7 +35,7 @@ function messageHandler(msg: BackgroundRequest, sender: any, reply: any) {
         case RequestType.GET_PROP_REC:
             return getPropRecs(msg.payload.entity, msg.payload.text, reply);
         case RequestType.ADD_CLAIM:
-            addClaimAndRef(msg.payload);
+            addClaimAndRef(msg.payload).then(() => reply(true));
             //addItemClaim(msg.payload.sourceItem, msg.payload.property, msg.payload.targetItem).then((v) => reply(v));
             return true
     }

@@ -31,18 +31,21 @@ function itemListener(msg: any) {
     if (curUrl.pathname.endsWith("wiki/" + fixedEncodeURIComponent(msg.title)) && msg.body.claims) {
         document.body.setAttribute("qid", qid);
         extractLinkedItems(msg.body.claims);
-    }
-    var count = 0;
-    for (let l of linkElms) {
-        let href = l.getAttribute("href") || "";
-        if (href.endsWith("wiki/" + fixedEncodeURIComponent(msg.title)) ||
-            href.endsWith("wiki/" + msg.title)) {
-            markupLink(l, msg.body);
-            count += 1;
+        for (let l of linkElms) {
+            let qid = l.getAttribute("qid");
+            console.log(l, qid);
+            if (qid) {
+                addTooltip(l, qid);
+            }
         }
-    }
-    if (count == 0) {
-       // console.log("no match", msg);
+    } else {
+        for (let l of linkElms) {
+            let href = l.getAttribute("href") || "";
+            if (href.endsWith("wiki/" + fixedEncodeURIComponent(msg.title)) ||
+                href.endsWith("wiki/" + msg.title)) {
+                markupLink(l, msg.body);
+            }
+        }
     }
 }
 
@@ -103,6 +106,9 @@ function searchProp(evt: any) {
                             targetItem: targetQid,
                             sourceUrl: getSourceUrl()
                         }
+                    }, (res: any) => {
+                        console.log("return", res);
+                        if (res) { loadProps(); }
                     });
                     
                     console.log(`saving link: ${qid} - ${pid} - ${targetQid}`);
@@ -182,13 +188,18 @@ let links = [window.location.href].concat(
         .map((url) => new URL(url, document.baseURI).href));
 
 
+function loadProps() {
+    // request a refresh of the entities properties
+    port.postMessage({
+        reqType: RequestType.GET_WD_IDS,
+        payload: {urls: [window.location.href], full: true}
+    });
+}
+
 function boot() {
     if (document.baseURI.indexOf("wiki/Special:") < 0) {
         linkElms.forEach((l: any) => l.setAttribute("title", ""));
-        port.postMessage({
-            reqType: RequestType.GET_WD_IDS,
-            payload: {urls: [window.location.href], full: true}
-        });
+        loadProps();
         port.postMessage({
             reqType: RequestType.GET_WD_IDS,
             payload: {urls: links, full: false}
@@ -216,9 +227,11 @@ function markupLink(link: Element, resp: any) {
 
 
 function addTooltip(link: Element, qid: string) {
-   if (qid in linkedItems) {
+    if (qid in linkedItems) {
+       link.classList.remove("badge-info");
        link.classList.add("badge-success");
        link.setAttribute("data-toggle","tooltip");
+       let curTitle = link.setAttribute("wd-prop", "");
        for (let pid of new Set(linkedItems[qid])) {
            let curTitle = link.getAttribute("wd-prop") || "";
             if (pid in propDescs) {
@@ -229,6 +242,7 @@ function addTooltip(link: Element, qid: string) {
        }
        new Tooltip(link, {title: function(){ return this.getAttribute("wd-prop") || "" ;}});
     } else {
+        link.classList.remove("badge-success");
         link.classList.add("badge-info");
     }
 }
