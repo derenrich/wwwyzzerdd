@@ -54,17 +54,21 @@ function extractLinkedItems(claims: any) {
         for (let claim of claims[prop]) {
             if (claim['type'] == 'statement' &&
                 (claim['rank'] == 'normal' || claim['rank'] == 'preferred') &&
-                (claim['mainsnak']['snaktype'] == "value") &&
-                claim['mainsnak']["datatype"] == ["wikibase-item"]) {
-                
-                let linkedItem = claim['mainsnak']["datavalue"]["value"]["id"];
-                if (!(linkedItem in linkedItems)) {
-                    linkedItems[linkedItem] = [];
+                claim['mainsnak']['snaktype'] == "value") {
+                if (claim['mainsnak']["datatype"] == ["wikibase-item"]) {
+                    let linkedItem = claim['mainsnak']["datavalue"]["value"]["id"];
+                    if (!(linkedItem in linkedItems)) {
+                        linkedItems[linkedItem] = [];
+                    }
+                    linkedItems[linkedItem].push(prop);
+                } else if(claim['mainsnak']["datatype"] == "commonsMedia") {
+                    // dump the filename in
+                    let linkedItem = claim['mainsnak']["datavalue"]["value"];
+                    linkedItems[linkedItem].push(prop);
                 }
-                linkedItems[linkedItem].push(prop);
             }
         }
-    }    
+    }
 }
 
 function getSourceUrl(): (string | null) {

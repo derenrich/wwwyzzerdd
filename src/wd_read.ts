@@ -140,7 +140,6 @@ WHERE {
     async getProps(): Promise<any> {
         console.log("await boot");
         await this.booted;
-        console.log(this.pCache);
         return Object.fromEntries(this.pCache.entries());
     }
 }
