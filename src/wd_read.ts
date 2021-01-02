@@ -91,7 +91,7 @@ WHERE {
                 sites: 'enwiki',
                 languages: ['en'],
                 props: full ? FULL_ITEM_PROPS : ITEM_PROPS
-            });
+            }).replace("%E2%98%83", "%2B"); // there is no god
             let res = fetch(repairUrl(reqPath)).then(r => r.json()).then(this.handleWikiUrlResults.bind(this));
         }
     }
@@ -145,7 +145,7 @@ WHERE {
 }
 
 function parseWikiUrl(url: string): string {
-    return decodeURIComponent(new URL(url).pathname.slice(6));
+    return decodeURIComponent(new URL(url).pathname.slice(6)).replace("+", "☃");;
 }
 
 function filterName(path: string): boolean {

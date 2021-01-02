@@ -1,3 +1,4 @@
+
 import { BackgroundRequest, RequestType, LinkData } from "./common";
 
 import 'bootstrap';
@@ -16,7 +17,7 @@ let curUrl = new URL(document.baseURI);
 function fixedEncodeURIComponent(str: string) {
     return str.replace(/[^a-zA-Z:,_0-9()!$*./;@-]/g, function(c) {
         return encodeURIComponent(c);
-    }).replace(/[']/g, function(c) {
+    }).replace(/['+]/g, function(c) {
         return '%' + c.charCodeAt(0).toString(16).toUpperCase();
     });
 }
@@ -64,6 +65,9 @@ function extractLinkedItems(claims: any) {
                 } else if(claim['mainsnak']["datatype"] == "commonsMedia") {
                     // dump the filename in
                     let linkedItem = claim['mainsnak']["datavalue"]["value"];
+                    if (!(linkedItem in linkedItems)) {
+                        linkedItems[linkedItem] = [];
+                    }
                     linkedItems[linkedItem].push(prop);
                 }
             }
