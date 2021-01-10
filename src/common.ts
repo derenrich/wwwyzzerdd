@@ -32,7 +32,8 @@ export interface GetPropRec {
 export interface AddClaim {
     sourceItem: string;
     property: string;
-    targetItem: string;
+    targetItem?: string;
+    targetString?: string;
     sourceUrl?: string;
 }
 

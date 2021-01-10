@@ -1,6 +1,6 @@
 
 import { BackgroundRequest, RequestType, LinkData } from "./common";
-
+import {matchLinks} from "./external_id_handler";
 import 'bootstrap';
 import {Popover, Tooltip} from 'bootstrap'
 import 'jquery';
@@ -23,9 +23,13 @@ function fixedEncodeURIComponent(str: string) {
 }
 
 
-function itemListener(msg: any) {
+async function itemListener(msg: any) {
     if ("props" in msg) {
         propDescs = msg.props;
+        return;
+    }
+    if ("regex" in msg) {
+        matchLinks(msg.regex);
         return;
     }
     let qid = msg.body.title;
@@ -34,11 +38,14 @@ function itemListener(msg: any) {
         extractLinkedItems(msg.body.claims);
         for (let l of linkElms) {
             let qid = l.getAttribute("qid");
-            console.log(l, qid);
+            //console.log(l, qid);
             if (qid) {
                 addTooltip(l, qid);
             }
         }
+        for (let l of allLinkElms) {
+            visitLink(l);
+        }        
     } else {
         for (let l of linkElms) {
             let href = l.getAttribute("href") || "";
@@ -69,6 +76,10 @@ function extractLinkedItems(claims: any) {
                         linkedItems[linkedItem] = [];
                     }
                     linkedItems[linkedItem].push(prop);
+                } else if(claim['mainsnak']["datatype"] == "external-id") {
+                    let linkedItemValue = claim['mainsnak']["datavalue"]["value"];
+                    let linkedItemKey = prop + "::" + linkedItemValue;
+                    linkedItems[linkedItemKey] = [true];
                 }
             }
         }
@@ -105,21 +116,22 @@ function searchProp(evt: any) {
                     let qid = document.body.getAttribute("qid");
                     let pid = prop.id;
                     let targetQid = popDiv.getAttribute("qid");
-
+                    let idKey = popDiv.getAttribute("idKey");
                     chrome.runtime.sendMessage({
                         reqType: RequestType.ADD_CLAIM,
                         payload: {
                             sourceItem: qid,
                             property: pid,
                             targetItem: targetQid,
+                            targetString: idKey,
                             sourceUrl: getSourceUrl()
                         }
                     }, (res: any) => {
-                        console.log("return", res);
+                        //console.log("return", res);
                         if (res) { loadProps(); }
                     });
                     
-                    console.log(`saving link: ${qid} - ${pid} - ${targetQid}`);
+                    //console.log(`saving link: ${qid} - ${pid} - ${targetQid}`);
                     dismissPopover();
                 }
                 let row = document.createElement("div");
@@ -166,14 +178,18 @@ function dismissPopover() {
     if (curPopover) {
         curPopover.hide();
         (popDiv.children[0] as HTMLInputElement).value = "";
+        (popDiv.children[0] as HTMLInputElement).disabled = false;        
         (popDiv.children[1] as HTMLDivElement).innerHTML = "";
     }    
 }
 
-function makeContextMenu(d: any) {
+function makeContextMenu(d: any, restrictedPid?:string) {
     function contextMenu(evt: any): boolean {
         evt.preventDefault();
         popDiv.setAttribute("qid", d.title);
+        if (d.idKey) {
+            popDiv.setAttribute("idKey", d.idKey);
+        }
         dismissPopover();
         curPopover = new Popover(evt.target, {
             content: popDiv,
@@ -184,12 +200,17 @@ function makeContextMenu(d: any) {
             title: d.labels.en.value
         });
         curPopover.show();
+        if (restrictedPid) {
+            (popDiv.children[0] as HTMLInputElement).value = restrictedPid;
+            (popDiv.children[0] as HTMLInputElement).disabled = true;
+        }
         searchProp({target: popDiv.children[0]});
         return false;
     }
     return contextMenu;
 }
 
+let allLinkElms = Array.from(document.querySelectorAll("#bodyContent a"));
 let linkElms = Array.from(document.querySelectorAll("#bodyContent a[href*='/wiki/']"));
 let links = [window.location.href].concat(
     linkElms.flatMap((e) => e.getAttribute("href") || [])
@@ -252,5 +273,30 @@ function addTooltip(link: Element, qid: string) {
     } else {
         link.classList.remove("badge-success");
         link.classList.add("badge-info");
+    }
+}
+
+function visitLink(link: Element) {
+    // is this an autosuggested link?
+    let idProp = link.getAttribute("wd-prop-id");
+    let idValue = link.getAttribute("wd-key");
+    if (idProp && idValue) {
+        let ignoreCase = link.getAttribute("wd-prop-ignorecase");
+        let checker = idProp + "::" + idValue;
+        var match = false;
+        if (!ignoreCase && checker in linkedItems) {
+            match = true;
+        } else if (!Object.keys(linkedItems).every(v => v.localeCompare(checker, undefined, {sensitivity: "accent"}) != 0)) {
+            match = true;
+        }
+        if (match) {
+            link.classList.add("badge-success");
+            let propName = propDescs[idProp]
+            new Tooltip(link, {title: function(){ return propName;}});
+        } else {          
+            link.classList.add("badge-info");
+            let resp = {title: "", idKey: idValue, labels: {en: {value: idValue}}};
+            link.addEventListener("contextmenu", makeContextMenu(resp, idProp))
+        }
     }
 }

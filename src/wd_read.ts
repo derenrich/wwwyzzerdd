@@ -30,6 +30,8 @@ class WikidataReader {
     pCache: Map<string, any>;
     // url -> qid
     wdCache: Map<string, any>;
+    // regex -> matcher info
+    regexCache: Map<string, any>;
 
     booted: Promise<any>;
     
@@ -37,11 +39,14 @@ class WikidataReader {
         this.wdCache = new TriggerMap(onNewItem);
         this.qCache = new Map();
         this.pCache = new Map();
+        this.regexCache = new Map();
         this.booted = this.init();
     }
 
     async init() {
-        await this.loadPropsCached();
+        let propFetch = this.loadPropsCached();
+        let regexFetched = this.loadRegexCached();
+        return Promise.allSettled([propFetch, regexFetched]);
     }
 
     async loadPropsCached() {
@@ -50,7 +55,7 @@ class WikidataReader {
             await this.loadProps();
             let x = Object.fromEntries(this.pCache.entries());
             return x;
-        });
+        },  60 * 60 * 24);
         let props = await res;
         if(!this.pCache.size) {
             this.pCache = new Map(Object.entries(props));
@@ -77,6 +82,44 @@ WHERE {
         });
     }
 
+    async loadRegexCached() {
+        let REGEX_KEY = "WD_REGEX";
+        let res = getOrCompute(REGEX_KEY, async () => {
+            await this.loadPatterns();
+            let x = Object.fromEntries(this.regexCache.entries());
+            return x;
+        },  60 * 60 * 24);
+        let regex = await res;
+        if(!this.regexCache.size) {
+            this.regexCache = new Map(Object.entries(regex));
+        }
+    }
+    
+    async loadPatterns() {
+        let propQuery = `
+SELECT ?p ?regexValue (COALESCE(?replacement, "\\\\1") as ?replacementString) (COALESCE(?q = wd:Q55121297, false) as ?caseInsensitive)
+WHERE {
+  ?p p:P8966 ?regex.
+  ?regex ps:P8966 ?regexValue
+  OPTIONAL {
+     ?p wdt:P1552 ?q.
+     ?q wdt:P31 wd:Q55121384.
+  }
+ OPTIONAL {?regex pq:P8967 ?replacement.}
+}`;
+        const url = wdk.sparqlQuery(propQuery);
+        await fetch(url).then((x) => x.json()).then((res) => {
+            for(let prop of res.results.bindings) {
+                let propUrl = prop.p.value;
+                let splitUrl = propUrl.split("/");
+                let propId = splitUrl[splitUrl.length - 1];
+                let regex = prop.regexValue.value;
+                let replacementValue = prop.replacementString.value;
+                let caseInsensitive = prop.caseInsensitive.value;
+                this.regexCache.set(regex, {prop: propId, replacementValue: replacementValue, caseInsensitive: caseInsensitive});
+            }
+        });
+    }
     
     lookupWikiUrls(urls: string[], full?: boolean) {
         // parse urls and filter out invalid ones
@@ -138,9 +181,13 @@ WHERE {
     }
 
     async getProps(): Promise<any> {
-        console.log("await boot");
         await this.booted;
         return Object.fromEntries(this.pCache.entries());
+    }
+
+    async getRegex(): Promise<any> {
+        await this.booted;
+        return Object.fromEntries(this.regexCache.entries());
     }
 }
 

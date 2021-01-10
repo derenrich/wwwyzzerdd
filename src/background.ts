@@ -1,6 +1,6 @@
 import { AddClaim, BackgroundRequest, RequestType, GetWikidataIds, GetLinkData, LinkData } from "./common";
 import { WikidataReader } from "./wd_read";
-import { addItemClaim, addReference } from "./wd_write";
+import { addItemClaim, addIdClaim, addReference } from "./wd_write";
 
 let port: any  = null;
 function openPort(conn: any) {
@@ -9,6 +9,9 @@ function openPort(conn: any) {
     wdr.getProps().then((props: any) => port.postMessage({
         props: props
     }));
+    wdr.getRegex().then((regex: any) => port.postMessage({
+        regex: regex
+    }));    
 }
 
 chrome.runtime.onConnect.addListener(openPort);
@@ -45,7 +48,15 @@ function messageHandler(msg: BackgroundRequest, sender: any, reply: any) {
 chrome.runtime.onMessage.addListener(messageHandler);
 
 async function addClaimAndRef(claim: AddClaim) {
-    let res = await addItemClaim(claim.sourceItem, claim.property, claim.targetItem);
+    var res: any = {};
+    if (claim.targetString) {
+        res = await addIdClaim(claim.sourceItem, claim.property, claim.targetString);
+    } else if (claim.targetItem)  {
+        res = await addItemClaim(claim.sourceItem, claim.property, claim.targetItem);
+    } else {
+        console.log("bad add claim", claim);
+        return;
+    }
     //"{"pageinfo":{"lastrevid":1304825547},"success":1,"claim":{"mainsnak":{"snaktype":"value","property":"P113","hash":"c0db0d5ef5b9c88da2489eaf107f67a14b4287ad","datavalue":{"value":{"entity-type":"item","numeric-id":9064,"id":"Q9064"},"type":"wikibase-entityid"},"datatype":"wikibase-item"},"type":"statement","id":"Q4836308$13A1BD63-B66F-4730-B2C0-8B53B85A92CB","rank":"normal"}}"
     if (res && res.success) {
         let claim_id = res.claim.id;

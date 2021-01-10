@@ -40,6 +40,10 @@ export async function addItemClaim(entity: string, property: string, qid: string
     return addClaim(entity, property, {"entity-type": "item", "id": qid});
 }
 
+export async function addIdClaim(entity: string, property: string, value: string): Promise<any> {
+    return addClaim(entity, property, value);
+}
+
 export async function addClaim(entity: string, property: string, value: any): Promise<any> {
     let base_url = "https://www.wikidata.org/w/api.php?action=wbcreateclaim&format=json&snaktype=value&";    
     let token = encodeURIComponent(await getCachedToken());

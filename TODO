@@ -5,3 +5,5 @@
 - use text fragment links see https://github.com/GoogleChromeLabs/link-to-text-fragment
 - handle weird article names (incl '!')
 - support images
+- blow caches for sparql queries
+- don't allow linking deprecated values
