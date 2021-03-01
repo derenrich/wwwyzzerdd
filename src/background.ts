@@ -1,6 +1,9 @@
-import { AddClaim, BackgroundRequest, RequestType, GetWikidataIds, GetLinkData, LinkData } from "./common";
+import { MessageType, Message, AddClaim, BackgroundRequest, RequestType, GetWikidataIds, GetLinkData, LinkData } from "./common";
 import { WikidataReader } from "./wd_read";
 import { addItemClaim, addIdClaim, addReference } from "./wd_write";
+import { MenuBackground } from "./context";
+
+let m = new MenuBackground()
 
 let port: any  = null;
 function openPort(conn: any) {
@@ -9,6 +12,9 @@ function openPort(conn: any) {
     wdr.getProps().then((props: any) => port.postMessage({
         props: props
     }));
+    wdr.getIcons().then((props: any) => port.postMessage({
+        icons: props
+    }));    
     wdr.getRegex().then((regex: any) => port.postMessage({
         regex: regex
     }));    
@@ -23,26 +29,29 @@ function onNewItem(url: string, body: any) {
 let wdr = new WikidataReader(onNewItem);
 
 function portHandler(msg: BackgroundRequest) {
-    switch(msg.reqType) {
-        case RequestType.GET_WD_IDS:
-            wdr.lookupWikiUrls(msg.payload.urls, msg.payload.full);
+    if (1==1||msg.msgType == MessageType.BACKGROUND_MISC) {
+        switch(msg.reqType) {
+            case RequestType.GET_WD_IDS:
+                wdr.lookupWikiUrls(msg.payload.urls, msg.payload.full);
+        }
     }
 }
-
 
 chrome.runtime.onMessage.addListener(messageHandler);
 
 
 function messageHandler(msg: BackgroundRequest, sender: any, reply: any) {
-    switch(msg.reqType) {           
-        case RequestType.GET_PROP_REC:
-            return getPropRecs(msg.payload.entity, msg.payload.text, reply);
-        case RequestType.ADD_CLAIM:
-            addClaimAndRef(msg.payload).then(() => reply(true));
-            //addItemClaim(msg.payload.sourceItem, msg.payload.property, msg.payload.targetItem).then((v) => reply(v));
-            return true
+    if (1==1||msg.msgType == MessageType.BACKGROUND_MISC) {
+        switch(msg.reqType) {           
+            case RequestType.GET_PROP_REC:
+                return getPropRecs(msg.payload.entity, msg.payload.text, reply);
+            case RequestType.ADD_CLAIM:
+                addClaimAndRef(msg.payload).then(() => reply(true));
+                //addItemClaim(msg.payload.sourceItem, msg.payload.property, msg.payload.targetItem).then((v) => reply(v));
+                return true;
+        }
+        return false;
     }
-    return false;
 }
 
 chrome.runtime.onMessage.addListener(messageHandler);

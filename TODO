@@ -7,3 +7,4 @@
 - support images
 - blow caches for sparql queries
 - don't allow linking deprecated values
+- Invalid CSRF token - doesn't return errors: {"error":{"code":"badtoken","info":"Invalid CSRF token.","*":"See https://www.wikidata.org/w/api.php for API usage. Subscribe to the mediawiki-api-announce mailing list at &lt;https://lists.wikimedia.org/mailman/listinfo/mediawiki-api-announce&gt; for notice of API deprecations and breaking changes."},"servedby":"mw1340"}

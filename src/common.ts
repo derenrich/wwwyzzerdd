@@ -1,3 +1,11 @@
+export enum MessageType {
+    BACKGROUND_MISC
+}
+
+export interface Message {
+    msgType: MessageType;
+}
+
 export enum RequestType {
     GET_WD_IDS,
     GET_LINK_DATA,
@@ -6,7 +14,7 @@ export enum RequestType {
     ADD_CLAIM
 }
 
-export interface BackgroundRequest {
+export interface BackgroundRequest extends Message {
     reqType: RequestType;
     payload?: any;
 }

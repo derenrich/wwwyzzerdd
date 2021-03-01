@@ -32,13 +32,16 @@ class WikidataReader {
     wdCache: Map<string, any>;
     // regex -> matcher info
     regexCache: Map<string, any>;
-
+    // pid -> url
+    iconCache: Map<string, string>;
+    
     booted: Promise<any>;
     
     constructor(onNewItem: CacheCallback<string, any>) {
         this.wdCache = new TriggerMap(onNewItem);
         this.qCache = new Map();
         this.pCache = new Map();
+        this.iconCache = new Map();
         this.regexCache = new Map();
         this.booted = this.init();
     }
@@ -54,20 +57,23 @@ class WikidataReader {
         let res = getOrCompute(PROP_KEY, async () => {
             await this.loadProps();
             let x = Object.fromEntries(this.pCache.entries());
-            return x;
+            let y = Object.fromEntries(this.iconCache.entries());
+            return { props: x, icons: y};
         },  60 * 60 * 24);
-        let props = await res;
+        let propsData = await res;
         if(!this.pCache.size) {
-            this.pCache = new Map(Object.entries(props));
+            this.pCache = new Map(Object.entries(propsData.props));
+            this.iconCache = new Map(Object.entries(propsData.icons));
         }
     }
     
     async loadProps() { 
         let propQuery = `
-SELECT ?p ?label
+SELECT distinct ?p ?label ?icon
 WHERE {
   ?p wdt:P31/wdt:P279* wd:Q18616576.
   ?p rdfs:label ?label.
+  OPTIONAL {   ?p wdt:P2910 ?icon. }
   FILTER(LANG(?label) = "en").  
 }`;
         const url = wdk.sparqlQuery(propQuery);
@@ -77,6 +83,9 @@ WHERE {
                 let splitUrl = propUrl.split("/");
                 let propId = splitUrl[splitUrl.length - 1];
                 let desc = prop.label.value;
+                if (prop.icon && prop.icon.value) {
+                    this.iconCache.set(propId, prop.icon.value);
+                }
                 this.pCache.set(propId, desc);
             }
         });
@@ -166,7 +175,6 @@ WHERE {
                 let enwikiTitle = this.qCache.get(k).sitelinks.enwiki.title.replaceAll(" ", "_");
                 this.wdCache.set(enwikiTitle, res.entities[k]);                
                 if (("normalized" in res)) {
-                    console.log(res);
                     let oldTitle = res.normalized.n['from'];
                     this.wdCache.set(oldTitle.replaceAll(" ", "_"), res.entities[k]);
                 }
@@ -174,7 +182,6 @@ WHERE {
         }
         if (Object.keys(res.entities).length > 1) {
             for (let k of failedLookups) {
-                console.log(k);
                 this.lookupSingleWikiPage(k);
             }
         }
@@ -184,6 +191,11 @@ WHERE {
         await this.booted;
         return Object.fromEntries(this.pCache.entries());
     }
+
+    async getIcons(): Promise<any> {
+        await this.booted;
+        return Object.fromEntries(this.iconCache.entries());
+    }    
 
     async getRegex(): Promise<any> {
         await this.booted;

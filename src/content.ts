@@ -1,15 +1,20 @@
-
 import { BackgroundRequest, RequestType, LinkData } from "./common";
 import {matchLinks} from "./external_id_handler";
 import 'bootstrap';
 import {Popover, Tooltip} from 'bootstrap'
 import 'jquery';
-import * as $ from "jquery";
+//import * as $ from "jquery";
 
-let port = chrome.runtime.connect();
+function exposeNamespace() {
+  const j = document.createElement('script'),
+    f = document.getElementsByTagName('script')[0];
+  j.textContent = "document.getElementsByTagName(\"body\")[0].setAttribute(\"mw-ns\", mw.config.get('wgNamespaceNumber' ));";
+  f.parentNode.insertBefore(j, f);
+  f.parentNode.removeChild(j);
+}
 
-port.onMessage.addListener(itemListener);
-
+exposeNamespace();
+   
 let linkedItems: { [key: string]: any[]; } = {};
 let propDescs: { [key: string]: any; } = {};
 let curUrl = new URL(document.baseURI);
@@ -24,8 +29,13 @@ function fixedEncodeURIComponent(str: string) {
 
 
 async function itemListener(msg: any) {
+    console.log(msg);
     if ("props" in msg) {
         propDescs = msg.props;
+        return;
+    }
+    if ("icons" in msg) {
+        console.log(msg.icons);
         return;
     }
     if ("regex" in msg) {
@@ -34,6 +44,7 @@ async function itemListener(msg: any) {
     }
     let qid = msg.body.title;
     if (curUrl.pathname.endsWith("wiki/" + fixedEncodeURIComponent(msg.title)) && msg.body.claims) {
+        // this is info about this page
         document.body.setAttribute("qid", qid);
         extractLinkedItems(msg.body.claims);
         for (let l of linkElms) {
@@ -47,6 +58,7 @@ async function itemListener(msg: any) {
             visitLink(l);
         }        
     } else {
+        // this is info about a link
         for (let l of linkElms) {
             let href = l.getAttribute("href") || "";
             if (href.endsWith("wiki/" + fixedEncodeURIComponent(msg.title)) ||
@@ -56,6 +68,19 @@ async function itemListener(msg: any) {
         }
     }
 }
+var port = null;
+try {
+    let wikiNamespace = document.getElementsByTagName("body")[0].getAttribute("mw-ns") || "";
+    if (wikiNamespace == "0") {
+        port = chrome.runtime.connect();
+        port.onMessage.addListener(itemListener);        
+    }  else {
+        console.log("not running", wikiNamespace);
+    }
+} catch (e) {
+    console.log("not running", e);
+}
+
 
 function extractLinkedItems(claims: any) {
     for (let prop of Object.keys(claims)) {
@@ -226,17 +251,16 @@ function loadProps() {
 }
 
 function boot() {
-    if (document.baseURI.indexOf("wiki/Special:") < 0) {
-        linkElms.forEach((l: any) => l.setAttribute("title", ""));
-        loadProps();
-        port.postMessage({
-            reqType: RequestType.GET_WD_IDS,
-            payload: {urls: links, full: false}
-        });
-    }
+    linkElms.forEach((l: any) => l.setAttribute("title", ""));
+    loadProps();
+    port.postMessage({
+        reqType: RequestType.GET_WD_IDS,
+        payload: {urls: links, full: false}
+    });
 }
-
-boot();
+if (port) {
+    boot();
+}
 
 function appendString(title: string, ap: string): string {
     if (title) {

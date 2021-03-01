@@ -26,6 +26,7 @@
     "offline_enabled": false,
     "permissions": ["storage",
                     "activeTab",
+                    "contextMenus",
                     "https://www.wikidata.org/*",
                     "https://*.wikipedia.org/*"                  
                    ],
@@ -35,7 +36,7 @@
     "storage": {},
     "web_accessible_resources": [],
     "background": {
-        "scripts": ["background.ts"],
+        "scripts": ["background.ts", "context.ts"],
         "persistent": false
     }
 }
