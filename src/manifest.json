@@ -1,15 +1,15 @@
 {
     "manifest_version": 2,
     "name": "Wwwyzzerdd for Wikidata",
-    "version": "0.0.0.1",
-    "description": "A plain text description",
+    "version": "0.0.0.3",
+    "description": "Edit wikidata from wikipedia!",
     "icons": { },
     "page_action": { },
     "commands": { },
     "content_scripts": [{
         "matches": ["*://*.wikipedia.org/*"],
-        "js": ["content.ts", "common.ts"],
-        "css": ["content.scss"],
+        "js": ["frontend.tsx"],
+        "css": [],
         "run_at": "document_idle"
     }],
     "event_rules": [],
@@ -27,6 +27,7 @@
     "permissions": ["storage",
                     "activeTab",
                     "contextMenus",
+                    "unlimitedStorage",
                     "https://www.wikidata.org/*",
                     "https://*.wikipedia.org/*"                  
                    ],
@@ -36,7 +37,6 @@
     "storage": {},
     "web_accessible_resources": [],
     "background": {
-        "scripts": ["background.ts", "context.ts"],
-        "persistent": false
-    }
+        "scripts": ["background.ts"]
+    }    
 }

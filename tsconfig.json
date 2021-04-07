@@ -1,5 +1,7 @@
 {
     "compilerOptions": {
+        "allowSyntheticDefaultImports": true,
+        "jsx": "react",
         "outDir": "./dist/",
         "sourceMap": true,
         "strict": true,
