@@ -1,0 +1,10 @@
+{
+  "extends": "@parcel/config-webextension",
+  "transformers": {
+    "*.{ts,tsx}": ["@parcel/transformer-typescript-tsc"]
+  },
+  "validators": {
+    "*.{ts,tsx}": ["@parcel/validator-typescript"]
+  }  
+}
+
