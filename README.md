@@ -14,7 +14,7 @@ Definitely still in beta. Use at your own risk. Audit all the edits you make.
 
 ## Usage
 
-To build: yarn run build-prod
+To build: yarn run build
 
 To use: point chrome at the dist folder
 

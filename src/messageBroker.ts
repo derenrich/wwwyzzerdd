@@ -188,6 +188,7 @@ export class MessageBroker {
                 break;
             }
             case MessageType.SET_PROP_ID: {
+                // crappy debounce method
                 let now = Date.now();
                 if (now - lastWrite < MIN_WRITE_WAIT) break;
                 lastWrite = Date.now();

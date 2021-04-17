@@ -5,13 +5,15 @@ const REQ_LIMIT = 50;
 const SOURCE_PROPS = ['info', 'descriptions', 'aliases', 'labels', 'claims'].join("|");
 const LINKED_PROPS = ['labels', 'descriptions', 'sitelinks'].join('|');
 
+type QidCallback = (d: LinkedItemData) => void;
+
 export interface LinkedItemData {
     qid: string;
     label: string | undefined;
     description: string | undefined;
 }
 
-export function getQidsFromTitles(titles: string[]): Promise<{[key: string]: LinkedItemData }> {
+export function getQidsFromTitles(titles: string[], respond?: QidCallback): Promise<{[key: string]: LinkedItemData }> {
     // TODO: handle pipes in titles
     let concatTitleChunk = encodeURIComponent(titles.join("|"));
     let site = "enwiki";
@@ -39,7 +41,7 @@ export function getQidsFromTitles(titles: string[]): Promise<{[key: string]: Lin
                     let title = ent["sitelinks"][site].title;
                     let label = (ent["labels"][lang] || {})["value"];
                     let description = (ent["descriptions"][lang] || {})["value"];
-                    let linkData = {
+                    let linkData: LinkedItemData = {
                         qid,
                         label,
                         description
@@ -127,15 +129,15 @@ export class ItemDB {
 
     }
 
-    //handleQueries(queries: ItemLinkQuery[]) {        
-    //}
-
-    async lookupTitles(titles: string[]): Promise<{[key: string]: LinkedItemData}> {
+    async lookupTitles(titles: string[], respond?: QidCallback): Promise<{[key: string]: LinkedItemData}> {
         let uniqTitles = Array.from(new Set(titles));
         let out: {[key: string]: LinkedItemData} = {}; 
         for (let i = 0; i < uniqTitles.length; i += REQ_LIMIT) {
             let titleChunk = uniqTitles.slice(i, i + REQ_LIMIT);
-            let batch = await getOrComputeMultiple(titleChunk, getQidsFromTitles, "title2qid_", TITLE_CACHE_SEC);
+            function qidsFromTitle(titles: string[]) {
+                return getQidsFromTitles(titles, respond);
+            }
+            let batch = await getOrComputeMultiple(titleChunk, qidsFromTitle, "title2qid_", TITLE_CACHE_SEC);
             Object.assign(out, batch);
         }
         return out;

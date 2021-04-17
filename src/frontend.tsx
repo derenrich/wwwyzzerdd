@@ -120,9 +120,20 @@ function getSuggestion(qid: string, typed: string): Promise<PropertySuggestions>
 }
 
 function operateLinks(fn: (link:HTMLAnchorElement) => void) {
+    let navBoxes = Array.from(document.querySelectorAll("#bodyContent .navbox"));
     let bodyLinkElms = Array.from(document.querySelectorAll("#bodyContent a"));
-    for(const link of bodyLinkElms) {
-        fn(link as HTMLAnchorElement)
+    for(const link of bodyLinkElms) {        
+        // skip links in nav boxes for now
+        let notInNav = true;
+        for (const navBox of navBoxes) {
+            if ((navBox.compareDocumentPosition(link) & Node.DOCUMENT_POSITION_CONTAINED_BY) > 0) {
+                notInNav = false;
+                break;
+            }
+        }
+        if (notInNav) {
+            fn(link as HTMLAnchorElement)
+        }
     }
 }
 
@@ -314,7 +325,7 @@ function getBodyClaims() {
 
 let wikiNamespace = document.getElementsByTagName("body")[0].getAttribute("mw-ns") || "";
 
-if (wikiNamespace == "0") {
+if (wikiNamespace == "0" && parseWikiUrl(document.baseURI) != "Main Page") {
     registerEvents();
     annotateWikiLinks();
     annotateIdLinks();
