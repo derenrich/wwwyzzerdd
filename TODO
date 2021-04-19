@@ -1,10 +1,8 @@
 - warn users of the type they are linking (e.g. disambig)
-- show item description when linking
 - undo?
 - link unlinked text / dates / values
+- link images
 - use text fragment links see https://github.com/GoogleChromeLabs/link-to-text-fragment
-- handle weird article names (incl '!')
-- support images
+- handle weird article names (incl '!', '|')
 - blow caches for sparql queries
 - don't allow linking deprecated values
-- Invalid CSRF token - doesn't return errors: {"error":{"code":"badtoken","info":"Invalid CSRF token.","*":"See https://www.wikidata.org/w/api.php for API usage. Subscribe to the mediawiki-api-announce mailing list at &lt;https://lists.wikimedia.org/mailman/listinfo/mediawiki-api-announce&gt; for notice of API deprecations and breaking changes."},"servedby":"mw1340"}
