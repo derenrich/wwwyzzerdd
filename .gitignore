@@ -5,7 +5,7 @@ node_modules
 *~
 .npmrc
 .parcel-cache/
-#*
+\#*
 .#*
 .nvmrc
 yarn-error.log
