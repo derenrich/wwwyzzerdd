@@ -4,7 +4,7 @@
     "*.{ts,tsx}": ["@parcel/transformer-typescript-tsc"]
   },
   "validators": {
-    "*.{tstsx}": ["@parcel/validator-typescript"]
+    "*.{ts,tsx}": ["@parcel/validator-typescript"]
   }  
 }
 

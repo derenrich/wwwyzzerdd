@@ -14,9 +14,10 @@
         "baseUrl": "./src",
         "paths": {
             "~*": ["./*"]
-        }
+        },
+        "types": ["chrome"]
     },
     "include": [
-        "./src/**/*"
+        "src/**/*"
     ]
 }

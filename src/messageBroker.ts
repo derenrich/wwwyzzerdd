@@ -12,7 +12,7 @@ export enum MessageType {
     SET_PROP_ID,
 }
 
-interface Message {
+export interface Message {
     type: MessageType;
     payload: any;
 }
