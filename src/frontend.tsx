@@ -1,9 +1,11 @@
 
 import {registerFrontendBroker, MessageType, Message, GetQidsReply, GetClaimsReply, GetPropNamesReply, GetLinkIdentifierReply} from "./messageBroker";
+import {PropertySuggestions} from "./propertyData";
+
 import {WWWLink} from "./component"
+import {WwwyzzerddHolder} from "./holder"
 import React from "react";
 import ReactDom from "react-dom";
-import {PropertySuggestions} from "./propertyData";
 
 
 let broker = registerFrontendBroker();
@@ -331,3 +333,17 @@ if (wikiNamespace == "0" && parseWikiUrl(document.baseURI) != "Main Page") {
     annotateIdLinks();
 }
 
+
+let links: HTMLElement[] = Array.from(document.querySelectorAll("div.vector-menu-content a"));
+let footer = document.querySelectorAll("#footer")[0];
+if (links.length > 0) {
+    
+    function setRef(ref: WwwyzzerddHolder) {
+        console.log(ref, "ref");
+        for(let link of links) {
+            ref.addWikiLink(link as HTMLAnchorElement);
+        }
+    }
+    const elm = <div><WwwyzzerddHolder pageTitle="foo" wikiLinks={[]} ref={setRef} /></div>;
+    ReactDom.render(elm, footer);
+}
