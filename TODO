@@ -6,3 +6,6 @@
 - handle weird article names (incl '!', '|')
 - blow caches for sparql queries
 - don't allow linking deprecated values
+- heuristic handling of official website?
+- show the existing values for that property when adding?
+- exclude invalid props
