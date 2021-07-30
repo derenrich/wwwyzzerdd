@@ -19,10 +19,10 @@ let pageQid: {[key: string]: string} = {};
 const debug = true;
 
 if (debug) {
-    broker.registerFrontendHandler(MessageType.GET_QIDS, console.log);
-    broker.registerFrontendHandler(MessageType.GET_CLAIMS, console.log);
-    broker.registerFrontendHandler(MessageType.GET_PROP_NAMES, console.log);
-    broker.registerFrontendHandler(MessageType.GET_PROP_SUGGESTIONS, console.log);
+    //broker.registerFrontendHandler(MessageType.GET_QIDS, console.log);
+    //broker.registerFrontendHandler(MessageType.GET_CLAIMS, console.log);
+    //broker.registerFrontendHandler(MessageType.GET_PROP_NAMES, console.log);
+    //broker.registerFrontendHandler(MessageType.GET_PROP_SUGGESTIONS, console.log);
 }
 
 broker.registerFrontendHandler(MessageType.GET_CLAIMS, function(data: GetClaimsReply) {
@@ -328,22 +328,32 @@ function getBodyClaims() {
 let wikiNamespace = document.getElementsByTagName("body")[0].getAttribute("mw-ns") || "";
 
 if (wikiNamespace == "0" && parseWikiUrl(document.baseURI) != "Main Page") {
-    registerEvents();
-    annotateWikiLinks();
+    //registerEvents();
+    //annotateWikiLinks();
     annotateIdLinks();
 }
 
 
-let links: HTMLElement[] = Array.from(document.querySelectorAll("div.vector-menu-content a"));
+//let links: HTMLElement[] = Array.from(document.querySelectorAll("div.vector-menu-content a"));
+//let links = Array.from(document.querySelectorAll(`#bodyContent a[wd_title='${title.replaceAll("'","\\'")}']`));
+
 let footer = document.querySelectorAll("#footer")[0];
-if (links.length > 0) {
+//if (links.length > 0) {
     
     function setRef(ref: WwwyzzerddHolder) {
-        console.log(ref, "ref");
-        for(let link of links) {
-            ref.addWikiLink(link as HTMLAnchorElement);
-        }
+        operateWikiLinks(function(link:HTMLAnchorElement) {
+            // clone the anchor into itself to make a place for the orb
+            let linkAnchor  = link as HTMLAnchorElement;
+            let origLink = linkAnchor.cloneNode(true) as HTMLAnchorElement;
+            linkAnchor.removeAttribute("href");
+            for (let c of linkAnchor.childNodes) {
+                linkAnchor.removeChild(c);
+            }
+            linkAnchor.appendChild(origLink);
+            ref.addWikiLink(origLink.href, linkAnchor);
+        });
+        ref.boot();
     }
-    const elm = <div><WwwyzzerddHolder pageTitle="foo" wikiLinks={[]} ref={setRef} /></div>;
+    const elm = <div><WwwyzzerddHolder curUrl={getSourceUrl()} pageTitle="foo" wikiLinks={[]} ref={setRef} /></div>;
     ReactDom.render(elm, footer);
-}
+//}
