@@ -75,14 +75,29 @@ const propDB = new PropertyDB();
 
 const MIN_WRITE_WAIT = 300;
 let lastWrite = Date.now();
-
+let initBroker = false;
 
 export class MessageBroker {
     port: chrome.runtime.Port;
+    connected: boolean;
 
     constructor(port: chrome.runtime.Port) {
         this.port = port;
-        chrome.runtime.onMessage.addListener(this.handleOneTimeRequest.bind(this));
+        this.connected = true;
+        this.port.onDisconnect.addListener((d) => {
+            this.connected = false;
+        });
+        if (!initBroker) {
+            // only init once
+            chrome.runtime.onMessage.addListener(this.handleOneTimeRequest.bind(this));
+            initBroker = true;
+        }
+    }
+
+    postMessage(msg: any) {
+        if (this.connected) {
+            this.port.postMessage(msg);
+        }
     }
 
     handleOneTimeRequest(msg: any, b: chrome.runtime.MessageSender, reply: (response?: any) => void): boolean {
@@ -99,7 +114,7 @@ export class MessageBroker {
             case MessageType.GET_QIDS: {
                 const payload = msg.payload as GetQidsAsk;
                 itemDB.lookupTitles(payload.titles).then((data) => {
-                    this.port.postMessage({
+                    this.postMessage({
                         type: MessageType.GET_QIDS,
                         payload: {
                             data
@@ -119,7 +134,7 @@ export class MessageBroker {
                         }
                     };
                     if (reply) reply( response );
-                    this.port.postMessage(response);
+                    this.postMessage(response);
                 });
                 break;
             }
@@ -132,12 +147,14 @@ export class MessageBroker {
                     props.forEach((prop) => {
                         propNames[prop.prop] = prop.name;
                     });
-                    this.port.postMessage({
+                    let response = {
                         type: MessageType.GET_PROP_NAMES,
                         payload: {
                             propNames
                         }
-                    });
+                    };
+                    if (reply) reply( response );
+                    this.postMessage(response);
                 });
 
                 break;
@@ -151,7 +168,7 @@ export class MessageBroker {
                         payload: resp                    
                     }
                     if (reply) reply( response );
-                    this.port.postMessage(response);
+                    this.postMessage(response);
                 });
                 break;
             }
@@ -177,13 +194,12 @@ export class MessageBroker {
                 const payload = msg.payload as GetLinkIdentifierAsk;
                 const result = propDB.parseUrl(payload.url);                
                 result.then((resp) => {
-                    console.log("parse", result, payload);
                     const message = {
                         type: MessageType.GET_LINK_ID,
                         payload: {match: resp}
                     };
                     if (reply) reply(message);
-                    this.port.postMessage(message);
+                    this.postMessage(message);
                 });
                 break;
             }
@@ -208,10 +224,10 @@ export class MessageBroker {
     }
 
     sendMessage(msg: Message) {
-        this.port.postMessage(msg);
+        this.postMessage(msg);
     }
 
-    sendFrontendRequest(msg: Message, response: (r: any) => any) {
+    sendFrontendRequest(msg: Message, response?: (r: any) => any) {
         chrome.runtime.sendMessage(msg, response);          
     }
 

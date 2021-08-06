@@ -137,6 +137,5 @@ export class PropertyDB {
                 suggestions: (x.search || {}).map((sug: any) => sug.id)
             }
         });
-    
     }
 }

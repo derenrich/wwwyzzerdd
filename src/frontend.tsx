@@ -50,13 +50,17 @@ const wikiExpandedRegex = new RegExp("^https?:\/\/[a-z]+\.wikipedia\.org.+", "i"
 
 
 function exposeNamespace() {
-    const j = document.createElement('script');
-    const f = document.getElementsByTagName('script')[0];
-    if(f && f.parentNode) {
-        j.textContent = "document.getElementsByTagName(\"body\")[0].setAttribute(\"mw-ns\", mw.config.get('wgNamespaceNumber' ));";
-        f.parentNode.insertBefore(j, f);
-        f.parentNode.removeChild(j);
-    }
+    document.onreadystatechange = function () {
+        if (document.readyState == "complete") {
+            const j = document.createElement('script');
+            const f = document.getElementsByTagName('script')[0];
+            if(f && f.parentNode) {
+                j.textContent = "document.getElementsByTagName(\"body\")[0].setAttribute(\"mw-ns\", mw.config.get('wgNamespaceNumber' ));";
+                f.parentNode.insertBefore(j, f);
+                f.parentNode.removeChild(j);
+            }        
+        }
+      }
 }
   
 exposeNamespace();
@@ -303,7 +307,7 @@ function handleQids(payload: GetQidsReply) {
 
 function registerEvents() {
     broker.registerFrontendHandler(MessageType.GET_QIDS, handleQids);
-    broker.sendMessage({type: MessageType.GET_PROP_NAMES, payload: {}});
+    broker.sendFrontendRequest({type: MessageType.GET_PROP_NAMES, payload: {}});
     const body = document.querySelector("#bodyContent");
     if(body) {
         body.addEventListener('links-registered', console.log);
@@ -349,6 +353,7 @@ let footer = document.querySelectorAll("#footer")[0];
             for (let c of linkAnchor.childNodes) {
                 linkAnchor.removeChild(c);
             }
+            linkAnchor.innerText = "";
             linkAnchor.appendChild(origLink);
             ref.addWikiLink(origLink.href, linkAnchor);
         });

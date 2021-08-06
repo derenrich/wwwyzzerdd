@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import Portal from '@material-ui/core/Portal';
 
-import {registerFrontendBroker, MessageType, Message, GetQidsReply, GetClaimsReply, GetPropNamesReply, GetLinkIdentifierReply} from "./messageBroker";
+import {MessageBroker, registerFrontendBroker, MessageType, Message, GetQidsReply, GetClaimsReply, GetPropNamesReply, GetLinkIdentifierReply} from "./messageBroker";
 import {PropertySuggestions} from "./propertyData";
 import {LinkedItemData} from "./itemData";
 import { withStyles, createStyles, WithStyles } from '@material-ui/core/styles';
@@ -156,7 +156,7 @@ interface HolderState {
 }
 
 export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
-    broker: any;
+    broker: MessageBroker;
 
     constructor(props: HolderProps) {
         super(props);
@@ -310,7 +310,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
 
                 return <Portal container={link.element}>
                     {!!qidData ? 
-                    <Orb mode={mode} popover={<ItemWindow qid={qidData.qid} label={qidData.label} description={qidData.description} existingProps={propTuples} />}                    
+                    <Orb mode={mode} popover={<ItemWindow broker={this.broker} qid={qidData.qid} label={qidData.label} description={qidData.description} existingProps={propTuples} />}                    
                      /> : null
                     }
                 </Portal>;
@@ -325,6 +325,7 @@ interface PropTuple {
 }
 
  interface ItemWindowProps extends CloseParam, WithStyles<typeof styles> {
+     broker: MessageBroker;
      qid: string;
      label?: string;
      description?: string;
@@ -356,8 +357,19 @@ interface PropTuple {
             !!this.props.close ? this.props.close() : null;
         }
 
-        add (pid: string): void {
-            this.close();
+        add (pid?: string): void {
+            if (pid) {
+                this.props.broker.sendMessage({
+                    type: MessageType.SET_PROP_QID,
+                    payload: {
+                        sourceItemQid: "",
+                        propId: pid,
+                        targetItemQid: "",
+                        sourceUrl: ""
+                    }
+                });
+                this.close();
+            }
         }
 
         render() {
@@ -382,7 +394,10 @@ interface PropTuple {
             <List dense component="nav" >                                    
             {propItems}
             {this.state.addMode ? 
-            <Suggester onSubmit={this.add.bind(this)} propNames={{"P31" : "instance of"}} />  :
+            <Suggester 
+                targetQid={this.props.qid}
+                broker={this.props.broker}
+                onSubmit={this.add.bind(this)} />  :
             <ListItem button onClick={this.addMode}>
                 <ListItemIcon>
                   <AddIcon />
@@ -399,20 +414,63 @@ interface PropTuple {
 )
 
 
-
 interface SuggesterProps {
-    propNames: {[key: string]: string};
-    onSubmit: (pid: string) => void;
+    targetQid: string;
+    broker: MessageBroker;
+    onSubmit: (pid?: string) => void;
 }
 
 interface SuggesterState {
+    typed: string;
     selectedPid?: string;
+    propNames: {[key: string]: string};
+    suggestedProps: string[];
 }
 
 class Suggester extends Component<SuggesterProps, SuggesterState> {
 
+    constructor(props: SuggesterProps) {
+        super(props);
+        this.state = {
+            suggestedProps: [],
+            propNames: {},
+            typed: ""
+        };
+        this.props.broker.sendFrontendRequest({
+            type: MessageType.GET_PROP_NAMES,
+            payload: {}
+        }, (resp) => {
+
+            this.setState({
+                propNames: resp.payload.propNames
+            });
+        });
+        this.suggest();
+    }
+
     submit() {
-        this.props.onSubmit("P31");
+        this.props.onSubmit(this.state.selectedPid);        
+    }
+
+    suggest() {
+        this.props.broker.sendFrontendRequest({
+            type: MessageType.GET_PROP_SUGGESTIONS,
+            payload: {
+                itemQid: this.props.targetQid,
+                typed: this.state.typed
+            }
+        }, (resp: any) => {
+            this.setState({
+                suggestedProps: resp.payload.suggestions
+            })
+        })
+    }
+
+    componentDidUpdate(prevProps: SuggesterProps, prevState: SuggesterState) {
+        // todo: discard not most recent requests
+        if (this.state.typed != prevState.typed) {
+            this.suggest();
+        }
     }
 
     render() {
@@ -425,11 +483,16 @@ class Suggester extends Component<SuggesterProps, SuggesterState> {
             autoHighlight
             autoSelect
             openOnFocus
+            onInputChange={(evt, value, reason) => {
+                this.setState({
+                    typed: value
+                });
+            }}
             onChange={(evt, obj, reason) => {
                 this.setState({"selectedPid": !!obj ? obj['pid'] : undefined});
             }}
             renderInput={(params) => <TextField {...params} label="Property" variant="outlined"  />}
-            options={Object.keys(this.props.propNames).map((pid) => {return {"pid": pid, "label": this.props.propNames[pid]};})}
+            options={this.state.suggestedProps.map((pid) => {return {"pid": pid, "label": this.state.propNames[pid]};})}
             getOptionLabel={(opt) => opt.label}
             id="prop-box"  />
         </ListItem>;

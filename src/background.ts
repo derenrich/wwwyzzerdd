@@ -1,5 +1,4 @@
-import runQuery from './sparql'
-import { ItemDB, getQidsFromTitles } from './itemData'
+
 import {registerBackendBroker} from "./messageBroker";
 
 registerBackendBroker();
