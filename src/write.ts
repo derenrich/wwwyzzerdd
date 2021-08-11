@@ -1,5 +1,5 @@
 import { getAuthToken } from "./auth";
-
+import { retryWikimediaPromise } from "./util";
 
 export async function addItemClaim(entity: string, property: string, qid: string): Promise<any> {
     return addClaim(entity, property, {"entity-type": "item", "id": qid});
@@ -17,14 +17,16 @@ export async function addClaim(entity: string, property: string, value: any): Pr
     let summary = encodeURIComponent("import w/ 🧙 Wwwyzzerdd for Wikidata");
     let args = `token=${token}&summary=${summary}`;
 
-    return fetch(base_url + getArgs, {
-        method: 'POST',
-        body: args,
-        headers: {
-            "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "accept":"application/json, text/javascript, */*; q=0.01"
-        }
-    }).then((res) => res.json());
+    return retryWikimediaPromise(() => {
+        return fetch(base_url + getArgs, {
+            method: 'POST',
+            body: args,
+            headers: {
+             "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+             "accept":"application/json, text/javascript, */*; q=0.01"
+            }
+        }).then((res) => res.json());
+    });
 }
 
 function currentTimeValue() {

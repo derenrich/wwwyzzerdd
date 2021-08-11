@@ -19,10 +19,22 @@ import LinkIcon from '@material-ui/icons/Link';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import IconButton from '@material-ui/core/IconButton';
 import TextField from '@material-ui/core/TextField';
+import { Typography } from '@material-ui/core';
+import Button from '@material-ui/core/Button';
+
 
 
 const wikiLinkRegex = new RegExp("^https?:\/\/[a-z]+\.wikipedia\.org\/wiki\/([^#]+)", "i");
 const bannedPrefixes: string[] = ["File:", "Template:", "Special:", "Template talk:", "Help:", "Wikipedia:", "Talk:", "Category:"];
+
+function getSourceUrl(): string {
+    let link = document.querySelector("#t-permalink a")
+    if (link) {
+        return (link as HTMLAnchorElement).href;
+    } else {
+        return document.baseURI;
+    }
+}
 
 
 function parseWikiUrl(url: string): string | undefined {
@@ -134,6 +146,13 @@ interface LinkedElement {
     slug?: string;
 }
 
+interface ExternalLinkedElement {
+    element: HTMLElement;
+    pid: string;
+    identifier: string;
+}
+
+
 interface QidData {
     qid: string;
     label?: string;
@@ -148,11 +167,12 @@ interface HolderProps {
 
 interface HolderState {
     wikiLinks: LinkedElement[];
-    externalLinks: LinkedElement[];
+    externalLinks: ExternalLinkedElement[];
     booted: boolean;
     claims: {[key: string]: any};
     propNames: {[key: string]: string};
     qidMapping: {[key: string]: QidData};
+    curPageQid?: string;
 }
 
 export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
@@ -196,10 +216,14 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
     handleQids(payload: any) {
         let curTitle = parseWikiUrl(document.baseURI);
         if (!!curTitle && curTitle in payload.data) {
+            let curPageQid = payload.data[curTitle].qid;
+            this.setState({
+                curPageQid: curPageQid
+            });
             this.broker.sendMessage({
                 type: MessageType.GET_CLAIMS,
                 payload: {
-                    qid: payload.data[curTitle].qid
+                    qid: curPageQid
                 }
             });
         }
@@ -216,24 +240,25 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
 
     }
 
-    addWikiLink(page: string, elm: HTMLAnchorElement) {
+    addWikiLink(url: string, elm: HTMLAnchorElement) {
         this.setState(function(state: HolderState) {
             return {
                 wikiLinks: state.wikiLinks.concat({
                   element: elm,
-                  link: page,
-                  slug: parseWikiUrl(page)
+                  link: url,
+                  slug: parseWikiUrl(url)
                 })
             };
         });
     }
 
-    addExternalLink(url: string, elm: HTMLAnchorElement) {
+    addExternalLink(property: string, identifier: string, elm: HTMLAnchorElement) {
         this.setState(function(state: HolderState) {
             return {
                 externalLinks: state.externalLinks.concat({
                    element: elm,
-                   link: url
+                   pid: property,
+                   identifier: identifier
                 })
             };
         });
@@ -285,6 +310,24 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         return matchedProps;
     }
 
+    identifierChecker(pid:string, identifier: string): boolean {
+        let d = this.state.claims;
+        for (let k of Object.keys(d)) {
+            let claims = d[k].claims;
+            for (let statementV of Object.values(claims[pid] || {})) {                
+                let statement = (statementV as any);
+                if (statement.rank != "deprecated" && statement.mainsnak.datatype == "external-id") {
+                    if (statement.mainsnak.datavalue && statement.mainsnak.datavalue.value == identifier) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+
+
     mapProps(props:string[]): PropTuple[] {
         return props.map((p) => {
            return {
@@ -296,21 +339,49 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
 
     render() {
         return <React.Fragment>
+            {this.state.externalLinks.map((link) => {
+                let linked = this.identifierChecker(link.pid, link.identifier);
+                let orbMode =  (!this.state.booted || !this.state.curPageQid) ? OrbMode.Unknown : (linked ? OrbMode.Linked : OrbMode.Unlinked);
+                return <Portal container={link.element}>
+                    <Orb
+                        mode={orbMode}
+                        hover={this.state.propNames[link.pid] ? <Typography>{this.state.propNames[link.pid]}</Typography>:  undefined}
+                        popover={
+                            <LinkWindow pageQid={this.state.curPageQid} 
+                            pid={link.pid} linked={linked} identifier={link.identifier} 
+                            broker={this.broker} propNames={this.state.propNames} />
+                        }
+                     />
+                </Portal>;
+            })}
+
             {this.state.wikiLinks.map((link) => {
                 let qidData = this.lookupSlug(link.slug);
-                let matchedProps = !qidData ? [] : this.getProps(qidData.qid);
+                let matchedProps: string[] = !qidData ? [] : this.getProps(qidData.qid);
                 let propTuples = this.mapProps(matchedProps);
-                let mode = !this.state.booted ? OrbMode.Unknown : (
+                let mode = (!this.state.booted || !this.state.curPageQid) ? OrbMode.Unknown : (
                     (!qidData) ? OrbMode.Unknown : (
                         matchedProps.length > 0 ? 
                         OrbMode.Linked
                          : OrbMode.Unlinked
                     )
                 );
+                
+                let hoverText = matchedProps.length > 0 ?  <Typography>
+                    {Array.from(new Set(matchedProps
+                        .map((p) => this.state.propNames[p] || "")
+                        .filter((p) => p.length > 0))).join(" & ")}
+                </Typography> : null;
 
                 return <Portal container={link.element}>
                     {!!qidData ? 
-                    <Orb mode={mode} popover={<ItemWindow broker={this.broker} qid={qidData.qid} label={qidData.label} description={qidData.description} existingProps={propTuples} />}                    
+                    <Orb
+                        mode={mode}
+                        hover={hoverText}
+                        popover={<ItemWindow broker={this.broker}
+                            pageQid={this.state.curPageQid}
+                            qid={qidData.qid} label={qidData.label}
+                            description={qidData.description} existingProps={propTuples} />}
                      /> : null
                     }
                 </Portal>;
@@ -327,6 +398,7 @@ interface PropTuple {
  interface ItemWindowProps extends CloseParam, WithStyles<typeof styles> {
      broker: MessageBroker;
      qid: string;
+     pageQid?: string;
      label?: string;
      description?: string;
      existingProps: PropTuple[]; 
@@ -336,7 +408,7 @@ interface PropTuple {
      addMode: boolean;
  }
 
- export const ItemWindow = withStyles(styles)(
+ const ItemWindow = withStyles(styles)(
     class extends Component<ItemWindowProps, ItemWindowState> {
         constructor(props: ItemWindowProps) {
             super(props);
@@ -358,14 +430,14 @@ interface PropTuple {
         }
 
         add (pid?: string): void {
-            if (pid) {
+            if (pid && this.props.pageQid) {
                 this.props.broker.sendMessage({
                     type: MessageType.SET_PROP_QID,
                     payload: {
-                        sourceItemQid: "",
+                        sourceItemQid: this.props.pageQid,
                         propId: pid,
-                        targetItemQid: "",
-                        sourceUrl: ""
+                        targetItemQid: this.props.qid,
+                        sourceUrl: getSourceUrl()
                     }
                 });
                 this.close();
@@ -395,7 +467,7 @@ interface PropTuple {
             {propItems}
             {this.state.addMode ? 
             <Suggester 
-                targetQid={this.props.qid}
+                targetQid={this.props.pageQid || ""}
                 broker={this.props.broker}
                 onSubmit={this.add.bind(this)} />  :
             <ListItem button onClick={this.addMode}>
@@ -498,3 +570,58 @@ class Suggester extends Component<SuggesterProps, SuggesterState> {
         </ListItem>;
     }
 }
+
+
+
+interface LinkWindowProps extends CloseParam, WithStyles<typeof styles> {
+    pageQid?: string;
+    broker: MessageBroker;
+    pid: string;
+    identifier: string;
+    linked: boolean;
+    propNames: {[key: string]: string};
+
+}
+
+const LinkWindow = withStyles(styles)(
+    class extends Component<LinkWindowProps, {}> {
+        constructor(props: LinkWindowProps) {
+            super(props);
+        }
+
+        link (): void {
+            if (!this.props.linked && !!this.props.pageQid) {
+                this.props.broker.sendMessage({
+                    type: MessageType.SET_PROP_ID,
+                    payload: {
+                        sourceItemQid: this.props.pageQid,
+                        propId: this.props.pid,
+                        targetId: this.props.identifier,
+                        sourceUrl: getSourceUrl()
+                    }
+                });
+                this.close();
+            }
+        }
+
+        close = () => {
+            !!this.props.close ? this.props.close() : null;
+        }
+
+        render() {
+        const pidLink = <React.Fragment>
+            <a href={`https://www.wikidata.org/wiki/Property:${this.props.pid}`}>{this.props.pid}</a>
+            {" "}·{" "}
+            {this.props.propNames[this.props.pid || ""] ?? "«no description»"}
+        </React.Fragment>;
+
+        return <Card elevation={3} className={this.props.classes.card}>
+            <CardHeader title={this.props.identifier ?? "«no label»"} subheader={pidLink}/>
+            {!this.props.linked ?
+            <CardContent>
+                <Button style={{width: "100%"}} startIcon={<AddIcon />} variant="contained" color="primary" onClick={this.link.bind(this)}>Link</Button>
+            </CardContent> : null
+            }
+        </Card>;
+        }
+    });

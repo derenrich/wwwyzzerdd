@@ -1,8 +1,7 @@
-
 import {registerFrontendBroker, MessageType, Message, GetQidsReply, GetClaimsReply, GetPropNamesReply, GetLinkIdentifierReply} from "./messageBroker";
-import {PropertySuggestions} from "./propertyData";
+//import {PropertySuggestions} from "./propertyData";
 
-import {WWWLink} from "./component"
+//import {WWWLink} from "./component"
 import {WwwyzzerddHolder} from "./holder"
 import React from "react";
 import ReactDom from "react-dom";
@@ -24,7 +23,7 @@ if (debug) {
     //broker.registerFrontendHandler(MessageType.GET_PROP_NAMES, console.log);
     //broker.registerFrontendHandler(MessageType.GET_PROP_SUGGESTIONS, console.log);
 }
-
+/*
 broker.registerFrontendHandler(MessageType.GET_CLAIMS, function(data: GetClaimsReply) {
   Object.assign(claims, data.claims)
   for (let i = 0; i < components.length; i += 1) {
@@ -41,16 +40,19 @@ broker.registerFrontendHandler(MessageType.GET_PROP_NAMES, function(data: GetPro
     }
 });
   
+*/
 
+let htmlElement = document.getElementsByTagName("html")[0];
 const linksRegisteredEvent = new Event('links-registered');
+const bootEvent = new Event('wwwyzzerdd-boot');
 
 
 const wikiLinkRegex = new RegExp("^https?:\/\/[a-z]+\.wikipedia\.org\/wiki\/([^#]+)", "i");
 const wikiExpandedRegex = new RegExp("^https?:\/\/[a-z]+\.wikipedia\.org.+", "i");
-
+let booted = false;
 
 function exposeNamespace() {
-    document.onreadystatechange = function () {
+     if (!booted) {
         if (document.readyState == "complete") {
             const j = document.createElement('script');
             const f = document.getElementsByTagName('script')[0];
@@ -58,12 +60,13 @@ function exposeNamespace() {
                 j.textContent = "document.getElementsByTagName(\"body\")[0].setAttribute(\"mw-ns\", mw.config.get('wgNamespaceNumber' ));";
                 f.parentNode.insertBefore(j, f);
                 f.parentNode.removeChild(j);
-            }        
+            }
+            booted = true;
+            htmlElement.dispatchEvent(bootEvent);
         }
       }
 }
   
-exposeNamespace();
 
 function getSourceUrl(): string {
     let link = document.querySelector("#t-permalink a")
@@ -73,7 +76,7 @@ function getSourceUrl(): string {
         return document.baseURI;
     }
 }
-
+/*
 function addClaim(sourceQid: string, prop: string, targetQid: string) {
     const addPromise = new Promise(function(resolve) {
         broker.sendFrontendRequest({
@@ -111,8 +114,8 @@ function addIdClaim(sourceQid: string, prop: string, targetId: string) {
     
     return addPromise;
 }
-
-
+*/
+/*
 function getSuggestion(qid: string, typed: string): Promise<PropertySuggestions> {
     return new Promise(function(resolve) {
         broker.sendFrontendRequest({
@@ -124,7 +127,7 @@ function getSuggestion(qid: string, typed: string): Promise<PropertySuggestions>
         }, resolve);
     });
 }
-
+*/
 function operateLinks(fn: (link:HTMLAnchorElement) => void) {
     let navBoxes = Array.from(document.querySelectorAll("#bodyContent .navbox"));
     let bodyLinkElms = Array.from(document.querySelectorAll("#bodyContent a"));
@@ -163,12 +166,17 @@ function operateWikiLinks(fn: (link:HTMLAnchorElement) => void) {
 }
 
 function operateNonWikiLinks(fn: (link:HTMLAnchorElement) => void) {
-
     operateLinks((link) => {
         if (isNotWikiLink(link)) {
-            fn(link);
+            fn(link as HTMLAnchorElement);
         }
     });
+
+
+    //let bodyLinkElms = Array.from(document.querySelectorAll("#bodyContent a.external"));
+    //for(const link of bodyLinkElms) {        
+    //    fn(link as HTMLAnchorElement);
+    // }
 }
 
 
@@ -191,7 +199,7 @@ function parseWikiUrl(url: string): string | undefined {
         return undefined;
     }
 }
-
+/*
 function annotateWikiLinks() {
 
     let curTitle = parseWikiUrl(document.baseURI);
@@ -328,37 +336,64 @@ function getBodyClaims() {
         }
     }
 }
+*/
 
-let wikiNamespace = document.getElementsByTagName("body")[0].getAttribute("mw-ns") || "";
+function boot() {
+    let wikiNamespace = document.getElementsByTagName("body")[0].getAttribute("mw-ns") || "";
+    if (wikiNamespace == "0" && parseWikiUrl(document.baseURI) != "Main Page") {
+        let footer = document.querySelectorAll("#footer")[0];    
+        function setRef(ref: WwwyzzerddHolder) {
+            operateWikiLinks(function(link:HTMLAnchorElement) {
+                // clone the anchor into itself to make a place for the orb
+                let linkAnchor  = link as HTMLAnchorElement;
+                let origLink = linkAnchor.cloneNode(true) as HTMLAnchorElement;
+                linkAnchor.removeAttribute("href");
+                for (let c of linkAnchor.childNodes) {
+                    linkAnchor.removeChild(c);
+                }
+                linkAnchor.innerText = "";
+                linkAnchor.className = "";
+                linkAnchor.appendChild(origLink);
 
-if (wikiNamespace == "0" && parseWikiUrl(document.baseURI) != "Main Page") {
-    //registerEvents();
-    //annotateWikiLinks();
-    annotateIdLinks();
+                ref.addWikiLink(origLink.href, linkAnchor);
+            });
+
+
+            operateNonWikiLinks(function(link:HTMLAnchorElement) {
+                // clone the anchor into itself to make a place for the orb
+                let linkAnchor  = link as HTMLAnchorElement;
+                let origLink = linkAnchor.cloneNode(true) as HTMLAnchorElement;
+                linkAnchor.removeAttribute("href");
+                for (let c of linkAnchor.childNodes) {
+                    linkAnchor.removeChild(c);
+                }
+                linkAnchor.innerText = "";
+                linkAnchor.className = "";
+                linkAnchor.appendChild(origLink);
+
+                broker.sendFrontendRequest({
+                    type: MessageType.GET_LINK_ID,
+                    payload: {
+                        url: origLink.href
+                    }
+                }, (resp: Message) => {
+                    const payload = resp.payload as GetLinkIdentifierReply;
+                    if (payload.match) {
+                        ref.addExternalLink(payload.match.prop, payload.match.identifier, linkAnchor);
+                    }
+                });
+            });
+
+            ref.boot();
+        }
+        const elm = <div><WwwyzzerddHolder curUrl={getSourceUrl()} pageTitle="foo" wikiLinks={[]} ref={setRef} /></div>;
+        ReactDom.render(elm, footer);
+    }
 }
 
+htmlElement.addEventListener(bootEvent.type, boot);
 
-//let links: HTMLElement[] = Array.from(document.querySelectorAll("div.vector-menu-content a"));
-//let links = Array.from(document.querySelectorAll(`#bodyContent a[wd_title='${title.replaceAll("'","\\'")}']`));
-
-let footer = document.querySelectorAll("#footer")[0];
-//if (links.length > 0) {
-    
-    function setRef(ref: WwwyzzerddHolder) {
-        operateWikiLinks(function(link:HTMLAnchorElement) {
-            // clone the anchor into itself to make a place for the orb
-            let linkAnchor  = link as HTMLAnchorElement;
-            let origLink = linkAnchor.cloneNode(true) as HTMLAnchorElement;
-            linkAnchor.removeAttribute("href");
-            for (let c of linkAnchor.childNodes) {
-                linkAnchor.removeChild(c);
-            }
-            linkAnchor.innerText = "";
-            linkAnchor.appendChild(origLink);
-            ref.addWikiLink(origLink.href, linkAnchor);
-        });
-        ref.boot();
-    }
-    const elm = <div><WwwyzzerddHolder curUrl={getSourceUrl()} pageTitle="foo" wikiLinks={[]} ref={setRef} /></div>;
-    ReactDom.render(elm, footer);
-//}
+document.onreadystatechange = exposeNamespace;
+if (document.readyState == "complete") {
+    exposeNamespace();    
+}

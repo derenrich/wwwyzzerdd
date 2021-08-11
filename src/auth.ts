@@ -28,9 +28,9 @@ async function getCSRF(): Promise<string> {
         );
 }
 
-export function getAuthToken(): Promise<string> {
+export function getAuthToken(force?: boolean): Promise<string> {
     let TOKEN_KEY = "WD_TOKEN";
     let TEN_MINUTES = 60 * 10;
 
-    return getOrCompute(TOKEN_KEY, getCSRF, TEN_MINUTES);
+    return getOrCompute(TOKEN_KEY, getCSRF, force ? 0 : TEN_MINUTES);
 }

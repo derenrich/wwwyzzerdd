@@ -186,6 +186,12 @@ export class MessageBroker {
                         addReference(payload.sourceUrl, claimId);                        
                     }
                     if (reply) reply({});
+                    this.handleMessageBackend({
+                        type: MessageType.GET_CLAIMS,
+                        payload: {
+                            qid: payload.sourceItemQid
+                        }
+                    });
                 });
                 break;
             }
@@ -217,6 +223,12 @@ export class MessageBroker {
                         addReference(payload.sourceUrl, claimId);                        
                     }
                     if (reply) reply({});
+                    this.handleMessageBackend({
+                        type: MessageType.GET_CLAIMS,
+                        payload: {
+                            qid: payload.sourceItemQid
+                        }
+                    });
                 });
                 break;
             }
