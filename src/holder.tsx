@@ -73,7 +73,7 @@ const styles = createStyles({
         fontSize: "large"
     },
     connectedOrb: {
-        color: "#198754",
+        color: "#2bdb56",
     },
     disconnectedOrb: {
         color: "#6c757d"
