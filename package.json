@@ -14,7 +14,7 @@
     "scripts": {
         "start": "parcel src/manifest.json --host localhost --target webext-dev",
         "build": "parcel build src/manifest.json --target webext-prod",
-        "bundle": "zip -r dist/wwwyzzerdd.zip dist/webext-prod/*",
+        "bundle": "zip -j -r dist/wwwyzzerdd.zip dist/webext-prod/*",
         "clean": "rm -rf dist/*",
         "check": "tsc --noEmit"
     },
