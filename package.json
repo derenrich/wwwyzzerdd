@@ -22,18 +22,18 @@
         "@material-ui/core": "^4.11.3",
         "@material-ui/icons": "^4.11.2",
         "@material-ui/lab": "^4.0.0-alpha.57",
+        "@parcel/config-webextension": "^2.0.0-nightly.2422",
         "react": "^17.0.2",
-        "react-dom": "^17.0.2",
-        "@parcel/config-webextension": "nightly"
+        "react-dom": "^17.0.2"
     },
     "devDependencies": {
+        "@parcel/config-default": "^2.0.0-nightly.800",
+        "@parcel/transformer-typescript-tsc": "^2.0.0-nightly.800",
+        "@parcel/validator-typescript": "^2.0.0-nightly.800",
+        "@types/chrome": "0.0.134",
         "@types/react": "^17.0.3",
         "@types/react-dom": "^17.0.3",
-        "@types/chrome": "0.0.134",
-        "@parcel/config-default": "nightly",
-        "@parcel/transformer-typescript-tsc": "nightly",
-        "@parcel/validator-typescript": "nightly",
-        "parcel": "nightly",
+        "parcel": "^2.0.0-nightly.798",
         "typescript": "^3.0"
     }
 }
