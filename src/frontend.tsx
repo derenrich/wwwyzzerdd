@@ -343,6 +343,7 @@ function boot() {
     if (wikiNamespace == "0" && parseWikiUrl(document.baseURI) != "Main Page") {
         let footer = document.querySelectorAll("#footer")[0];    
         function setRef(ref: WwwyzzerddHolder) {
+            console.log(ref);
             operateWikiLinks(function(link:HTMLAnchorElement) {
                 // clone the anchor into itself to make a place for the orb
                 let linkAnchor  = link as HTMLAnchorElement;
