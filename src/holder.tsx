@@ -65,6 +65,9 @@ const styles = createStyles({
         "&:hover": {
             "filter": "contrast(500%) blur(1px) saturate(150%)",
         },
+        "&::after": {
+            "content": "\"\\2b24\""
+        },
         "text-decoration": "none",
         "outline": "0",
         "cursor": "pointer"        
@@ -130,7 +133,6 @@ let Orb = withStyles(styles)(class extends Component<OrbProps, OrbState> {
          <span 
             onClick={this.handlePopoverOpen} 
             className={[orbClass, this.props.classes.orb].join(" ")}>
-                ⬤
         </span>
         </Tooltip>
         <Popover open={!!this.state.targetElement && !!this.props.popover} anchorEl={this.state.targetElement} onClose={this.handlePopoverClose.bind(this)}>
