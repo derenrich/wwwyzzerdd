@@ -1,6 +1,9 @@
 import { getAuthToken } from "./auth";
 import { retryWikimediaPromise } from "./util";
 
+const commentText = "import w/ [[Wikidata:Wwwyzzerdd|🧙 Wwwyzzerdd for Wikidata]]";
+
+
 export async function addItemClaim(entity: string, property: string, qid: string): Promise<any> {
     return addClaim(entity, property, {"entity-type": "item", "id": qid});
 }
@@ -14,7 +17,7 @@ export async function addClaim(entity: string, property: string, value: any): Pr
     let token = encodeURIComponent(await getAuthToken());
     let wrappedValue = encodeURIComponent(JSON.stringify(value));
     let getArgs = `entity=${entity}&property=${property}&value=${wrappedValue}`;
-    let summary = encodeURIComponent("import w/ 🧙 Wwwyzzerdd for Wikidata");
+    let summary = encodeURIComponent(commentText);
     let args = `token=${token}&summary=${summary}`;
 
     return retryWikimediaPromise(() => {
@@ -41,7 +44,7 @@ function currentTimeValue() {
 export async function addReference(sourceUrl: string, claimId: string) {
     let base_url = "https://www.wikidata.org/w/api.php?action=wbsetreference&format=json&";
     let token = encodeURIComponent(await getAuthToken());
-    let summary = encodeURIComponent("import via Wwwyzzerdd for Wikidata");
+    let summary = encodeURIComponent(commentText);
 
     let PAGE_VERSION_URL_PID = "P4656";
     let IMPORTED_FROM_WIKIMEDIA_PID = "P143";
