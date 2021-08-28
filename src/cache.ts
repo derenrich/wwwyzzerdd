@@ -1,7 +1,9 @@
 import {retryPromise} from "./util";
 
+const maxMaxAge = 60 * 60 * 24 * 2; // nothing is stored longer than 2 days
+
 export interface CachedItem {
-    fetchTime: number;
+    fetchTime: number; // in unix time ms
     data: any;
 }
 
@@ -10,7 +12,9 @@ function now(): number {
     return d.getTime();
 }
 
-const clearCache = false;
+function isExpired(ts: number, maxAge: number) {
+    return (now() - ts)/1000.0 >= maxAge;
+}
 
 function getMultiple(keys: string[], maxAge: number = 3600): Promise<any[]> {
     return new Promise((resolve) => {
@@ -19,7 +23,7 @@ function getMultiple(keys: string[], maxAge: number = 3600): Promise<any[]> {
             for (let key of keys) {
                if (key in result) {
                     let item = result[key] as CachedItem;
-                    if (clearCache || (now() - item.fetchTime)/1000.0 >= maxAge) {
+                    if (isExpired(item.fetchTime, maxAge)) {
                         resultArr.push(undefined);
                     } else {
                         resultArr.push(item.data);
@@ -29,28 +33,12 @@ function getMultiple(keys: string[], maxAge: number = 3600): Promise<any[]> {
                 }
             }
             resolve(resultArr);
-        })
+        });
     });
 }
 
 function get(key: string, maxAge: number = 3600): Promise<any> {
     return getMultiple([key], maxAge).then((results) => results[0]);
-    /*
-    return new Promise((resolve) => {
-        chrome.storage.local.get([key], function(result: any) {
-            if (key in result) {
-                let item = result[key] as CachedItem;
-                if ((now() - item.fetchTime)/1000.0 >= maxAge) {
-                    return resolve(undefined);
-                } else {
-                    return resolve(item.data);
-                }
-            } else {
-                return resolve(undefined);
-            }
-        })
-    });
-    */
 }
 
 export async function getOrCompute<T>(key: string, compute: () => Promise<T>, maxAge: number = 3600): Promise<T> {
@@ -71,13 +59,12 @@ export async function getOrCompute<T>(key: string, compute: () => Promise<T>, ma
     }
 }
 
-
 export async function getOrComputeMultiple(keys: string[], compute: ((ks:string[]) => Promise<{[key: string]: any}>), keyPrefix: string="", maxAge: number = 3600): Promise<{[key: string]: any}> {
     const prefixedKeys = keys.map((k) => keyPrefix + k);
     let values = await getMultiple(prefixedKeys, maxAge)
     let precomputedOut: {[key: string]: any} = {};
     let missingKeys: string[] = [];
-    for (let i =0; i < keys.length; i+=1) {
+    for (let i = 0; i < keys.length; i+=1) {
         if(values[i] !== undefined) {
             precomputedOut[keys[i]] = values[i];
         } else {
@@ -101,7 +88,17 @@ export async function getOrComputeMultiple(keys: string[], compute: ((ks:string[
             return Object.assign(out, precomputedOut);
         });
     } else {
-        console.log("all precomp");
         return precomputedOut;
     }
+}
+
+export function checkAllCaches() {
+    chrome.storage.local.get(function(result: {[key: string]: any}) {
+        for (let key in result) {
+            const value = result[key] as CachedItem;
+            if (isExpired(value.fetchTime, maxMaxAge)) {
+                chrome.storage.local.remove(key);
+            }
+        }
+    });
 }

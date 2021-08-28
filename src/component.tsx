@@ -22,8 +22,6 @@ import IconButton from '@material-ui/core/IconButton';
 
 const styles = createStyles({
     orb: {
-        //color: "#198754",
-        //color: "#6c757d",
         fontSize: "smaller",
         fontStyle: "normal",
         fontWeight: "normal",
