@@ -94,11 +94,16 @@ export async function getOrComputeMultiple(keys: string[], compute: ((ks:string[
 
 export function checkAllCaches() {
     chrome.storage.local.get(function(result: {[key: string]: any}) {
+        let numberRemoved = 0;
+        let totalNumber = 0;
         for (let key in result) {
             const value = result[key] as CachedItem;
+            totalNumber += 1;
             if (isExpired(value.fetchTime, maxMaxAge)) {
                 chrome.storage.local.remove(key);
+                numberRemoved += 1;
             }
         }
+        console.log("Expired " + numberRemoved + " keys out of " + totalNumber + ".");
     });
 }

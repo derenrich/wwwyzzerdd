@@ -25,6 +25,7 @@
     "homepage_url": "http://path/to/homepage",
     "offline_enabled": false,
     "permissions": ["storage",
+                    "alarms",
                     "activeTab",
                     "contextMenus",
                     "unlimitedStorage",
