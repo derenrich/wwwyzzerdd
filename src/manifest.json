@@ -22,7 +22,7 @@
         "multiple_mounts": false,
         "source": "file"
     },
-    "homepage_url": "http://path/to/homepage",
+    "homepage_url": "https://github.com/derenrich/wwwyzzerdd",
     "offline_enabled": false,
     "permissions": ["storage",
                     "alarms",
