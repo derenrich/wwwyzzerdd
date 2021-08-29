@@ -4,6 +4,13 @@ Easily edit and view the information in wikidata from Wikipedia
 
 Definitely still in beta. Use at your own risk. Audit all the edits you make.
 
+## Installation
+
+You can find wwwyzzerdd in the browser extension stores
+
+* [Chome Extension](https://chrome.google.com/webstore/detail/wwwyzzerdd-for-wikidata/gfidggfngdnaalpihbdjnfbkfiniookc?hl=en&authuser=0)
+* [Firefox Extension](https://addons.mozilla.org/en-US/firefox/addon/wwwyzzerdd-for-wikidata/)
+
 ## Known issues
 
 * Implement case-insensitive external property matching
