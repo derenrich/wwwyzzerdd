@@ -124,19 +124,23 @@ export class PropertyDB {
         const results = await this.pattern_results;
         for (const propData of results) {
             const regexMode = propData.caseInsensitive ? "i" : "";
-            const r = new RegExp(propData.regex, regexMode);
-            let match = r.exec(url);
-            if (match && match.length > 1) {
-                let pid = propData.prop;
-                let pattern = propData.replacementValue;
-                var key: string = String(pattern);
-                for (var i = 1; i < match.length; i+=1) {
-                    key = key.replaceAll("\\" + i, match[i]);
+            try {
+                const r = new RegExp(propData.regex, regexMode);
+                let match = r.exec(url);
+                if (match && match.length > 1) {
+                    let pid = propData.prop;
+                    let pattern = propData.replacementValue;
+                    var key: string = String(pattern);
+                    for (var i = 1; i < match.length; i+=1) {
+                        key = key.replaceAll("\\" + i, match[i]);
+                    }
+                    return {
+                        prop: pid,
+                        identifier: key
+                    };
                 }
-                return {
-                    prop: pid,
-                    identifier: key
-                };
+            } catch (e) {
+                console.warn("Failed to parse URL with pattern " + propData.regex);
             }
         }
         return undefined;
