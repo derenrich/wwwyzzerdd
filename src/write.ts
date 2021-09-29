@@ -41,7 +41,7 @@ function currentTimeValue() {
     return {"type":"time","value":{"after":0,"before":0,"calendarmodel":"http://www.wikidata.org/entity/Q1985727","precision":11,"time":today,"timezone":0}};
 }
 
-export async function addReference(sourceUrl: string, claimId: string) {
+export async function addReference(sourceUrl: string, claimId: string, wikiLanguage?: string) {
     let base_url = "https://www.wikidata.org/w/api.php?action=wbsetreference&format=json&";
     let token = encodeURIComponent(await getAuthToken());
     let summary = encodeURIComponent(commentText);
@@ -49,18 +49,33 @@ export async function addReference(sourceUrl: string, claimId: string) {
     let PAGE_VERSION_URL_PID = "P4656";
     let IMPORTED_FROM_WIKIMEDIA_PID = "P143";
     let ENGLISH_WIKI = "Q328";
+    let FRENCH_WIKI = "Q8447";
+    let GERMAN_WIKI = "Q48183";
+    let JAPANESE_WIKI = "Q177837";
     let RETRIEVED_TIME_PID = "P813";
+    let SPANISH_WIKI = "Q8449";
+    // for now just support these top wikis
+    let wikiLookup: { [key: string]: string; } = {
+        "en": ENGLISH_WIKI,
+        "fr": FRENCH_WIKI,
+        "de": GERMAN_WIKI,
+        "es": SPANISH_WIKI,
+        "ja": JAPANESE_WIKI
+    }
 
     let refSnack: { [key: string]: any; } = { };
 
-    refSnack[IMPORTED_FROM_WIKIMEDIA_PID] =
-        [
-            {
-                snaktype: "value",
-                property: IMPORTED_FROM_WIKIMEDIA_PID,
-                datavalue: { type:"wikibase-entityid", value:{"id": ENGLISH_WIKI}}
-            }
-        ];
+    if (wikiLanguage && wikiLanguage   in wikiLookup) {
+        let wikiQid = wikiLookup[wikiLanguage];
+        refSnack[IMPORTED_FROM_WIKIMEDIA_PID] =
+            [
+                {
+                    snaktype: "value",
+                    property: IMPORTED_FROM_WIKIMEDIA_PID,
+                    datavalue: { type:"wikibase-entityid", value:{"id": wikiQid}}
+                }
+            ];
+    }
     refSnack[RETRIEVED_TIME_PID] = [ { snaktype:"value",
                                        property: RETRIEVED_TIME_PID,
                                        datavalue: currentTimeValue()}];

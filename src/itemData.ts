@@ -13,10 +13,10 @@ export interface LinkedItemData {
     description: string | undefined;
 }
 
-export function getQidsFromTitles(titles: string[], respond?: QidCallback): Promise<{[key: string]: LinkedItemData }> {
+function getQidsFromTitles(titles: string[], wikiLanguage: string, respond?: QidCallback): Promise<{[key: string]: LinkedItemData }> {
     // TODO: handle pipes in titles
     let concatTitleChunk = encodeURIComponent(titles.join("|"));
-    let site = "enwiki";
+    let site = wikiLanguage + "wiki";
     let lang = "en";
     let targetUrl = GET_ENTITIES_URL + "&props=" + encodeURIComponent(LINKED_PROPS) + "&sites=" + encodeURIComponent(site) + "&titles=" + concatTitleChunk + "&sitefilter=" + encodeURIComponent(site);
     return fetch(targetUrl, {
@@ -50,7 +50,7 @@ export function getQidsFromTitles(titles: string[], respond?: QidCallback): Prom
                 }
             }
             for (let missingTitle of missingKeys) {
-                let linkData = await getQidFromTitle(missingTitle);
+                let linkData = await getQidFromTitle(missingTitle, wikiLanguage);
                 if (linkData) {
                     out[missingTitle] = linkData;
                 }
@@ -61,8 +61,8 @@ export function getQidsFromTitles(titles: string[], respond?: QidCallback): Prom
 }
 
 // uses normalization functionality
-function getQidFromTitle(title: string): Promise<LinkedItemData | undefined> {
-    let site = "enwiki";
+function getQidFromTitle(title: string, wikiLanguage: string): Promise<LinkedItemData | undefined> {
+    let site = wikiLanguage + "wiki";
     let lang = "en";
     let targetUrl = GET_ENTITIES_URL + "&normalize=true&props=" + encodeURIComponent(LINKED_PROPS) + "&sites=" + encodeURIComponent(site) + "&titles=" + encodeURIComponent(title) + "&sitefilter=" + encodeURIComponent(site);
     return fetch(targetUrl, {
@@ -129,15 +129,16 @@ export class ItemDB {
 
     }
 
-    async lookupTitles(titles: string[], respond?: QidCallback): Promise<{[key: string]: LinkedItemData}> {
+    async lookupTitles(titles: string[], wikiLanguageOpt?: string, respond?: QidCallback): Promise<{[key: string]: LinkedItemData}> {
         let uniqTitles = Array.from(new Set(titles));
         let out: {[key: string]: LinkedItemData} = {}; 
+        let wikiLanguage = wikiLanguageOpt || "en";
         for (let i = 0; i < uniqTitles.length; i += REQ_LIMIT) {
             let titleChunk = uniqTitles.slice(i, i + REQ_LIMIT);
             function qidsFromTitle(titles: string[]) {
-                return getQidsFromTitles(titles, respond);
+                return getQidsFromTitles(titles, wikiLanguage, respond);
             }
-            let batch = await getOrComputeMultiple(titleChunk, qidsFromTitle, "title2qid_", TITLE_CACHE_SEC);
+            let batch = await getOrComputeMultiple(titleChunk, qidsFromTitle, "title2qid_" + wikiLanguage + "@", TITLE_CACHE_SEC);
             Object.assign(out, batch);
         }
         return out;

@@ -1,5 +1,5 @@
 import { PropertyDB, PropertyMatch } from './propertyData';
-import { ItemDB, getQidsFromTitles, LinkedItemData } from './itemData'
+import { ItemDB, LinkedItemData } from './itemData'
 import {addItemClaim, addIdClaim, addReference} from "./write";
 
 export enum MessageType {
@@ -19,6 +19,7 @@ export interface Message {
 
 interface GetQidsAsk {
     titles: string[];
+    wikiLanguage?: string;
 }
 
 export interface GetQidsReply {
@@ -51,6 +52,7 @@ interface AddPropertyReq {
     propId: string;
     targetItemQid: string;
     sourceUrl: string;
+    wikiLanguage?: string;
 }
 
 interface GetLinkIdentifierAsk {
@@ -66,6 +68,7 @@ interface AddPropertyIdReq {
     propId: string;
     targetId: string;
     sourceUrl: string;
+    wikiLanguage?: string;
 }
 
 
@@ -113,7 +116,7 @@ export class MessageBroker {
         switch(msg.type) {
             case MessageType.GET_QIDS: {
                 const payload = msg.payload as GetQidsAsk;
-                itemDB.lookupTitles(payload.titles).then((data) => {
+                itemDB.lookupTitles(payload.titles, payload.wikiLanguage).then((data) => {
                     this.postMessage({
                         type: MessageType.GET_QIDS,
                         payload: {
@@ -183,7 +186,7 @@ export class MessageBroker {
                 addResponse.then((resp) => {
                     if (resp && resp.success) {
                         let claimId = resp.claim.id;                        
-                        addReference(payload.sourceUrl, claimId);                        
+                        addReference(payload.sourceUrl, claimId, payload.wikiLanguage);
                     }
                     if (reply) reply({});
                     this.handleMessageBackend({
@@ -215,12 +218,11 @@ export class MessageBroker {
                 if (now - lastWrite < MIN_WRITE_WAIT) break;
                 lastWrite = Date.now();
                 const payload = msg.payload as AddPropertyIdReq;
-                console.log("set prop id", payload);
                 let addResponse = addIdClaim(payload.sourceItemQid, payload.propId, payload.targetId);
                 addResponse.then((resp) => {
                     if (resp && resp.success) {
                         let claimId = resp.claim.id;                        
-                        addReference(payload.sourceUrl, claimId);                        
+                        addReference(payload.sourceUrl, claimId, payload.wikiLanguage);
                     }
                     if (reply) reply({});
                     this.handleMessageBackend({

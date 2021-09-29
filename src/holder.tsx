@@ -165,6 +165,8 @@ interface HolderProps {
     pageTitle: string;
     wikiLinks: HTMLElement[];
     curUrl: string;
+    userLanguage?: string;
+    wikiLanguage?: string;
 }
 
 interface HolderState {
@@ -193,18 +195,16 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         this.broker = registerFrontendBroker();        
         this.broker.registerFrontendHandler(MessageType.GET_QIDS, this.handleQids.bind(this));
 
-        this.broker.registerFrontendHandler(MessageType.GET_CLAIMS, console.log);
         this.broker.registerFrontendHandler(MessageType.GET_CLAIMS, this.handleClaims.bind(this));
 
-        //this.broker.registerFrontendHandler(MessageType.GET_PROP_NAMES, console.log);
         this.broker.registerFrontendHandler(MessageType.GET_PROP_NAMES, this.handleProps.bind(this));
 
-        //this.broker.registerFrontendHandler(MessageType.GET_PROP_SUGGESTIONS, console.log);
         this.broker.sendMessage({type: MessageType.GET_PROP_NAMES, payload: {}});
         this.broker.sendMessage({
             type: MessageType.GET_QIDS,
             payload: {
-                titles: [parseWikiUrl(document.baseURI)]
+                titles: [parseWikiUrl(document.baseURI)],
+                wikiLanguage: this.props.wikiLanguage
             }
         });
     }
@@ -272,10 +272,10 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
             this.broker.sendMessage({
                 type: MessageType.GET_QIDS,
                 payload: {
-                    titles: prevState.wikiLinks.map((l) => parseWikiUrl(l.link)).filter((l) => !!l)
+                    titles: prevState.wikiLinks.map((l) => parseWikiUrl(l.link)).filter((l) => !!l),
+                    wikiLanguage: this.props.wikiLanguage
                 }
             });
-    
             return {
                 booted: true
             };
@@ -381,6 +381,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                         mode={mode}
                         hover={hoverText}
                         popover={<ItemWindow broker={this.broker}
+                            wikiLanguage={this.props.wikiLanguage}
                             pageQid={this.state.curPageQid}
                             qid={qidData.qid} label={qidData.label}
                             description={qidData.description} existingProps={propTuples} />}
@@ -403,7 +404,8 @@ interface PropTuple {
      pageQid?: string;
      label?: string;
      description?: string;
-     existingProps: PropTuple[]; 
+     existingProps: PropTuple[];
+     wikiLanguage?: string;
  }
 
  interface ItemWindowState {
@@ -439,7 +441,8 @@ interface PropTuple {
                         sourceItemQid: this.props.pageQid,
                         propId: pid,
                         targetItemQid: this.props.qid,
-                        sourceUrl: getSourceUrl()
+                        sourceUrl: getSourceUrl(),
+                        wikiLanguage: this.props.wikiLanguage
                     }
                 });
                 this.close();

@@ -16,8 +16,9 @@ const wikiExpandedRegex = new RegExp("^https?:\/\/[a-z]+\.wikipedia\.org.+", "i"
 let booted = false;
 
 function exposeNamespace() {
-     if (!booted) {
+    if (!booted) {
         if (document.readyState == "complete") {
+            // extract 'wgNamespaceNumber'
             const j = document.createElement('script');
             const f = document.getElementsByTagName('script')[0];
             if(f && f.parentNode) {
@@ -25,10 +26,18 @@ function exposeNamespace() {
                 f.parentNode.insertBefore(j, f);
                 f.parentNode.removeChild(j);
             }
+            // extract 'wgUserLanguage'
+            const j2 = document.createElement('script');
+            const f2 = document.getElementsByTagName('script')[0];
+            if(f2 && f2.parentNode) {
+                j2.textContent = "document.getElementsByTagName(\"body\")[0].setAttribute(\"mw-lang\", mw.config.get('wgUserLanguage'));";
+                f2.parentNode.insertBefore(j2, f2);
+                f2.parentNode.removeChild(j2);
+            }
             booted = true;
             htmlElement.dispatchEvent(bootEvent);
         }
-      }
+    }
 }
   
 
@@ -115,12 +124,12 @@ function getWikiLanguage(url: string): string | undefined {
 
 function boot() {
     const wikiNamespace = document.getElementsByTagName("body")[0].getAttribute("mw-ns") || "";
+    const wikiUserLang = document.getElementsByTagName("body")[0].getAttribute("mw-lang") || "";
     const wikiLang = getWikiLanguage(document.baseURI);
     const wikiPage = parseWikiUrl(document.baseURI);
-    if (wikiLang == "en" && wikiNamespace == "0" && wikiPage != "Main Page") {
+    if (wikiNamespace == "0" && wikiPage != "Main Page") {
         let footer = document.querySelectorAll("#footer")[0];    
         function setRef(ref: WwwyzzerddHolder) {
-            console.log(ref);
             operateWikiLinks(function(link:HTMLAnchorElement) {
                 // clone the anchor into itself to make a place for the orb
                 let linkAnchor  = link as HTMLAnchorElement;
@@ -164,8 +173,10 @@ function boot() {
 
             ref.boot();
         }
-        const elm = <div><WwwyzzerddHolder curUrl={getSourceUrl()} pageTitle="foo" wikiLinks={[]} ref={setRef} /></div>;
+        const elm = <div><WwwyzzerddHolder wikiLanguage={wikiLang} userLanguage={wikiUserLang} curUrl={getSourceUrl()} pageTitle="foo" wikiLinks={[]} ref={setRef} /></div>;
         ReactDom.render(elm, footer);
+    } else {
+        console.log("Not running wwwyzzerdd.");
     }
 }
 
