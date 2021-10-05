@@ -497,11 +497,16 @@ interface SuggesterProps {
     onSubmit: (pid?: string) => void;
 }
 
+interface Suggestion {
+    id: string;
+    label: string;
+};
+
 interface SuggesterState {
     typed: string;
     selectedPid?: string;
     propNames: {[key: string]: string};
-    suggestedProps: string[];
+    suggestedProps: Suggestion[];
 }
 
 class Suggester extends Component<SuggesterProps, SuggesterState> {
@@ -568,8 +573,9 @@ class Suggester extends Component<SuggesterProps, SuggesterState> {
             onChange={(evt, obj, reason) => {
                 this.setState({"selectedPid": !!obj ? obj['pid'] : undefined});
             }}
+            filterOptions={(x) => x}
             renderInput={(params) => <TextField {...params} label="Property" variant="outlined"  />}
-            options={this.state.suggestedProps.map((pid) => {return {"pid": pid, "label": this.state.propNames[pid]};})}
+            options={this.state.suggestedProps.map((sugg) => {return {"pid": sugg.id, "label": sugg.label};})}
             getOptionLabel={(opt) => opt.label}
             id="prop-box"  />
         </ListItem>;

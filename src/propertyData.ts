@@ -116,8 +116,17 @@ export class PropertyDB {
     }
     
 
-    async getProperties(): Promise<PropertyData[]> {
-        return this.prop_results;
+    async getProperties(language?: string): Promise<PropertyData[]> {
+        // WARNING: this language code switch not currently work (just returns english)
+        if (!language || language == "en") {
+            return this.prop_results;
+        } else {
+            return getOrCompute(PROP_CACHE_KEY + "@" + language, function() {
+                return runQuery(propQuery).then((res) => {
+                    return parsePropFetch(res);
+                });
+            }, PROP_CACHE_LIFE)
+        }
     }
 
     async parseUrl(url: string): Promise<PropertyMatch|undefined> {
@@ -153,8 +162,8 @@ export class PropertyDB {
         let propTypes = await this.prop_types;
 
         return fetch(full_url).then((x) =>x.json()).then((x) => {
-            let allSuggestions = (x.search || {}).map((sug: any) => sug.id);
-            let validSuggestions = allSuggestions.filter((propId: string) => propTypes[propId] == ITEM_PROP_TYPE);
+            let allSuggestions = (x.search || []);
+            let validSuggestions = allSuggestions.filter((sugg: any) => propTypes[sugg.id] == ITEM_PROP_TYPE);
             return {
                 timestamp: now,
                 suggestions: validSuggestions

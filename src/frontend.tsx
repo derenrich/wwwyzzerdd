@@ -52,7 +52,7 @@ function getSourceUrl(): string {
 
 function operateLinks(fn: (link:HTMLAnchorElement) => void) {
     let navBoxes = Array.from(document.querySelectorAll("#bodyContent .navbox"));
-    let bodyLinkElms = Array.from(document.querySelectorAll("#bodyContent a"));
+    let bodyLinkElms = Array.from(document.querySelectorAll("#mw-content-text a"));
     for(const link of bodyLinkElms) {        
         // skip links in nav boxes for now
         let notInNav = true;

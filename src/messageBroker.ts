@@ -35,7 +35,7 @@ export interface GetClaimsReply {
 }
 
 interface GetPropNamesAsk {
-
+    language?: string;
 }
 
 export interface GetPropNamesReply {
@@ -144,8 +144,8 @@ export class MessageBroker {
 
             case MessageType.GET_PROP_NAMES: {
                 const payload = msg.payload as GetPropNamesAsk;
-                propDB.getProperties().then((props) => {
-
+                const language: string = payload.language || "en";
+                propDB.getProperties(language).then((props) => {
                     let propNames: {[key: string]: string} = {};
                     props.forEach((prop) => {
                         propNames[prop.prop] = prop.name;
@@ -168,8 +168,8 @@ export class MessageBroker {
                 propDB.suggestProperty(payload.itemQid, payload.typed).then((resp) => {
                     let response = {
                         type: MessageType.GET_PROP_SUGGESTIONS,
-                        payload: resp                    
-                    }
+                        payload: resp
+                    };
                     if (reply) reply( response );
                     this.postMessage(response);
                 });
