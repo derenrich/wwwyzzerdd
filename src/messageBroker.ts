@@ -6,6 +6,7 @@ export enum MessageType {
     GET_QIDS,
     GET_CLAIMS,
     GET_PROP_NAMES,
+    GET_PROP_ICONS,
     GET_PROP_SUGGESTIONS,
     SET_PROP_QID,
     GET_LINK_ID,
@@ -37,6 +38,11 @@ export interface GetClaimsReply {
 interface GetPropNamesAsk {
     language?: string;
 }
+
+interface GetPropIconsAsk {
+
+}
+
 
 export interface GetPropNamesReply {
     propNames: {[key: string]: string};
@@ -160,6 +166,27 @@ export class MessageBroker {
                     this.postMessage(response);
                 });
 
+                break;
+            }
+
+            case MessageType.GET_PROP_ICONS: {
+                const payload = msg.payload as GetPropIconsAsk;
+                propDB.getProperties().then((props) => {
+                    let propIcons: {[key: string]: string} = {};
+                    props.forEach((prop) => {
+                        if (prop.icon) {
+                            propIcons[prop.prop] = prop.icon;
+                        }
+                    });
+                    let response = {
+                        type: MessageType.GET_PROP_ICONS,
+                        payload: {
+                            propIcons
+                        }
+                    };
+                    if (reply) reply( response );
+                    this.postMessage(response);
+                });
                 break;
             }
 

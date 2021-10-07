@@ -175,6 +175,7 @@ interface HolderState {
     booted: boolean;
     claims: {[key: string]: any};
     propNames: {[key: string]: string};
+    propIcons: {[key: string]: string};
     qidMapping: {[key: string]: QidData};
     curPageQid?: string;
 }
@@ -190,6 +191,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
             booted: false,
             claims: {},
             propNames: {},
+            propIcons: {},
             qidMapping: {}
         };
         this.broker = registerFrontendBroker();        
@@ -199,7 +201,11 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
 
         this.broker.registerFrontendHandler(MessageType.GET_PROP_NAMES, this.handleProps.bind(this));
 
+        this.broker.registerFrontendHandler(MessageType.GET_PROP_ICONS, this.handlePropIcons.bind(this));
+
         this.broker.sendMessage({type: MessageType.GET_PROP_NAMES, payload: {}});
+        this.broker.sendMessage({type: MessageType.GET_PROP_ICONS, payload: {}});
+
         this.broker.sendMessage({
             type: MessageType.GET_QIDS,
             payload: {
@@ -214,6 +220,13 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
             propNames: payload.propNames
         });
     }
+
+    handlePropIcons(payload: any) {
+        this.setState({
+            propIcons: payload.propIcons
+        });
+    }
+
 
     handleQids(payload: any) {
         let curTitle = parseWikiUrl(document.baseURI);
@@ -345,6 +358,10 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                 let linked = this.identifierChecker(link.pid, link.identifier);
                 let orbMode =  (!this.state.booted || !this.state.curPageQid) ? OrbMode.Unknown : (linked ? OrbMode.Linked : OrbMode.Unlinked);
                 return <Portal container={link.element}>
+                    { this.state.propIcons[link.pid] ? 
+                        <img style={{"height": "1.2em"}} src={this.state.propIcons[link.pid]} />
+                        : null
+                    }
                     <Orb
                         mode={orbMode}
                         hover={this.state.propNames[link.pid] ? <Typography>{this.state.propNames[link.pid]}</Typography>:  undefined}
