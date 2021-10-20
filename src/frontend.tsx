@@ -122,6 +122,60 @@ function getWikiLanguage(url: string): string | undefined {
     return undefined;
 }
 
+interface Coordinate {
+    lat: number;
+    lon: number;
+}
+
+const decimalCoordRegex = new RegExp(".*\/\/geohack\.toolforge\.org\/geohack\.php\\?(?:pagename=(?:.*)&)?params=([\\d.-]+_[NS])_([\\d.-]+_[WE])", "i")
+const secondsCoordRegex = new RegExp(".*\/\/geohack\.toolforge\.org\/geohack\.php\\?(?:pagename=(?:.*)&)?params=(\\d+)_(\\d+)_([\\d.]+)_([NS])_(\\d+)_(\\d+)_([\\d.]+)_([WE])", "i")
+
+function findCoordinate(href: string): undefined | Coordinate  {
+    // WARNING: for now keep this functionality disabled
+    return;
+    /*
+    let match = decimalCoordRegex.exec(href);
+    if (match) {
+        let latSign = 1;
+        let lonSign = 1;
+        if (match[1].endsWith("S")) {
+            latSign = -1;
+        }
+        if (match[2].endsWith("W")) {
+            lonSign = -1;
+        }
+        let lat = Number.parseFloat(match[1]) * latSign;
+        let lon = Number.parseFloat(match[2]) * lonSign;
+        return {
+            lat: lat,
+            lon: lon
+        };
+    }
+    match = secondsCoordRegex.exec(href);
+    if (match) {
+        let latSign = 1;
+        let lonSign = 1;
+        if (match[4].endsWith("S")) {
+            latSign = -1;
+        }
+        if (match[8].endsWith("W")) {
+            lonSign = -1;
+        }
+        let lat = Number.parseFloat(match[1]);
+        lat += Number.parseFloat(match[2]) / 60.0;
+        lat += Number.parseFloat(match[3]) / 60.0 / 60.0;
+        let lon = Number.parseFloat(match[5]);
+        lon += Number.parseFloat(match[6]) / 60.0;
+        lon += Number.parseFloat(match[7]) / 60.0 / 60.0;        
+        return {
+            lat: lat * latSign,
+            lon: lon * lonSign
+        };
+    }
+    return;
+    */
+}
+
 function boot() {
     const wikiNamespace = document.getElementsByTagName("body")[0].getAttribute("mw-ns") || "";
     const wikiUserLang = document.getElementsByTagName("body")[0].getAttribute("mw-lang") || "";
@@ -158,17 +212,22 @@ function boot() {
                 linkAnchor.className = "";
                 linkAnchor.appendChild(origLink);
 
-                broker.sendFrontendRequest({
-                    type: MessageType.GET_LINK_ID,
-                    payload: {
-                        url: origLink.href
-                    }
-                }, (resp: Message) => {
-                    const payload = resp.payload as GetLinkIdentifierReply;
-                    if (payload.match) {
-                        ref.addExternalLink(payload.match.prop, payload.match.identifier, linkAnchor);
-                    }
-                });
+                let latlonMatch = findCoordinate(origLink.href);
+                if (latlonMatch) {
+                    ref.addCoordLink(latlonMatch.lat, latlonMatch. lon, linkAnchor);
+                } else {
+                    broker.sendFrontendRequest({
+                        type: MessageType.GET_LINK_ID,
+                        payload: {
+                            url: origLink.href
+                        }
+                    }, (resp: Message) => {
+                        const payload = resp.payload as GetLinkIdentifierReply;
+                        if (payload.match) {
+                            ref.addExternalLink(payload.match.prop, payload.match.identifier, linkAnchor);
+                        }
+                    });
+                }
             });
 
             ref.boot();

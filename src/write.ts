@@ -32,6 +32,10 @@ export async function addClaim(entity: string, property: string, value: any): Pr
     });
 }
 
+export async function addCoordClaim(entity: string, property: string, lat: number, lon: number): Promise<any> {
+    
+}
+
 function currentTimeValue() {
     let now = new Date();
     now.setUTCSeconds(0, 0);

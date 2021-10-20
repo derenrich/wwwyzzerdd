@@ -154,6 +154,11 @@ interface ExternalLinkedElement {
     identifier: string;
 }
 
+interface CoordLinkedElement {
+    element: HTMLElement;
+    lat: number;
+    lon: number;
+}
 
 interface QidData {
     qid: string;
@@ -172,6 +177,7 @@ interface HolderProps {
 interface HolderState {
     wikiLinks: LinkedElement[];
     externalLinks: ExternalLinkedElement[];
+    coordLinks: CoordLinkedElement[];
     booted: boolean;
     claims: {[key: string]: any};
     propNames: {[key: string]: string};
@@ -187,6 +193,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         super(props);
         this.state = {
             wikiLinks: [],
+            coordLinks: [],
             externalLinks: [],
             booted: false,
             claims: {},
@@ -279,6 +286,19 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         });
     }
 
+    addCoordLink(lat: number, lon: number, elm: HTMLAnchorElement) {
+        this.setState(function(state: HolderState) {
+            return {
+                coordLinks: state.coordLinks.concat({
+                   element: elm,
+                   lat: lat,
+                   lon: lon
+                })
+            };
+        });
+    }
+
+
     boot() {
         this.setState((prevState) => {
             // send the message in set state to ensure we have the most recent state
@@ -341,7 +361,26 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         return false;
     }
 
-
+    coordChecker(lat: number, lon: number): boolean {
+        let pid = 'P625';
+        let EPSILON = 0.00001;
+        let d = this.state.claims;
+        for (let k of Object.keys(d)) {
+            let claims = d[k].claims;
+            for (let statementV of Object.values(claims[pid] || {})) {                
+                let statement = (statementV as any);
+                if (statement.rank != "deprecated" && statement.mainsnak.datatype == "globe-coordinate") {
+                    if (statement.mainsnak.datavalue && statement.mainsnak.datavalue.value) {
+                        let targetLat = statement.mainsnak.datavalue.value.latitude;
+                        let targetLon = statement.mainsnak.datavalue.value.longitude;
+                        let targetPrecision = statement.mainsnak.datavalue.value.precision ?? EPSILON;
+                        return (Math.abs(targetLat - lat) < targetPrecision && Math.abs(targetLon - lon) < targetPrecision);
+                    }
+                }
+            }
+        }
+        return false;
+    }
 
     mapProps(props:string[]): PropTuple[] {
         return props.map((p) => {
@@ -373,6 +412,28 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                      />
                 </Portal>;
             })}
+
+            {this.state.coordLinks.map((link) => {
+                let pid = 'P625';
+                let linked = this.coordChecker(link.lat, link.lon);
+                let orbMode =  (!this.state.booted || !this.state.curPageQid) ? OrbMode.Unknown : (linked ? OrbMode.Linked : OrbMode.Unlinked);
+                return <Portal container={link.element}>
+                    { this.state.propIcons[pid] ? 
+                        <img style={{"height": "1.2em"}} src={this.state.propIcons[pid]} />
+                        : null
+                    }
+                    <Orb
+                        mode={orbMode}
+                        hover={this.state.propNames[pid] ? <Typography>{this.state.propNames[pid]}</Typography>:  undefined}
+                        popover={
+                            <CoordLinkWindow pageQid={this.state.curPageQid} 
+                            pid={pid} linked={linked} lat={link.lat} lon={link.lon} 
+                            broker={this.broker} propNames={this.state.propNames} />
+                        }
+                     />
+                </Portal>;
+            })}
+
 
             {this.state.wikiLinks.map((link) => {
                 let qidData = this.lookupSlug(link.slug);
@@ -653,3 +714,60 @@ const LinkWindow = withStyles(styles)(
         </Card>;
         }
     });
+
+    interface CoordLinkWindowProps extends CloseParam, WithStyles<typeof styles> {
+        pageQid?: string;
+        broker: MessageBroker;
+        pid: string;
+        lat: number;
+        lon: number;
+        linked: boolean;
+        propNames: {[key: string]: string};
+    
+    }
+    
+    const CoordLinkWindow = withStyles(styles)(
+        class extends Component<CoordLinkWindowProps, {}> {
+            constructor(props: CoordLinkWindowProps) {
+                super(props);
+            }
+    
+            link (): void {
+                if (!this.props.linked && !!this.props.pageQid) {
+                    this.props.broker.sendMessage({
+                        type: MessageType.SET_PROP_COORD,
+                        payload: {
+                            sourceItemQid: this.props.pageQid,
+                            propId: this.props.pid,
+                            lat: this.props.lat,
+                            lon: this.props.lon,
+                            sourceUrl: getSourceUrl()
+                        }
+                    });
+                    this.close();
+                }
+            }
+    
+            close = () => {
+                !!this.props.close ? this.props.close() : null;
+            }
+    
+            render() {
+            const pidLink = <React.Fragment>
+                <a href={`https://www.wikidata.org/wiki/Property:${this.props.pid}`}>{this.props.pid}</a>
+                {" "}·{" "}
+                {this.props.propNames[this.props.pid || ""] ?? "«no description»"}
+            </React.Fragment>;
+    
+            let coordString = this.props.lat + ", " + this.props.lon;
+
+            return <Card elevation={3} className={this.props.classes.card}>
+                <CardHeader title={coordString} subheader={pidLink}/>
+                {!this.props.linked ?
+                <CardContent>
+                    <Button style={{width: "100%"}} startIcon={<AddIcon />} variant="contained" color="primary" onClick={this.link.bind(this)}>Link</Button>
+                </CardContent> : null
+                }
+            </Card>;
+            }
+        });    

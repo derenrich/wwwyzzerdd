@@ -1,6 +1,6 @@
 import { PropertyDB, PropertyMatch } from './propertyData';
 import { ItemDB, LinkedItemData } from './itemData'
-import {addItemClaim, addIdClaim, addReference} from "./write";
+import {addItemClaim, addCoordClaim, addIdClaim, addReference} from "./write";
 
 export enum MessageType {
     GET_QIDS,
@@ -11,6 +11,7 @@ export enum MessageType {
     SET_PROP_QID,
     GET_LINK_ID,
     SET_PROP_ID,
+    SET_PROP_COORD
 }
 
 export interface Message {
@@ -76,6 +77,16 @@ interface AddPropertyIdReq {
     sourceUrl: string;
     wikiLanguage?: string;
 }
+
+interface AddPropertyCoordReq {
+    sourceItemQid: string;
+    propId: string;
+    lat: number;
+    lon: number;
+    sourceUrl: string;
+    wikiLanguage?: string;
+}
+
 
 
 const itemDB = new ItemDB();
@@ -261,6 +272,29 @@ export class MessageBroker {
                 });
                 break;
             }
+            case MessageType.SET_PROP_COORD: {
+                // crappy debounce method
+                let now = Date.now();
+                if (now - lastWrite < MIN_WRITE_WAIT) break;
+                lastWrite = Date.now();
+                const payload = msg.payload as AddPropertyCoordReq;
+                let addResponse = addCoordClaim(payload.sourceItemQid, payload.propId, payload.lat, payload.lon);
+                addResponse.then((resp) => {
+                    if (resp && resp.success) {
+                        let claimId = resp.claim.id;                        
+                        addReference(payload.sourceUrl, claimId, payload.wikiLanguage);
+                    }
+                    if (reply) reply({});
+                    this.handleMessageBackend({
+                        type: MessageType.GET_CLAIMS,
+                        payload: {
+                            qid: payload.sourceItemQid
+                        }
+                    });
+                });
+                break;
+            }
+
         }
     }
 
