@@ -28,6 +28,7 @@
     },
     "devDependencies": {
         "@parcel/config-default": "^2.0.0-nightly.800",
+        "@parcel/transformer-image": "2.0.0-rc.0",
         "@parcel/transformer-typescript-tsc": "^2.0.0-nightly.800",
         "@parcel/validator-typescript": "^2.0.0-nightly.800",
         "@types/chrome": "0.0.134",

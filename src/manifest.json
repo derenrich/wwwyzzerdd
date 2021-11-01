@@ -1,10 +1,23 @@
 {
     "manifest_version": 2,
     "name": "Wwwyzzerdd for Wikidata",
-    "version": "0.0.2.4",
+    "version": "0.0.2.5",
     "description": "Edit wikidata from wikipedia!",
     "icons": { },
-    "page_action": { },
+    "browser_action": { 
+        "browser_style": true,
+        "default_icon": {
+          "32": "./button/chillout-32.png",
+          "48": "./button/chillout-48.png"
+        },
+        "default_title": "Wwwyzzerdd",
+        "default_popup": "config.html"
+    },
+    "options_ui": {
+        "browser_style": true,
+        "open_in_tab": false,
+        "page": "config.html"
+    },
     "commands": { },
     "content_scripts": [{
         "matches": ["*://*.wikipedia.org/*"],
@@ -39,5 +52,10 @@
     "web_accessible_resources": [],
     "background": {
         "scripts": ["background.ts"]
-    }    
+    },
+    "browser_specific_settings": {
+        "gecko": {
+          "id": "wwwyzzerdd@erenrich.net"
+        }
+    }
 }

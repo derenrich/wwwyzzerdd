@@ -85,11 +85,17 @@ function parsePropFetch(d: any): PropertyData[] {
     return properties;
 }
 
+interface CachedRegexData {
+    regex: RegExp;
+    propertyData: PropertyPatternData
+}
+
 export class PropertyDB {
     pattern_results: Promise<PropertyPatternData[]>;
     prop_results: Promise<PropertyData[]>;
     // one of WikibaseItem, String, Quantity, ExternalId, ...
     prop_types: Promise<{ [pid: string]: string }>;
+    regex_results: Promise<CachedRegexData[]>;
 
     constructor() {
         this.pattern_results = getOrCompute(PATTERN_CACHE_KEY, function() {
@@ -97,6 +103,24 @@ export class PropertyDB {
                 return parsePatternFetch(res);
             });
         }, PROP_CACHE_LIFE)
+
+        // precompile all regexs
+        this.regex_results = this.pattern_results.then((results) => {
+            let regexCache: CachedRegexData[] =  [];
+            for (const propData of results) {
+                const regexMode = propData.caseInsensitive ? "i" : "";
+                try {
+                    const r = new RegExp(propData.regex, regexMode);
+                    regexCache.push({
+                        regex: r,
+                        propertyData: propData
+                    });
+                } catch (e) {
+                    console.warn("Failed to parse URL with pattern " + propData.regex, e);
+                }
+            }
+            return regexCache;
+        });
 
         this.prop_results = getOrCompute(PROP_CACHE_KEY, function() {
             return runQuery(propQuery).then((res) => {
@@ -130,26 +154,20 @@ export class PropertyDB {
     }
 
     async parseUrl(url: string): Promise<PropertyMatch|undefined> {
-        const results = await this.pattern_results;
-        for (const propData of results) {
-            const regexMode = propData.caseInsensitive ? "i" : "";
-            try {
-                const r = new RegExp(propData.regex, regexMode);
-                let match = r.exec(url);
-                if (match && match.length > 1) {
-                    let pid = propData.prop;
-                    let pattern = propData.replacementValue;
-                    var key: string = String(pattern);
-                    for (var i = 1; i < match.length; i+=1) {
-                        key = key.replaceAll("\\" + i, match[i]);
-                    }
-                    return {
-                        prop: pid,
-                        identifier: key
-                    };
+        const results = await this.regex_results;
+        for (const p of results) {
+            let match = p.regex.exec(url);
+            if (match && match.length > 1) {
+                let pid = p.propertyData.prop;
+                let pattern = p.propertyData.replacementValue;
+                var key: string = String(pattern);
+                for (var i = 1; i < match.length; i+=1) {
+                    key = key.replaceAll("\\" + i, match[i]);
                 }
-            } catch (e) {
-                console.warn("Failed to parse URL with pattern " + propData.regex);
+                return {
+                    prop: pid,
+                    identifier: key
+                };
             }
         }
         return undefined;

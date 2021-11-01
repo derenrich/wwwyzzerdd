@@ -4,6 +4,7 @@ import Portal from '@material-ui/core/Portal';
 import {MessageBroker, registerFrontendBroker, MessageType, Message, GetQidsReply, GetClaimsReply, GetPropNamesReply, GetLinkIdentifierReply} from "./messageBroker";
 import {PropertySuggestions} from "./propertyData";
 import {LinkedItemData} from "./itemData";
+import {CONFIG_KEY, ConfigObject, getConfig} from "./config"
 import { withStyles, createStyles, WithStyles } from '@material-ui/core/styles';
 import Tooltip from '@material-ui/core/Tooltip';
 import Popover from '@material-ui/core/Popover';
@@ -104,6 +105,7 @@ interface OrbProps extends WithStyles<typeof styles> {
     mode: OrbMode;
     hover?: React.ReactNode;
     popover?: React.ReactElement<CloseParam>;
+    hidden?: boolean;
 }
 
 interface OrbState {
@@ -126,7 +128,7 @@ let Orb = withStyles(styles)(class extends Component<OrbProps, OrbState> {
     };
 
     render() {
-        let orbClass = (this.props.mode == OrbMode.Unknown) ?  this.props.classes.hiddenOrb : 
+        let orbClass = (this.props.mode == OrbMode.Unknown || this.props.hidden) ?  this.props.classes.hiddenOrb : 
             (this.props.mode == OrbMode.Unlinked) ? this.props.classes.disconnectedOrb : this.props.classes.connectedOrb;
         return <React.Fragment>
         <Tooltip title={this.props.hover ?? ""}>
@@ -184,6 +186,7 @@ interface HolderState {
     propIcons: {[key: string]: string};
     qidMapping: {[key: string]: QidData};
     curPageQid?: string;
+    config?: ConfigObject;
 }
 
 export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
@@ -201,17 +204,30 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
             propIcons: {},
             qidMapping: {}
         };
-        this.broker = registerFrontendBroker();        
+        this.broker = registerFrontendBroker();
         this.broker.registerFrontendHandler(MessageType.GET_QIDS, this.handleQids.bind(this));
-
         this.broker.registerFrontendHandler(MessageType.GET_CLAIMS, this.handleClaims.bind(this));
-
         this.broker.registerFrontendHandler(MessageType.GET_PROP_NAMES, this.handleProps.bind(this));
-
         this.broker.registerFrontendHandler(MessageType.GET_PROP_ICONS, this.handlePropIcons.bind(this));
 
         this.broker.sendMessage({type: MessageType.GET_PROP_NAMES, payload: {}});
         this.broker.sendMessage({type: MessageType.GET_PROP_ICONS, payload: {}});
+
+
+        getConfig().then((conf) => {
+            this.setState({
+                config: conf
+            });
+        });
+        chrome.storage.onChanged.addListener( (changes, namespace) => {
+            for (let [key, { oldValue, newValue }] of Object.entries(changes)) {
+                if (namespace == "sync" && key == CONFIG_KEY) {
+                    this.setState({
+                        config: newValue
+                    });
+                }
+            }
+          });
 
         this.broker.sendMessage({
             type: MessageType.GET_QIDS,
@@ -233,7 +249,6 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
             propIcons: payload.propIcons
         });
     }
-
 
     handleQids(payload: any) {
         let curTitle = parseWikiUrl(document.baseURI);
@@ -391,6 +406,11 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         });
     }
 
+    orbsHidden(): boolean {
+        console.log("hidden?" ,this.state.config);
+        return !(!!this.state.config && !!this.state.config.showOrbs);
+    }
+
     render() {
         return <React.Fragment>
             {this.state.externalLinks.map((link) => {
@@ -402,6 +422,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                         : null
                     }
                     <Orb
+                        hidden={this.orbsHidden()}
                         mode={orbMode}
                         hover={this.state.propNames[link.pid] ? <Typography>{this.state.propNames[link.pid]}</Typography>:  undefined}
                         popover={
@@ -423,6 +444,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                         : null
                     }
                     <Orb
+                        hidden={this.orbsHidden()}
                         mode={orbMode}
                         hover={this.state.propNames[pid] ? <Typography>{this.state.propNames[pid]}</Typography>:  undefined}
                         popover={
@@ -457,6 +479,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                     {!!qidData ? 
                     <Orb
                         mode={mode}
+                        hidden={this.orbsHidden()}
                         hover={hoverText}
                         popover={<ItemWindow broker={this.broker}
                             wikiLanguage={this.props.wikiLanguage}
