@@ -3,15 +3,14 @@
     "name": "Wwwyzzerdd for Wikidata",
     "version": "0.0.2.5",
     "description": "Edit wikidata from wikipedia!",
-    "icons": { },
+    "icons": {
+        "128": "./icon/wwwyzzerdd.png"
+     },
     "browser_action": { 
         "browser_style": true,
-        "default_icon": {
-          "32": "./button/chillout-32.png",
-          "48": "./button/chillout-48.png"
-        },
         "default_title": "Wwwyzzerdd",
-        "default_popup": "config.html"
+        "default_popup": "config.html",
+        "default_icon": "./icon/wwwyzzerdd.png"
     },
     "options_ui": {
         "browser_style": true,
