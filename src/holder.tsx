@@ -407,7 +407,6 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
     }
 
     orbsHidden(): boolean {
-        console.log("hidden?" ,this.state.config);
         return !(!!this.state.config && !!this.state.config.showOrbs);
     }
 
