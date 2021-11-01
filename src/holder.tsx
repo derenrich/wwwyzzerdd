@@ -417,7 +417,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                 let orbMode =  (!this.state.booted || !this.state.curPageQid) ? OrbMode.Unknown : (linked ? OrbMode.Linked : OrbMode.Unlinked);
                 return <Portal container={link.element}>
                     { this.state.propIcons[link.pid] ? 
-                        <img style={{"height": "1.2em"}} src={this.state.propIcons[link.pid]} />
+                        <img style={{"height": "1.2em", "display": this.orbsHidden() ? "none" : "inline"}} src={this.state.propIcons[link.pid]} />
                         : null
                     }
                     <Orb
