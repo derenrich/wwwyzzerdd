@@ -4,7 +4,7 @@
     "version": "0.0.2.5",
     "description": "Edit wikidata from wikipedia!",
     "icons": {
-        "128": "./icon/wwwyzzerdd.png"
+        "128": "./icon/wwwyzzerdd-128.png"
      },
     "browser_action": { 
         "browser_style": true,
