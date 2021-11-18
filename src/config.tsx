@@ -1,4 +1,6 @@
 import Switch from '@material-ui/core/Switch';
+import Button from '@material-ui/core/Button';
+
 import FormGroup from '@material-ui/core/FormGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import CircularProgress from '@material-ui/core/CircularProgress';
@@ -64,6 +66,9 @@ class Config extends Component<{}, ConfigObject> {
             return <React.Fragment> 
             <FormGroup>
                 <FormControlLabel control={<Switch checked={this.state.showOrbs} onChange={this.handleShowOrbChange.bind(this)} />} label="Show Orbs" />
+                <Button variant="contained" onClick={() => {chrome.storage.local.clear()}}>
+                    Clear Cache
+                </Button>
             </FormGroup>
             </React.Fragment>;
         } else {
@@ -71,7 +76,6 @@ class Config extends Component<{}, ConfigObject> {
         }
     }
 }
-
 
 function boot() {
     const settingDiv = document.getElementById("settings");

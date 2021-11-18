@@ -1,4 +1,3 @@
-
 import { getOrCompute } from "./cache";
 
 async function getCSRF(): Promise<string> {
