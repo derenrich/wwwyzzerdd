@@ -182,7 +182,9 @@ function boot() {
     const wikiLang = getWikiLanguage(document.baseURI);
     const wikiPage = parseWikiUrl(document.baseURI);
     if (wikiNamespace == "0" && wikiPage != "Main Page") {
-        let footer = document.querySelectorAll("#footer")[0];    
+        let footer = document.querySelectorAll("#footer")[0];
+        let holder = document.createElement("div");
+        footer.appendChild(holder);
         function setRef(ref: WwwyzzerddHolder) {
             operateWikiLinks(function(link:HTMLAnchorElement) {
                 // clone the anchor into itself to make a place for the orb
@@ -233,7 +235,7 @@ function boot() {
             ref.boot();
         }
         const elm = <div><WwwyzzerddHolder wikiLanguage={wikiLang} userLanguage={wikiUserLang} curUrl={getSourceUrl()} pageTitle="foo" wikiLinks={[]} ref={setRef} /></div>;
-        ReactDom.render(elm, footer);
+        ReactDom.render(elm, holder);
     } else {
         console.log("Not running wwwyzzerdd.");
     }
