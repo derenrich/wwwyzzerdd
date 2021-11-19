@@ -25,15 +25,21 @@ import Button from '@material-ui/core/Button';
 
 
 
-const wikiLinkRegex = new RegExp("^https?:\/\/[a-z]+\.wikipedia\.org\/wiki\/([^#]+)", "i");
+const wikiLinkRegex = new RegExp("^https?:\/\/[a-z]+\.(?:m\.)?wikipedia\.org\/wiki\/([^#]+)", "i");
 const bannedPrefixes: string[] = ["File:", "Template:", "Special:", "Template talk:", "Help:", "Wikipedia:", "Talk:", "Category:"];
 
 function getSourceUrl(): string {
-    let link = document.querySelector("#t-permalink a")
+    let link = document.querySelector("#t-permalink a");
     if (link) {
         return (link as HTMLAnchorElement).href;
     } else {
-        return document.baseURI;
+        // for the mobile use case
+        let link = document.querySelector("a.menu__item--page-actions-overflow-permalink");
+        if (link) {
+            return (link as HTMLAnchorElement).href;
+        } else {
+            return document.baseURI;
+        }
     }
 }
 
@@ -417,7 +423,16 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                 let orbMode =  (!this.state.booted || !this.state.curPageQid) ? OrbMode.Unknown : (linked ? OrbMode.Linked : OrbMode.Unlinked);
                 return <Portal container={link.element}>
                     { this.state.propIcons[link.pid] ? 
-                        <img style={{"height": "1.2em", "display": this.orbsHidden() ? "none" : "inline"}} src={this.state.propIcons[link.pid]} />
+                        <img
+                            style={{"height": "1.2em", "display": this.orbsHidden() ? "none" : "inline"}}
+                            src={this.state.propIcons[link.pid]}
+                            ref={ (node) => {
+                                if (node) {
+                                    // hack for mobile mode which has an !important style
+                                    node.style.setProperty("height", "1.2em", "important");
+                                }
+                            }}
+                            />
                         : null
                     }
                     <Orb

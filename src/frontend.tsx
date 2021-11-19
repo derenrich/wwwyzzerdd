@@ -11,8 +11,8 @@ const linksRegisteredEvent = new Event('links-registered');
 const bootEvent = new Event('wwwyzzerdd-boot');
 
 
-const wikiLinkRegex = new RegExp("^https?:\/\/([a-z]+)\.wikipedia\.org\/wiki\/([^#]+)", "i");
-const wikiExpandedRegex = new RegExp("^https?:\/\/[a-z]+\.wikipedia\.org.+", "i");
+const wikiLinkRegex = new RegExp("^https?:\/\/([a-z]+)\.(?:m\.)?wikipedia\.org\/wiki\/([^#]+)", "i");
+const wikiExpandedRegex = new RegExp("^https?:\/\/[a-z]+\.(?:m\.)?wikipedia\.org.+", "i");
 let booted = false;
 
 function exposeNamespace() {
@@ -75,6 +75,9 @@ function isWikiLink(link:HTMLAnchorElement): boolean {
 
 function isNotWikiLink(link:HTMLAnchorElement): boolean {
     const hrefString = link.getAttribute("href") || "";
+    if (hrefString == "") {
+        return false;
+    }
     return (!hrefString.startsWith("#") && !wikiExpandedRegex.exec(link.href));
 }
 
@@ -182,7 +185,7 @@ function boot() {
     const wikiLang = getWikiLanguage(document.baseURI);
     const wikiPage = parseWikiUrl(document.baseURI);
     if (wikiNamespace == "0" && wikiPage != "Main Page") {
-        let footer = document.querySelectorAll("#footer")[0];
+        let footer = document.querySelectorAll("#footer")[0] || document.getElementsByTagName("body")[0];
         let holder = document.createElement("div");
         footer.appendChild(holder);
         function setRef(ref: WwwyzzerddHolder) {
@@ -191,9 +194,9 @@ function boot() {
                 let linkAnchor  = link as HTMLAnchorElement;
                 let origLink = linkAnchor.cloneNode(true) as HTMLAnchorElement;
                 linkAnchor.removeAttribute("href");
-                for (let c of linkAnchor.childNodes) {
-                    linkAnchor.removeChild(c);
-                }
+                // used for debugging
+                linkAnchor.setAttribute("data-x-wwwyzzerdd", "wiki-holder-element");
+                linkAnchor.innerHTML = '';
                 linkAnchor.innerText = "";
                 linkAnchor.className = "";
                 linkAnchor.appendChild(origLink);
@@ -207,13 +210,11 @@ function boot() {
                 let linkAnchor  = link as HTMLAnchorElement;
                 let origLink = linkAnchor.cloneNode(true) as HTMLAnchorElement;
                 linkAnchor.removeAttribute("href");
-                for (let c of linkAnchor.childNodes) {
-                    linkAnchor.removeChild(c);
-                }
+                linkAnchor.innerHTML = '';
                 linkAnchor.innerText = "";
                 linkAnchor.className = "";
                 linkAnchor.appendChild(origLink);
-
+                linkAnchor.setAttribute("data-x-wwwyzzerdd", "ext-holder-element");
                 let latlonMatch = findCoordinate(origLink.href);
                 if (latlonMatch) {
                     ref.addCoordLink(latlonMatch.lat, latlonMatch. lon, linkAnchor);
@@ -245,5 +246,5 @@ htmlElement.addEventListener(bootEvent.type, boot);
 
 document.onreadystatechange = exposeNamespace;
 if (document.readyState == "complete") {
-    exposeNamespace();    
+    exposeNamespace();
 }
