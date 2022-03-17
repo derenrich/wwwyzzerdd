@@ -106,12 +106,11 @@ export async function addReference(sourceUrl: string, claimId: string, wikiLangu
 
 async function checkedGetToken(): Promise<string> {
     let auth_token = await getAuthToken();
-    console.log("auth token", auth_token);
     if (auth_token == ANON_TOKEN) {
         // are we ok editing anonymously?
         let config = await getConfig();
         if (!config.allowAnon) {
-            throw new Error("Editing wikidata anonymously is disallowed");
+            throw new Error("Editing wikidata anonymously is disallowed.");
         }
     }
     let token = encodeURIComponent(auth_token);
