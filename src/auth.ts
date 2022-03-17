@@ -33,3 +33,5 @@ export function getAuthToken(force?: boolean): Promise<string> {
 
     return getOrCompute(TOKEN_KEY, getCSRF, force ? 0 : TEN_MINUTES);
 }
+
+export const ANON_TOKEN = "+\\";

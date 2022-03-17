@@ -1,5 +1,6 @@
-import { getAuthToken } from "./auth";
+import { getAuthToken, ANON_TOKEN } from "./auth";
 import { retryWikimediaPromise } from "./util";
+import { getConfig, ConfigObject } from "./config";
 
 const commentText = "import w/ [[Wikidata:Wwwyzzerdd|🧙 Wwwyzzerdd for Wikidata]]";
 
@@ -14,7 +15,7 @@ export async function addIdClaim(entity: string, property: string, value: string
 
 export async function addClaim(entity: string, property: string, value: any): Promise<any> {
     let base_url = "https://www.wikidata.org/w/api.php?action=wbcreateclaim&format=json&snaktype=value&";
-    let token = encodeURIComponent(await getAuthToken());
+    let token = await checkedGetToken();
     let wrappedValue = encodeURIComponent(JSON.stringify(value));
     let getArgs = `entity=${entity}&property=${property}&value=${wrappedValue}`;
     let summary = encodeURIComponent(commentText);
@@ -47,7 +48,7 @@ function currentTimeValue() {
 
 export async function addReference(sourceUrl: string, claimId: string, wikiLanguage?: string) {
     let base_url = "https://www.wikidata.org/w/api.php?action=wbsetreference&format=json&";
-    let token = encodeURIComponent(await getAuthToken());
+    let token = await checkedGetToken();
     let summary = encodeURIComponent(commentText);
 
     let PAGE_VERSION_URL_PID = "P4656";
@@ -101,4 +102,18 @@ export async function addReference(sourceUrl: string, claimId: string, wikiLangu
             "accept":"application/json, text/javascript, */*; q=0.01"
         }
     });
+}
+
+async function checkedGetToken(): Promise<string> {
+    let auth_token = await getAuthToken();
+    console.log("auth token", auth_token);
+    if (auth_token == ANON_TOKEN) {
+        // are we ok editing anonymously?
+        let config = await getConfig();
+        if (!config.allowAnon) {
+            throw new Error("Editing wikidata anonymously is disallowed");
+        }
+    }
+    let token = encodeURIComponent(auth_token);
+    return token;
 }

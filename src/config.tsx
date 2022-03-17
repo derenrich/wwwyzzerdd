@@ -8,7 +8,8 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import React, { Component } from 'react';
 import ReactDom from "react-dom";
 
-export const CONFIG_KEY = "WYZRD_CONFIG"
+export const CONFIG_KEY = "WYZRD_CONFIG";
+
 export function getConfig(): Promise<ConfigObject> {
     return new Promise<ConfigObject>(function (resolve, reject) {
         chrome.storage.sync.get(CONFIG_KEY,
@@ -29,6 +30,7 @@ export function getConfig(): Promise<ConfigObject> {
 export interface ConfigObject {
     syncd: boolean;
     showOrbs?: boolean;
+    allowAnon?: boolean;
 }
 
 class Config extends Component<{}, ConfigObject> {
@@ -61,11 +63,25 @@ class Config extends Component<{}, ConfigObject> {
 
     }
 
+    handleAllowAnonChange(evt: React.ChangeEvent<{}>, checked: boolean) {
+        const update = {
+            allowAnon: checked
+        }
+        let newState = Object.assign(this.state, update);
+
+        chrome.storage.sync.set({
+            [CONFIG_KEY]: newState
+        }, () => this.updateConfig());
+
+    }
+
+
     render() {
         if (this.state.syncd) {
             return <React.Fragment> 
             <FormGroup>
                 <FormControlLabel control={<Switch checked={this.state.showOrbs} onChange={this.handleShowOrbChange.bind(this)} />} label="Show Orbs" />
+                <FormControlLabel control={<Switch checked={this.state.allowAnon} onChange={this.handleAllowAnonChange.bind(this)} />} label="Allow Anon" />
                 <Button variant="contained" onClick={() => {chrome.storage.local.clear()}}>
                     Clear Cache
                 </Button>
