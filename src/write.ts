@@ -14,7 +14,7 @@ export async function addIdClaim(entity: string, property: string, value: string
 }
 
 export async function addClaim(entity: string, property: string, value: any): Promise<any> {
-    let base_url = "https://www.wikidata.org/w/api.php?action=wbcreateclaim&format=json&snaktype=value&";
+    let base_url = "https://www.wikidata.org/w/api.php?action=wbcreateclaim&format=json&snaktype=value&tags=wwwyzzerdd&";
     let token = await checkedGetToken();
     let wrappedValue = encodeURIComponent(JSON.stringify(value));
     let getArgs = `entity=${entity}&property=${property}&value=${wrappedValue}`;
@@ -47,7 +47,7 @@ function currentTimeValue() {
 }
 
 export async function addReference(sourceUrl: string, claimId: string, wikiLanguage?: string) {
-    let base_url = "https://www.wikidata.org/w/api.php?action=wbsetreference&format=json&";
+    let base_url = "https://www.wikidata.org/w/api.php?action=wbsetreference&format=json&tags=wwwyzzerdd&";
     let token = await checkedGetToken();
     let summary = encodeURIComponent(commentText);
 
