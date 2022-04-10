@@ -52,6 +52,7 @@ export interface GetPropNamesReply {
 interface GetPropSuggestionsAsk {
     itemQid: string;
     typed: string;
+    targetQid?: string;
 }
 
 interface AddPropertyReq {
@@ -203,7 +204,7 @@ export class MessageBroker {
 
             case MessageType.GET_PROP_SUGGESTIONS: {
                 const payload = msg.payload as GetPropSuggestionsAsk;
-                propDB.suggestProperty(payload.itemQid, payload.typed).then((resp) => {
+                propDB.suggestProperty(payload.itemQid, payload.typed, payload.targetQid).then((resp) => {
                     let response = {
                         type: MessageType.GET_PROP_SUGGESTIONS,
                         payload: resp

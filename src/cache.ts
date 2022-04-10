@@ -1,6 +1,6 @@
 import {retryPromise} from "./util";
 
-const maxMaxAge = 60 * 60 * 24 * 2; // nothing is stored longer than 2 days
+const maxMaxAge = 60 * 60 * 24 * 3; // nothing is stored longer than 3 days
 
 export interface CachedItem {
     fetchTime: number; // in unix time ms
@@ -37,8 +37,18 @@ function getMultiple(keys: string[], maxAge: number = 3600): Promise<any[]> {
     });
 }
 
-function get(key: string, maxAge: number = 3600): Promise<any> {
+export function get(key: string, maxAge: number = 3600): Promise<any> {
     return getMultiple([key], maxAge).then((results) => results[0]);
+}
+
+export function put(key: string, value: any) {
+    let c = {
+        fetchTime: now(),
+        data: value
+    };
+    let pair: { [key: string]: any; } = {};
+    pair[key] = c;
+    chrome.storage.local.set(pair);
 }
 
 export async function getOrCompute<T>(key: string, compute: () => Promise<T>, maxAge: number = 3600): Promise<T> {

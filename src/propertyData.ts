@@ -1,4 +1,4 @@
-import {getOrCompute} from './cache';
+import {getOrCompute, put, get} from './cache';
 import runQuery from './sparql'
 
 interface PropertyPatternData {
@@ -53,7 +53,11 @@ WHERE {
 const PATTERN_CACHE_KEY = "WD_PROP_PATTERN_CACHE_KEY";
 const PROP_CACHE_KEY = "WD_PROP_CACHE_KEY";
 const PROP_TYPE_KEY = "WD_PROP_TYPE_KEY";
+const PROP_NAME_KEY = "WD_PROP_NAME_KEY";
 const PROP_CACHE_LIFE = 60 * 60; // 1 hr cache time
+
+const LAST_QID_USE_NS = "WD_LAST_PID$";
+
 
 function parsePatternFetch(d: any): PropertyPatternData[] {
     let properties = [];
@@ -95,6 +99,7 @@ export class PropertyDB {
     prop_results: Promise<PropertyData[]>;
     // one of WikibaseItem, String, Quantity, ExternalId, ...
     prop_types: Promise<{ [pid: string]: string }>;
+    prop_names: Promise<{ [pid: string]: string }>;
     regex_results: Promise<CachedRegexData[]>;
 
     constructor() {
@@ -126,13 +131,24 @@ export class PropertyDB {
             return runQuery(propQuery).then((res) => {
                 return parsePropFetch(res);
             });
-        }, PROP_CACHE_LIFE)
+        }, PROP_CACHE_LIFE);
 
         this.prop_types = getOrCompute(PROP_TYPE_KEY, (): (Promise<{ [pid: string]: string }>) => {
             return this.prop_results.then(function(result: PropertyData[]): { [pid: string]: string }{
                 let out: { [pid: string]: string } = {};
                 result.forEach((row) => {
                     out[row.prop] = row.propType;
+                })
+                return out;
+            });
+        }, PROP_CACHE_LIFE);
+
+
+        this.prop_names = getOrCompute(PROP_NAME_KEY, (): (Promise<{ [pid: string]: string }>) => {
+            return this.prop_results.then(function(result: PropertyData[]): { [pid: string]: string }{
+                let out: { [pid: string]: string } = {};
+                result.forEach((row) => {
+                    out[row.prop] = row.name;
                 })
                 return out;
             });
@@ -173,19 +189,51 @@ export class PropertyDB {
         return undefined;
     }
 
-    async suggestProperty(itemQid: string, typed: string): Promise<PropertySuggestions> {
+    async suggestProperty(itemQid: string, typed: string, targetQid?: string): Promise<PropertySuggestions> {
         let now = Date.now();
         let BASE_URL = "https://www.wikidata.org/w/api.php?action=wbsgetsuggestions&format=json&context=item";
         let full_url = BASE_URL + "&entity=" + encodeURIComponent(itemQid) + "&search=" + encodeURIComponent(typed);
         let propTypes = await this.prop_types;
 
+        let lastPidSuggestion: any | undefined = undefined;
+        if (typed == "" && targetQid) {
+            lastPidSuggestion = await this.getLastQidProperty(targetQid);
+        }
+
         return fetch(full_url).then((x) =>x.json()).then((x) => {
             let allSuggestions = (x.search || []);
             let validSuggestions = allSuggestions.filter((sugg: any) => propTypes[sugg.id] == ITEM_PROP_TYPE);
+            if (lastPidSuggestion) {
+                let pid = lastPidSuggestion.id;
+                validSuggestions = [lastPidSuggestion].concat(validSuggestions.filter((sugg: any) => sugg.id != pid)); 
+            }
             return {
                 timestamp: now,
                 suggestions: validSuggestions
             }
         });
     }
+
+    async getLastQidProperty(itemQid: string): Promise<any | undefined> {
+        let pid = await get(LAST_QID_USE_NS + itemQid, 60*60*24*2);
+        if (pid) {
+            let prop_names = await this.prop_names;
+            let name = prop_names[pid];
+            if (name) {
+                return {
+                    id: pid,
+                    label: name
+                };
+            } else {
+                return undefined;
+            }
+        } else {
+            return undefined;
+        }
+    }
+}
+
+// remember the last use of a property for this qid
+export function saveLastQidProperty(itemQid: string, pid: string) {
+    put(LAST_QID_USE_NS + itemQid, pid);
 }

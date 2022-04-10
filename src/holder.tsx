@@ -588,6 +588,7 @@ interface PropTuple {
             {this.state.addMode ? 
             <Suggester 
                 targetQid={this.props.pageQid || ""}
+                objectQid={this.props.qid}
                 broker={this.props.broker}
                 onSubmit={this.add.bind(this)} />  :
             <ListItem button onClick={this.addMode}>
@@ -608,6 +609,7 @@ interface PropTuple {
 
 interface SuggesterProps {
     targetQid: string;
+    objectQid?: string;
     broker: MessageBroker;
     onSubmit: (pid?: string) => void;
 }
@@ -654,6 +656,7 @@ class Suggester extends Component<SuggesterProps, SuggesterState> {
             type: MessageType.GET_PROP_SUGGESTIONS,
             payload: {
                 itemQid: this.props.targetQid,
+                targetQid: this.props.objectQid, // yes the variable naming here is bad (sorry)
                 typed: this.state.typed
             }
         }, (resp: any) => {

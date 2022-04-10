@@ -1,11 +1,13 @@
 import { getAuthToken, ANON_TOKEN } from "./auth";
 import { retryWikimediaPromise } from "./util";
 import { getConfig, ConfigObject } from "./config";
+import {saveLastQidProperty} from "./propertyData";
 
 const commentText = "import w/ [[Wikidata:Wwwyzzerdd|🧙 Wwwyzzerdd for Wikidata]]";
 
 
 export async function addItemClaim(entity: string, property: string, qid: string): Promise<any> {
+    saveLastQidProperty(qid, property);
     return addClaim(entity, property, {"entity-type": "item", "id": qid});
 }
 
@@ -20,6 +22,7 @@ export async function addClaim(entity: string, property: string, value: any): Pr
     let getArgs = `entity=${entity}&property=${property}&value=${wrappedValue}`;
     let summary = encodeURIComponent(commentText);
     let args = `token=${token}&summary=${summary}`;
+
 
     return retryWikimediaPromise(() => {
         return fetch(base_url + getArgs, {
