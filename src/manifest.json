@@ -38,8 +38,6 @@
     "offline_enabled": false,
     "permissions": ["storage",
                     "alarms",
-                    "activeTab",
-                    "contextMenus",
                     "unlimitedStorage",
                     "https://www.wikidata.org/*",
                     "https://*.wikipedia.org/*"                  
