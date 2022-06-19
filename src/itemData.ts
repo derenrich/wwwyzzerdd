@@ -60,6 +60,42 @@ function getQidsFromTitles(titles: string[], wikiLanguage: string, respond?: Qid
     });
 }
 
+// get the title/desc from qid
+function getDataFromQids(qids: string[], respond?: QidCallback): Promise<{[key: string]: LinkedItemData }> {
+    let concatQidChunk = qids.join("|");
+    let targetUrl = GET_ENTITIES_URL + "&props=" + encodeURIComponent(LINKED_PROPS) + "&ids=" + concatQidChunk;
+    let site = "enwiki";
+    let lang = "en";
+    return fetch(targetUrl, {
+        method: 'GET',
+        cache: 'no-cache',
+        redirect: 'error',
+    }).then((resp) => {
+        return resp.json();
+    }).then(async (data) => {
+        if (data.error) {
+            console.error(data.error);
+            throw new Error();
+        } else {
+            const entities = data['entities'];
+            let out: {[key: string]: LinkedItemData} = {};
+            for (let qid of Object.keys(entities)) {
+                const ent = entities[qid];
+                let label = (ent["labels"][lang] || {})["value"];
+                let description = (ent["descriptions"][lang] || {})["value"];
+                let linkData: LinkedItemData = {
+                    qid,
+                    label,
+                    description
+                }
+                // using the qid as the key here creates a problem where it could in theory collide with an article title
+                out[qid] = linkData;
+            }
+            return out;
+        }
+    });
+}
+
 // uses normalization functionality
 function getQidFromTitle(title: string, wikiLanguage: string): Promise<LinkedItemData | undefined> {
     let site = wikiLanguage + "wiki";
@@ -143,6 +179,19 @@ export class ItemDB {
         }
         return out;
     }
+
+    // same as lookup tittles but given qids instead of titles
+    async lookupQids(qids: string[], respond?: QidCallback): Promise<{[key: string]: LinkedItemData}> {
+        let uniqQids = Array.from(new Set(qids));
+        let out: {[key: string]: LinkedItemData} = {}; 
+        for (let i = 0; i < uniqQids.length; i += REQ_LIMIT) {
+            let qidChunk = uniqQids.slice(i, i + REQ_LIMIT);
+            let batch = await getOrComputeMultiple(qidChunk, getDataFromQids, "qid2title_", TITLE_CACHE_SEC);
+            Object.assign(out, batch);
+        }
+        return out;
+    }
+
 
     async lookupQidContent(qids: string[], skipCache: boolean | undefined = false): Promise<{[key: string]: string}> {
         // remove duplicates

@@ -11,7 +11,8 @@ export enum MessageType {
     SET_PROP_QID,
     GET_LINK_ID,
     SET_PROP_ID,
-    SET_PROP_COORD
+    SET_PROP_COORD,
+    LOOKUP_QIDS
 }
 
 export interface Message {
@@ -26,6 +27,10 @@ interface GetQidsAsk {
 
 export interface GetQidsReply {
     data: {[key: string]: LinkedItemData};
+}
+
+interface LookupQidsAsk {
+    qids: string[];
 }
 
 interface GetClaimsAsk {
@@ -43,7 +48,6 @@ interface GetPropNamesAsk {
 interface GetPropIconsAsk {
 
 }
-
 
 export interface GetPropNamesReply {
     propNames: {[key: string]: string};
@@ -295,7 +299,18 @@ export class MessageBroker {
                 });
                 break;
             }
-
+            case MessageType.LOOKUP_QIDS: {
+                const payload = msg.payload as LookupQidsAsk;
+                itemDB.lookupQids(payload.qids).then((data) => {
+                    this.postMessage({
+                        type: MessageType.GET_QIDS,
+                        payload: {
+                            data
+                        }
+                    });
+                });
+                break;
+            }
         }
     }
 

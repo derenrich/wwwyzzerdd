@@ -12,7 +12,9 @@ const bootEvent = new Event('wwwyzzerdd-boot');
 
 
 const wikiLinkRegex = new RegExp("^https?:\/\/([a-z]+)\.(?:m\.)?wikipedia\.org\/wiki\/([^#]+)", "i");
-const wikiExpandedRegex = new RegExp("^https?:\/\/[a-z]+\.(?:m\.)?wikipedia\.org.+", "i");
+// don't allow anything after the QID to prevent edit links
+const wikidataLinkRegex = new RegExp("^https?:\/\/([a-z]+)\.(?:m\.)?wikidata\.org\/wiki\/(Q\\d+)$", "i");
+const wikiExpandedRegex = new RegExp("^https?:\/\/[a-z]+\.(?:m\.)?(wikipedia|wikidata)\.org.+", "i");
 let booted = false;
 
 function exposeNamespace() {
@@ -73,6 +75,12 @@ function isWikiLink(link:HTMLAnchorElement): boolean {
     return !!(link.href && (!hrefString.startsWith("#")) && wikiLinkRegex.exec(link.href));
 }
 
+function isWikidataLink(link:HTMLAnchorElement): boolean {
+    const hrefString = link.getAttribute("href") || "";
+    return !!(link.href && (!hrefString.startsWith("#")) && wikidataLinkRegex.exec(link.href));
+}
+
+
 function isNotWikiLink(link:HTMLAnchorElement): boolean {
     const hrefString = link.getAttribute("href") || "";
     if (hrefString == "") {
@@ -89,6 +97,15 @@ function operateWikiLinks(fn: (link:HTMLAnchorElement) => void) {
         }
     });
 }
+
+function operateWikidataLinks(fn: (link:HTMLAnchorElement) => void) {
+    operateLinks((link) => {
+        if (isWikidataLink(link)) {
+            fn(link);
+        }
+    });
+}
+
 
 function operateNonWikiLinks(fn: (link:HTMLAnchorElement) => void) {
     operateLinks((link) => {
@@ -202,6 +219,21 @@ function boot() {
                 linkAnchor.appendChild(origLink);
 
                 ref.addWikiLink(origLink.href, linkAnchor);
+            });
+
+            operateWikidataLinks(function(link:HTMLAnchorElement) {
+                // clone the anchor into itself to make a place for the orb
+                let linkAnchor  = link as HTMLAnchorElement;
+                let origLink = linkAnchor.cloneNode(true) as HTMLAnchorElement;
+                linkAnchor.removeAttribute("href");
+                // used for debugging
+                linkAnchor.setAttribute("data-x-wwwyzzerdd", "wiki-holder-element");
+                linkAnchor.innerHTML = '';
+                linkAnchor.innerText = "";
+                linkAnchor.className = "";
+                linkAnchor.appendChild(origLink);
+
+                ref.addWikidataLink(origLink.href, linkAnchor);
             });
 
 

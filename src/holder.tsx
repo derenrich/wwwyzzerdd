@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, ReactPortal } from 'react';
 import Portal from '@material-ui/core/Portal';
 
 import {MessageBroker, registerFrontendBroker, MessageType, Message, GetQidsReply, GetClaimsReply, GetPropNamesReply, GetLinkIdentifierReply} from "./messageBroker";
@@ -26,6 +26,8 @@ import Button from '@material-ui/core/Button';
 
 
 const wikiLinkRegex = new RegExp("^https?:\/\/[a-z]+\.(?:m\.)?wikipedia\.org\/wiki\/([^#]+)", "i");
+const wikidataLinkRegex = new RegExp("^https?:\/\/(?:m\.|www\.)?wikidata\.org\/wiki\/(Q\\d+)", "i");
+
 const bannedPrefixes: string[] = ["File:", "Template:", "Special:", "Template talk:", "Help:", "Wikipedia:", "Talk:", "Category:"];
 
 function getSourceUrl(): string {
@@ -60,6 +62,16 @@ function parseWikiUrl(url: string): string | undefined {
         return undefined;
     }
 }
+
+function parseWikidataUrl(url: string): string | undefined {
+    let m = wikidataLinkRegex.exec(url);
+    if(m && m.length > 1) {
+        return decodeURIComponent(m[1]);
+    } else {
+        return undefined;
+    }
+}
+
 
 
 const styles = createStyles({
@@ -184,6 +196,7 @@ interface HolderProps {
 
 interface HolderState {
     wikiLinks: LinkedElement[];
+    wikidataLinks: LinkedElement[];
     externalLinks: ExternalLinkedElement[];
     coordLinks: CoordLinkedElement[];
     booted: boolean;
@@ -202,6 +215,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         super(props);
         this.state = {
             wikiLinks: [],
+            wikidataLinks: [],
             coordLinks: [],
             externalLinks: [],
             booted: false,
@@ -295,6 +309,18 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         });
     }
 
+    addWikidataLink(url: string, elm: HTMLAnchorElement) {
+        this.setState(function(state: HolderState) {
+            return {
+                wikidataLinks: state.wikidataLinks.concat({
+                  element: elm,
+                  link: url,
+                  slug: parseWikidataUrl(url)
+                })
+            };
+        });
+    }
+
     addExternalLink(property: string, identifier: string, elm: HTMLAnchorElement) {
         this.setState(function(state: HolderState) {
             return {
@@ -330,6 +356,12 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                     wikiLanguage: this.props.wikiLanguage
                 }
             });
+            this.broker.sendMessage({
+                type: MessageType.LOOKUP_QIDS,
+                payload: {
+                    qids: prevState.wikidataLinks.map((l) => l.slug).filter((l) => !!l)
+                }
+            });
             return {
                 booted: true
             };
@@ -347,8 +379,22 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         }
     }
 
+    lookupWikidataQid(qid?: string): QidData | undefined {
+        if (!qid) {
+            return undefined;
+        }
+        // yes this is O(n) ...
+        for (let data of Object.values(this.state.qidMapping)) {
+            if (data.qid == qid) {
+                return data;
+            }
+        }
+        return undefined;
+    }
+
+
     getProps(qid:string): string[] {
-        let matchedProps = []
+        let matchedProps = [];
         let d = this.state.claims;
         for (let k of Object.keys(d)) {
             let claims = d[k].claims;
@@ -416,6 +462,40 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         return !(!!this.state.config && !!this.state.config.showOrbs);
     }
 
+    renderLinkPortal(qidData: QidData | undefined, link: LinkedElement): React.ReactNode {
+        let matchedProps: string[] = !qidData ? [] : this.getProps(qidData.qid);
+        let propTuples = this.mapProps(matchedProps);
+        let mode = (!this.state.booted || !this.state.curPageQid) ? OrbMode.Unknown : (
+            (!qidData) ? OrbMode.Unknown : (
+                matchedProps.length > 0 ? 
+                OrbMode.Linked
+                 : OrbMode.Unlinked
+            )
+        );
+        
+        let hoverText = matchedProps.length > 0 ?  <Typography>
+            {Array.from(new Set(matchedProps
+                .map((p) => this.state.propNames[p] || "")
+                .filter((p) => p.length > 0))).join(" & ")}
+        </Typography> : null;
+
+        return <Portal container={link.element}>
+            {!!qidData ? 
+            <Orb
+                mode={mode}
+                hidden={this.orbsHidden()}
+                hover={hoverText}
+                popover={<ItemWindow broker={this.broker}
+                    wikiLanguage={this.props.wikiLanguage}
+                    pageQid={this.state.curPageQid}
+                    qid={qidData.qid} label={qidData.label}
+                    description={qidData.description} existingProps={propTuples} />}
+             /> : null
+            }
+        </Portal>;
+
+    }
+
     render() {
         return <React.Fragment>
             {this.state.externalLinks.map((link) => {
@@ -473,37 +553,14 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
 
             {this.state.wikiLinks.map((link) => {
                 let qidData = this.lookupSlug(link.slug);
-                let matchedProps: string[] = !qidData ? [] : this.getProps(qidData.qid);
-                let propTuples = this.mapProps(matchedProps);
-                let mode = (!this.state.booted || !this.state.curPageQid) ? OrbMode.Unknown : (
-                    (!qidData) ? OrbMode.Unknown : (
-                        matchedProps.length > 0 ? 
-                        OrbMode.Linked
-                         : OrbMode.Unlinked
-                    )
-                );
-                
-                let hoverText = matchedProps.length > 0 ?  <Typography>
-                    {Array.from(new Set(matchedProps
-                        .map((p) => this.state.propNames[p] || "")
-                        .filter((p) => p.length > 0))).join(" & ")}
-                </Typography> : null;
-
-                return <Portal container={link.element}>
-                    {!!qidData ? 
-                    <Orb
-                        mode={mode}
-                        hidden={this.orbsHidden()}
-                        hover={hoverText}
-                        popover={<ItemWindow broker={this.broker}
-                            wikiLanguage={this.props.wikiLanguage}
-                            pageQid={this.state.curPageQid}
-                            qid={qidData.qid} label={qidData.label}
-                            description={qidData.description} existingProps={propTuples} />}
-                     /> : null
-                    }
-                </Portal>;
+                return this.renderLinkPortal(qidData, link);
             })}
+
+            {this.state.wikidataLinks.map((link) => {
+                let qidData = this.lookupWikidataQid(link.slug);
+                return this.renderLinkPortal(qidData, link);
+            })}
+
         </React.Fragment>;
     }
 }
