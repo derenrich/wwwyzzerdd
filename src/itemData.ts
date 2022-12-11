@@ -131,7 +131,7 @@ function getQidFromTitle(title: string, wikiLanguage: string): Promise<LinkedIte
             }
             return undefined;
         }
-    });        
+    });
 }
 
 function getContentFromQids(qids: string[]): Promise<{[key: string]: any}> {
@@ -166,8 +166,8 @@ export class ItemDB {
     }
 
     async lookupTitles(titles: string[], wikiLanguageOpt?: string, respond?: QidCallback): Promise<{[key: string]: LinkedItemData}> {
-        let uniqTitles = Array.from(new Set(titles));
-        let out: {[key: string]: LinkedItemData} = {}; 
+        let uniqTitles = Array.from(new Set(titles)).filter(x => !!x);
+        let out: {[key: string]: LinkedItemData} = {};
         let wikiLanguage = wikiLanguageOpt || "en";
         for (let i = 0; i < uniqTitles.length; i += REQ_LIMIT) {
             let titleChunk = uniqTitles.slice(i, i + REQ_LIMIT);
@@ -183,7 +183,7 @@ export class ItemDB {
     // same as lookup tittles but given qids instead of titles
     async lookupQids(qids: string[], respond?: QidCallback): Promise<{[key: string]: LinkedItemData}> {
         let uniqQids = Array.from(new Set(qids));
-        let out: {[key: string]: LinkedItemData} = {}; 
+        let out: {[key: string]: LinkedItemData} = {};
         for (let i = 0; i < uniqQids.length; i += REQ_LIMIT) {
             let qidChunk = uniqQids.slice(i, i + REQ_LIMIT);
             let batch = await getOrComputeMultiple(qidChunk, getDataFromQids, "qid2title_", TITLE_CACHE_SEC);
@@ -192,16 +192,15 @@ export class ItemDB {
         return out;
     }
 
-
     async lookupQidContent(qids: string[], skipCache: boolean | undefined = false): Promise<{[key: string]: string}> {
         // remove duplicates
         let uniqQids = Array.from(new Set(qids));
-        let out: {[key: string]: any} = {}; 
+        let out: {[key: string]: any} = {};
         for (let i = 0; i < uniqQids.length; i += REQ_LIMIT) {
             let qidChunk = uniqQids.slice(i, i + REQ_LIMIT);
             let cacheTime = skipCache ? 0 : STATEMENT_CACHE_SEC;
             let batch = await getOrComputeMultiple(qidChunk, getContentFromQids, "qid2content_", cacheTime);
-            Object.assign(out, batch);            
+            Object.assign(out, batch);
         }
         return out;
     }

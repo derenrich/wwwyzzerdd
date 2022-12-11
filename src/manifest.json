@@ -6,7 +6,7 @@
     "icons": {
         "128": "./icon/wwwyzzerdd-128.png"
      },
-    "browser_action": { 
+    "browser_action": {
         "browser_style": true,
         "default_title": "Wwwyzzerdd",
         "default_popup": "config.html",
@@ -40,7 +40,8 @@
                     "alarms",
                     "unlimitedStorage",
                     "https://www.wikidata.org/*",
-                    "https://*.wikipedia.org/*"                  
+                    "https://*.wikipedia.org/*",
+                    "https://api-inference.huggingface.co/models/derenrich/*"
                    ],
     "requirements": {},
     "sandbox": [],

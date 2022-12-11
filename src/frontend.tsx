@@ -17,7 +17,7 @@ const wikidataLinkRegex = new RegExp("^https?:\/\/([a-z]+)\.(?:m\.)?wikidata\.or
 const wikiExpandedRegex = new RegExp("^https?:\/\/[a-z]+\.(?:m\.)?(wikipedia|wikidata)\.org.+", "i");
 let booted = false;
 
-function exposeNamespace() {
+function exposeVariables() {
     if (!booted) {
         if (document.readyState == "complete") {
             // extract 'wgNamespaceNumber'
@@ -36,12 +36,21 @@ function exposeNamespace() {
                 f2.parentNode.insertBefore(j2, f2);
                 f2.parentNode.removeChild(j2);
             }
+            // extract page id
+            const j3 = document.createElement('script');
+            const f3 = document.getElementsByTagName('script')[0];
+            if(f3 && f3.parentNode) {
+                j3.textContent = "document.getElementsByTagName(\"body\")[0].setAttribute(\"mw-page-id\", mw.config.get('wgArticleId'));";
+                f3.parentNode.insertBefore(j3, f3);
+                f3.parentNode.removeChild(j3);
+            }
+
             booted = true;
             htmlElement.dispatchEvent(bootEvent);
         }
     }
 }
-  
+
 
 function getSourceUrl(): string {
     let link = document.querySelector("#t-permalink a")
@@ -55,7 +64,7 @@ function getSourceUrl(): string {
 function operateLinks(fn: (link:HTMLAnchorElement) => void) {
     let navBoxes = Array.from(document.querySelectorAll("#bodyContent .navbox"));
     let bodyLinkElms = Array.from(document.querySelectorAll("#mw-content-text a"));
-    for(const link of bodyLinkElms) {        
+    for(const link of bodyLinkElms) {
         // skip links in nav boxes for now
         let notInNav = true;
         for (const navBox of navBoxes) {
@@ -186,7 +195,7 @@ function findCoordinate(href: string): undefined | Coordinate  {
         lat += Number.parseFloat(match[3]) / 60.0 / 60.0;
         let lon = Number.parseFloat(match[5]);
         lon += Number.parseFloat(match[6]) / 60.0;
-        lon += Number.parseFloat(match[7]) / 60.0 / 60.0;        
+        lon += Number.parseFloat(match[7]) / 60.0 / 60.0;
         return {
             lat: lat * latSign,
             lon: lon * lonSign
@@ -199,6 +208,7 @@ function findCoordinate(href: string): undefined | Coordinate  {
 function boot() {
     const wikiNamespace = document.getElementsByTagName("body")[0].getAttribute("mw-ns") || "";
     const wikiUserLang = document.getElementsByTagName("body")[0].getAttribute("mw-lang") || "";
+    const pageId = parseInt(document.getElementsByTagName("body")[0].getAttribute("mw-page-id") || "") ;
     const wikiLang = getWikiLanguage(document.baseURI);
     const wikiPage = parseWikiUrl(document.baseURI);
     if (wikiNamespace == "0" && wikiPage != "Main Page") {
@@ -267,7 +277,7 @@ function boot() {
 
             ref.boot();
         }
-        const elm = <div><WwwyzzerddHolder wikiLanguage={wikiLang} userLanguage={wikiUserLang} curUrl={getSourceUrl()} pageTitle="foo" wikiLinks={[]} ref={setRef} /></div>;
+        const elm = <div><WwwyzzerddHolder wikiLanguage={wikiLang} userLanguage={wikiUserLang} pageId={pageId} curUrl={getSourceUrl()} wikiLinks={[]} ref={setRef} /></div>;
         ReactDom.render(elm, holder);
     } else {
         console.log("Not running wwwyzzerdd.");
@@ -276,7 +286,7 @@ function boot() {
 
 htmlElement.addEventListener(bootEvent.type, boot);
 
-document.onreadystatechange = exposeNamespace;
+document.onreadystatechange = exposeVariables;
 if (document.readyState == "complete") {
-    exposeNamespace();
+    exposeVariables();
 }

@@ -3,6 +3,7 @@ import Portal from '@material-ui/core/Portal';
 
 import {MessageBroker, registerFrontendBroker, MessageType, Message, GetQidsReply, GetClaimsReply, GetPropNamesReply, GetLinkIdentifierReply} from "./messageBroker";
 import {PropertySuggestions} from "./propertyData";
+import {StatementSuggestions} from "./psychiq";
 import {LinkedItemData} from "./itemData";
 import {CONFIG_KEY, ConfigObject, getConfig} from "./config"
 import { withStyles, createStyles, WithStyles } from '@material-ui/core/styles';
@@ -56,7 +57,7 @@ function parseWikiUrl(url: string): string | undefined {
                 return undefined;
             }
         }
-        
+
         return title;
     } else {
         return undefined;
@@ -89,7 +90,7 @@ const styles = createStyles({
         },
         "text-decoration": "none",
         "outline": "0",
-        "cursor": "pointer"        
+        "cursor": "pointer"
     },
     hoverText: {
         fontSize: "large"
@@ -146,19 +147,19 @@ let Orb = withStyles(styles)(class extends Component<OrbProps, OrbState> {
     };
 
     render() {
-        let orbClass = (this.props.mode == OrbMode.Unknown || this.props.hidden) ?  this.props.classes.hiddenOrb : 
+        let orbClass = (this.props.mode == OrbMode.Unknown || this.props.hidden) ?  this.props.classes.hiddenOrb :
             (this.props.mode == OrbMode.Unlinked) ? this.props.classes.disconnectedOrb : this.props.classes.connectedOrb;
         return <React.Fragment>
         <Tooltip title={this.props.hover ?? ""}>
-         <span 
-            onClick={this.handlePopoverOpen} 
+         <span
+            onClick={this.handlePopoverOpen}
             className={[orbClass, this.props.classes.orb].join(" ")}>
         </span>
         </Tooltip>
         <Popover open={!!this.state.targetElement && !!this.props.popover} anchorEl={this.state.targetElement} onClose={this.handlePopoverClose.bind(this)}>
             {!! this.props.popover ? React.cloneElement(this.props.popover, {close: this.handlePopoverClose.bind(this)}) : undefined}
         </Popover>
-        </React.Fragment>;        
+        </React.Fragment>;
     }
 });
 
@@ -187,7 +188,7 @@ interface QidData {
 }
 
 interface HolderProps {
-    pageTitle: string;
+    pageId: number;
     wikiLinks: HTMLElement[];
     curUrl: string;
     userLanguage?: string;
@@ -206,6 +207,7 @@ interface HolderState {
     qidMapping: {[key: string]: QidData};
     curPageQid?: string;
     config?: ConfigObject;
+    suggestedClaims: StatementSuggestions[];
 }
 
 export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
@@ -222,7 +224,8 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
             claims: {},
             propNames: {},
             propIcons: {},
-            qidMapping: {}
+            qidMapping: {},
+            suggestedClaims: []
         };
         this.broker = registerFrontendBroker();
         this.broker.registerFrontendHandler(MessageType.GET_QIDS, this.handleQids.bind(this));
@@ -416,7 +419,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         let d = this.state.claims;
         for (let k of Object.keys(d)) {
             let claims = d[k].claims;
-            for (let statementV of Object.values(claims[pid] || {})) {                
+            for (let statementV of Object.values(claims[pid] || {})) {
                 let statement = (statementV as any);
                 if (statement.rank != "deprecated" && statement.mainsnak.datatype == "external-id") {
                     if (statement.mainsnak.datavalue && statement.mainsnak.datavalue.value == identifier) {
@@ -434,7 +437,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         let d = this.state.claims;
         for (let k of Object.keys(d)) {
             let claims = d[k].claims;
-            for (let statementV of Object.values(claims[pid] || {})) {                
+            for (let statementV of Object.values(claims[pid] || {})) {
                 let statement = (statementV as any);
                 if (statement.rank != "deprecated" && statement.mainsnak.datatype == "globe-coordinate") {
                     if (statement.mainsnak.datavalue && statement.mainsnak.datavalue.value) {
@@ -467,12 +470,12 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         let propTuples = this.mapProps(matchedProps);
         let mode = (!this.state.booted || !this.state.curPageQid) ? OrbMode.Unknown : (
             (!qidData) ? OrbMode.Unknown : (
-                matchedProps.length > 0 ? 
+                matchedProps.length > 0 ?
                 OrbMode.Linked
                  : OrbMode.Unlinked
             )
         );
-        
+
         let hoverText = matchedProps.length > 0 ?  <Typography>
             {Array.from(new Set(matchedProps
                 .map((p) => this.state.propNames[p] || "")
@@ -480,7 +483,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         </Typography> : null;
 
         return <Portal container={link.element}>
-            {!!qidData ? 
+            {!!qidData ?
             <Orb
                 mode={mode}
                 hidden={this.orbsHidden()}
@@ -502,7 +505,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                 let linked = this.identifierChecker(link.pid, link.identifier);
                 let orbMode =  (!this.state.booted || !this.state.curPageQid) ? OrbMode.Unknown : (linked ? OrbMode.Linked : OrbMode.Unlinked);
                 return <Portal container={link.element}>
-                    { this.state.propIcons[link.pid] ? 
+                    { this.state.propIcons[link.pid] ?
                         <img
                             style={{"height": "1.2em", "display": this.orbsHidden() ? "none" : "inline"}}
                             src={this.state.propIcons[link.pid]}
@@ -520,8 +523,8 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                         mode={orbMode}
                         hover={this.state.propNames[link.pid] ? <Typography>{this.state.propNames[link.pid]}</Typography>:  undefined}
                         popover={
-                            <LinkWindow pageQid={this.state.curPageQid} 
-                            pid={link.pid} linked={linked} identifier={link.identifier} 
+                            <LinkWindow pageQid={this.state.curPageQid}
+                            pid={link.pid} linked={linked} identifier={link.identifier}
                             broker={this.broker} propNames={this.state.propNames} />
                         }
                      />
@@ -533,7 +536,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                 let linked = this.coordChecker(link.lat, link.lon);
                 let orbMode =  (!this.state.booted || !this.state.curPageQid) ? OrbMode.Unknown : (linked ? OrbMode.Linked : OrbMode.Unlinked);
                 return <Portal container={link.element}>
-                    { this.state.propIcons[pid] ? 
+                    { this.state.propIcons[pid] ?
                         <img style={{"height": "1.2em"}} src={this.state.propIcons[pid]} />
                         : null
                     }
@@ -542,8 +545,8 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                         mode={orbMode}
                         hover={this.state.propNames[pid] ? <Typography>{this.state.propNames[pid]}</Typography>:  undefined}
                         popover={
-                            <CoordLinkWindow pageQid={this.state.curPageQid} 
-                            pid={pid} linked={linked} lat={link.lat} lon={link.lon} 
+                            <CoordLinkWindow pageQid={this.state.curPageQid}
+                            pid={pid} linked={linked} lat={link.lat} lon={link.lon}
                             broker={this.broker} propNames={this.state.propNames} />
                         }
                      />
@@ -598,7 +601,7 @@ interface PropTuple {
             this.setState({
                 addMode: true
             });
-        };   
+        };
 
 
         close = () => {
@@ -630,7 +633,7 @@ interface PropTuple {
                     <ListItemText primary={prop.propName ?? ""} secondary={prop.propId} />
                 </ListItem>;
             });
-    
+
             const qidLink = <React.Fragment>
                 <a href={`https://www.wikidata.org/wiki/${this.props.qid}`}>{this.props.qid}</a>
                 {" "}·{" "}
@@ -640,10 +643,10 @@ interface PropTuple {
             return <Card elevation={3} className={this.props.classes.card}>
             <CardHeader title={this.props.label ?? "«no label»"} subheader={qidLink}/>
             <CardContent>
-            <List dense component="nav" >                                    
+            <List dense component="nav" >
             {propItems}
-            {this.state.addMode ? 
-            <Suggester 
+            {this.state.addMode ?
+            <Suggester
                 targetQid={this.props.pageQid || ""}
                 objectQid={this.props.qid}
                 broker={this.props.broker}
@@ -655,11 +658,11 @@ interface PropTuple {
                 <ListItemText primary="Add Statement" />
             </ListItem>
             }
-             </List>                
+             </List>
             </CardContent>
         </Card>;
 
-        }        
+        }
     }
 )
 
@@ -705,7 +708,7 @@ class Suggester extends Component<SuggesterProps, SuggesterState> {
     }
 
     submit() {
-        this.props.onSubmit(this.state.selectedPid);        
+        this.props.onSubmit(this.state.selectedPid);
     }
 
     suggest() {
@@ -820,15 +823,15 @@ const LinkWindow = withStyles(styles)(
         lon: number;
         linked: boolean;
         propNames: {[key: string]: string};
-    
+
     }
-    
+
     const CoordLinkWindow = withStyles(styles)(
         class extends Component<CoordLinkWindowProps, {}> {
             constructor(props: CoordLinkWindowProps) {
                 super(props);
             }
-    
+
             link (): void {
                 if (!this.props.linked && !!this.props.pageQid) {
                     this.props.broker.sendMessage({
@@ -844,18 +847,18 @@ const LinkWindow = withStyles(styles)(
                     this.close();
                 }
             }
-    
+
             close = () => {
                 !!this.props.close ? this.props.close() : null;
             }
-    
+
             render() {
             const pidLink = <React.Fragment>
                 <a href={`https://www.wikidata.org/wiki/Property:${this.props.pid}`}>{this.props.pid}</a>
                 {" "}·{" "}
                 {this.props.propNames[this.props.pid || ""] ?? "«no description»"}
             </React.Fragment>;
-    
+
             let coordString = this.props.lat + ", " + this.props.lon;
 
             return <Card elevation={3} className={this.props.classes.card}>
@@ -867,4 +870,4 @@ const LinkWindow = withStyles(styles)(
                 }
             </Card>;
             }
-        });    
+        });

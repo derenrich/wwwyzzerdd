@@ -14,6 +14,7 @@
     "scripts": {
         "start": "parcel src/manifest.json --host localhost --target webext-dev",
         "build": "parcel build src/manifest.json --target webext-prod",
+        "build-debug": "parcel build src/manifest.json --target webext-prod --no-optimize ",
         "bundle": "cd dist/webext-prod; zip -r ../wwwyzzerdd.zip *",
         "clean": "rm -rf dist/*",
         "check": "tsc --noEmit"
@@ -24,7 +25,8 @@
         "@material-ui/lab": "^4.0.0-alpha.57",
         "@parcel/config-webextension": "^2.3.2",
         "react": "^17.0.2",
-        "react-dom": "^17.0.2"
+        "react-dom": "^17.0.2",
+        "ts-retry-promise": "^0.7.0"
     },
     "devDependencies": {
         "@parcel/config-default": "^2.3.2",
@@ -35,7 +37,7 @@
         "@types/chrome": "0.0.134",
         "@types/react": "^17.0.3",
         "@types/react-dom": "^17.0.3",
-        "typescript": "^3.0",
-	"parcel": "^2.3.2"
+        "parcel": "^2.3.2",
+        "typescript": "^3.0"
     }
 }
