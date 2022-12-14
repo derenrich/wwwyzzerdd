@@ -174,7 +174,6 @@ let Orb = withStyles(styles)(class extends Component<OrbProps, OrbState> {
 
     render() {
         let orbClass: string = "";
-        console.log(this.props.mode, this.props.hidden);        
         if (this.props.mode == OrbMode.Unknown || this.props.hidden) {
             orbClass = this.props.classes.hiddenOrb;
         } else if (this.props.mode == OrbMode.Unlinked) {
@@ -1066,7 +1065,6 @@ const SuggestedClaimsWindow = withStyles(styles)(
 
         save(): void {
             this.state.statements.forEach((statement) => {
-                console.log(statement);
                 let [pid, targetQid] = statement.split("-");
                 this.props.broker.sendMessage({
                     type: MessageType.SET_PROP_QID,
