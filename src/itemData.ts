@@ -180,7 +180,7 @@ export class ItemDB {
         return out;
     }
 
-    // same as lookup tittles but given qids instead of titles
+    // same as lookup titles but given qids instead of titles
     async lookupQids(qids: string[], respond?: QidCallback): Promise<{[key: string]: LinkedItemData}> {
         let uniqQids = Array.from(new Set(qids));
         let out: {[key: string]: LinkedItemData} = {};

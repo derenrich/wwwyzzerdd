@@ -16,7 +16,7 @@ export interface StatementSuggestions {
     score: number;
 }
 
-const hfToken = "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";
+const hfToken = "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";
 
 async function queryPsychiq(data: PsychiqQuery): Promise<PsychiqResponseRow[]> {
 
@@ -92,7 +92,7 @@ async function getPsychiqDocument(pageId: number): Promise<string> {
         }
         let newCategories: string[] = categoryResponse.categories!.map((x) => x.title.slice(9)).filter(isValidCategory);
         categories = categories.concat(newCategories)
-        
+
         continueKey = responseBody?.continue?.clcontinue;
     } while (continueKey)
 

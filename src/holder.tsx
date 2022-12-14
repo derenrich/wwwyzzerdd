@@ -18,10 +18,11 @@ import ListItem, { ListItemProps } from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import LinkIcon from '@material-ui/icons/Link';
+import HelpIcon from '@material-ui/icons/Help';
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import IconButton from '@material-ui/core/IconButton';
 import TextField from '@material-ui/core/TextField';
-import { Typography } from '@material-ui/core';
+import { Checkbox, FormControlLabel, FormGroup, Typography } from '@material-ui/core';
 import Button from '@material-ui/core/Button';
 
 
@@ -92,6 +93,10 @@ const styles = createStyles({
         "outline": "0",
         "cursor": "pointer"
     },
+    orbTitle: {
+        verticalAlign: "super",
+        fontSize: "medium"
+    },
     hoverText: {
         fontSize: "large"
     },
@@ -107,7 +112,13 @@ const styles = createStyles({
     card: {
         maxWidth: 500,
         minWidth: 350
-    }
+    },
+    titleCardContent: {
+        textAlign: "right"
+    },
+    suggestedStatementsBody: {
+        textAlign: "left"
+    },
 });
 
 enum OrbMode {
@@ -125,6 +136,7 @@ interface OrbProps extends WithStyles<typeof styles> {
     hover?: React.ReactNode;
     popover?: React.ReactElement<CloseParam>;
     hidden?: boolean;
+    location?: string;
 }
 
 interface OrbState {
@@ -149,11 +161,16 @@ let Orb = withStyles(styles)(class extends Component<OrbProps, OrbState> {
     render() {
         let orbClass = (this.props.mode == OrbMode.Unknown || this.props.hidden) ?  this.props.classes.hiddenOrb :
             (this.props.mode == OrbMode.Unlinked) ? this.props.classes.disconnectedOrb : this.props.classes.connectedOrb;
+        let classes = [orbClass, this.props.classes.orb]
+        if (this.props.location === "title") {
+            // apply special styling for orbs in the title
+            classes = classes.concat(this.props.classes.orbTitle);
+        }
         return <React.Fragment>
         <Tooltip title={this.props.hover ?? ""}>
          <span
             onClick={this.handlePopoverOpen}
-            className={[orbClass, this.props.classes.orb].join(" ")}>
+            className={classes.join(" ")}>
         </span>
         </Tooltip>
         <Popover open={!!this.state.targetElement && !!this.props.popover} anchorEl={this.state.targetElement} onClose={this.handlePopoverClose.bind(this)}>
@@ -200,6 +217,7 @@ interface HolderState {
     wikidataLinks: LinkedElement[];
     externalLinks: ExternalLinkedElement[];
     coordLinks: CoordLinkedElement[];
+    titleBox?: HTMLElement;
     booted: boolean;
     claims: {[key: string]: any};
     propNames: {[key: string]: string};
@@ -225,13 +243,16 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
             propNames: {},
             propIcons: {},
             qidMapping: {},
-            suggestedClaims: []
+            suggestedClaims: [],
+            titleBox: undefined
         };
         this.broker = registerFrontendBroker();
         this.broker.registerFrontendHandler(MessageType.GET_QIDS, this.handleQids.bind(this));
         this.broker.registerFrontendHandler(MessageType.GET_CLAIMS, this.handleClaims.bind(this));
         this.broker.registerFrontendHandler(MessageType.GET_PROP_NAMES, this.handleProps.bind(this));
         this.broker.registerFrontendHandler(MessageType.GET_PROP_ICONS, this.handlePropIcons.bind(this));
+        this.broker.registerFrontendHandler(MessageType.GET_CLAIM_SUGGESTIONS, this.handleClaimSuggestions.bind(this));
+
 
         this.broker.sendMessage({type: MessageType.GET_PROP_NAMES, payload: {}});
         this.broker.sendMessage({type: MessageType.GET_PROP_ICONS, payload: {}});
@@ -242,6 +263,8 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                 config: conf
             });
         });
+
+        // handle config changes
         chrome.storage.onChanged.addListener( (changes, namespace) => {
             for (let [key, { oldValue, newValue }] of Object.entries(changes)) {
                 if (namespace == "sync" && key == CONFIG_KEY) {
@@ -259,6 +282,14 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                 wikiLanguage: this.props.wikiLanguage
             }
         });
+        if (this.props.wikiLanguage === "en") {
+            this.broker.sendMessage({
+                type: MessageType.GET_CLAIM_SUGGESTIONS,
+                payload: {
+                    pageId: this.props.pageId
+                }
+            });
+        }
     }
 
     handleProps(payload: any) {
@@ -270,6 +301,21 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
     handlePropIcons(payload: any) {
         this.setState({
             propIcons: payload.propIcons
+        });
+    }
+
+
+    handleClaimSuggestions(payload: any) {
+        let suggestedClaims: StatementSuggestions[] = payload.suggestions;
+        this.setState({
+            suggestedClaims: suggestedClaims
+        });
+
+        this.broker.sendMessage({
+            type: MessageType.LOOKUP_QIDS,
+            payload: {
+                qids: suggestedClaims.filter((s) => s.pid != "unknown").map((s) => s.qid)
+            }
         });
     }
 
@@ -297,7 +343,6 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         this.setState({
             claims: payload.claims
         });
-
     }
 
     addWikiLink(url: string, elm: HTMLAnchorElement) {
@@ -309,6 +354,12 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                   slug: parseWikiUrl(url)
                 })
             };
+        });
+    }
+
+    addTitleBox(elm?: HTMLElement) {
+        this.setState({
+            titleBox: elm
         });
     }
 
@@ -415,6 +466,26 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         return matchedProps;
     }
 
+    checkClaimExists(pid:string, qid:string): boolean {
+        let d = this.state.claims;
+        for (let k of Object.keys(d)) {
+            let claims = d[k].claims;
+            if (claims[pid]) {
+                let statements = claims[pid];
+                for (let statementV of Object.values(statements)) {
+                    let statement = (statementV as any);
+                    if (statement.rank != "deprecated" && statement.mainsnak.datatype == "wikibase-item") {
+                        if (statement.mainsnak.datavalue && statement.mainsnak.datavalue.value.id == qid) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+
     identifierChecker(pid:string, identifier: string): boolean {
         let d = this.state.claims;
         for (let k of Object.keys(d)) {
@@ -463,6 +534,29 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
 
     orbsHidden(): boolean {
         return !(!!this.state.config && !!this.state.config.showOrbs);
+    }
+
+    renderTitleBoxPortal() : React.ReactNode {
+        let topSuggestions = this.state.suggestedClaims.filter(sug => sug.pid != "unknown").slice(0, 5);
+        let linkedSuggestion = topSuggestions.filter(sug => this.checkClaimExists(sug.pid, sug.qid)).length > 0;
+        return <Portal container={this.state.titleBox!}>
+            <Orb
+            location="title"
+            mode={linkedSuggestion? OrbMode.Linked : OrbMode.Unlinked}
+            hover={<Typography>suggested claims</Typography>}
+            popover={<SuggestedClaimsWindow
+                claimExists={this.checkClaimExists.bind(this)}
+                broker={this.broker}
+                claims={this.state.claims}
+                pageQid={this.state.curPageQid!}
+                suggestedClaims={topSuggestions}
+                propNames={this.state.propNames}
+                qidMapping={this.state.qidMapping}
+                wikiLanguage={this.props.wikiLanguage}
+                 />}
+            hidden={this.orbsHidden() || (this.state.suggestedClaims.length == 0)}
+            />
+        </Portal>;
     }
 
     renderLinkPortal(qidData: QidData | undefined, link: LinkedElement): React.ReactNode {
@@ -563,6 +657,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                 let qidData = this.lookupWikidataQid(link.slug);
                 return this.renderLinkPortal(qidData, link);
             })}
+            {this.state.titleBox ? this.renderTitleBoxPortal() : null}
 
         </React.Fragment>;
     }
@@ -871,3 +966,112 @@ const LinkWindow = withStyles(styles)(
             </Card>;
             }
         });
+
+
+interface SuggestedClaimsWindowProps extends CloseParam, WithStyles<typeof styles> {
+    pageQid?: string;
+    suggestedClaims: StatementSuggestions[];
+    propNames: {[key: string]: string};
+    qidMapping: {[key: string]: QidData};
+    claims: {[key: string]: any};
+    broker: MessageBroker;
+    wikiLanguage?: string;
+    claimExists: (pid: string, qid: string) => boolean;
+}
+
+interface SuggestedClaimsWindowState {
+    statements: string[];
+}
+
+const SuggestedClaimsWindow = withStyles(styles)(
+    class extends Component<SuggestedClaimsWindowProps, SuggestedClaimsWindowState> {
+        constructor(props: SuggestedClaimsWindowProps) {
+            super(props);
+            this.state = {
+                statements: []
+            };
+        }
+
+        close = () => {
+            !!this.props.close ? this.props.close() : null;
+        }
+
+        getPropName(pid: string): string {
+            return this.props.propNames[pid] ?? pid;
+        }
+
+        getQidName(qid: string): string {
+            // yes this is O(n) ...
+            for (let data of Object.values(this.props.qidMapping)) {
+                if (data.qid == qid) {
+                    return data.label ?? qid;
+                }
+            }
+            return qid;
+        }
+
+        clickStatement(event: React.ChangeEvent<HTMLInputElement>, checked: boolean): void {
+            let value = event.target.value;
+            if (checked) {
+                this.setState((state) => {
+                    return {
+                        statements: state.statements.concat(value)
+                    }
+                });
+            } else {
+                this.setState((state) => {
+                    return {
+                        statements: state.statements.filter(v => v != value)
+                    }
+            }   );
+            }
+        }
+
+        renderSuggestedClaims(): React.ReactNode {
+            let claims = this.props.suggestedClaims.filter((r) => r.pid != "unknown").slice(0, 5);
+            return <FormGroup className={this.props.classes.suggestedStatementsBody}>
+                {claims.map((c) => {
+                    let linked = this.props.claimExists(c.pid, c.qid);
+                    return <FormControlLabel
+                        control={<Checkbox  onChange={this.clickStatement.bind(this)} value={c.pid + "-" + c.qid} defaultChecked={linked}/>}
+                        disabled={linked}
+                        label={this.getPropName(c.pid) + " " + this.getQidName(c.qid)} />
+                })}
+            </FormGroup>
+        }
+
+        save(): void {
+            this.state.statements.forEach((statement) => {
+                console.log(statement);
+                let [pid, targetQid] = statement.split("-");
+                this.props.broker.sendMessage({
+                    type: MessageType.SET_PROP_QID,
+                    payload: {
+                        sourceItemQid: this.props.pageQid,
+                        propId: pid,
+                        targetItemQid: targetQid,
+                        sourceUrl: getSourceUrl(),
+                        wikiLanguage: this.props.wikiLanguage,
+                        commentAddendum: "via psychiq"
+                    }
+                });
+            });
+            this.close();
+        }
+
+        render() {
+            return <Card elevation={3} className={this.props.classes.card}>
+                <CardHeader title={"Suggested Statements"} action={
+                    <Tooltip placement='right-start' title="These are statements that we predict are applicable to this item. Click the checkbox and hit save to add them to the item." arrow>
+                    <HelpIcon />
+                  </Tooltip>
+                }/>
+                <CardContent className={this.props.classes.titleCardContent}>
+                    {this.renderSuggestedClaims()}
+                    <Button onClick={this.save.bind(this)} variant="outlined" startIcon={<AddIcon />}>
+                        Save
+                    </Button>
+                </CardContent>
+            </Card>;
+        }
+});

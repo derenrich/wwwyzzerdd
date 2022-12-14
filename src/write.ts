@@ -6,21 +6,21 @@ import {saveLastQidProperty} from "./propertyData";
 const commentText = "import w/ [[Wikidata:Wwwyzzerdd|🧙 Wwwyzzerdd for Wikidata]]";
 
 
-export async function addItemClaim(entity: string, property: string, qid: string): Promise<any> {
+export async function addItemClaim(entity: string, property: string, qid: string, commentAddendum?: string): Promise<any> {
     saveLastQidProperty(qid, property);
-    return addClaim(entity, property, {"entity-type": "item", "id": qid});
+    return addClaim(entity, property, {"entity-type": "item", "id": qid}, commentAddendum);
 }
 
 export async function addIdClaim(entity: string, property: string, value: string): Promise<any> {
     return addClaim(entity, property, value);
 }
 
-export async function addClaim(entity: string, property: string, value: any): Promise<any> {
+export async function addClaim(entity: string, property: string, value: any, commentAddendum?: string): Promise<any> {
     let base_url = "https://www.wikidata.org/w/api.php?action=wbcreateclaim&format=json&snaktype=value&tags=wwwyzzerdd&";
     let token = await checkedGetToken();
     let wrappedValue = encodeURIComponent(JSON.stringify(value));
     let getArgs = `entity=${entity}&property=${property}&value=${wrappedValue}`;
-    let summary = encodeURIComponent(commentText);
+    let summary = encodeURIComponent(commentText + (commentAddendum ? " (" + commentAddendum +")" : ""));
     let args = `token=${token}&summary=${summary}`;
 
 
@@ -33,7 +33,7 @@ export async function addClaim(entity: string, property: string, value: any): Pr
              "accept":"application/json, text/javascript, */*; q=0.01"
             }
         }).then((res) => res.json());
-    });
+    }, 2);
 }
 
 export async function addCoordClaim(entity: string, property: string, lat: number, lon: number): Promise<any> {
@@ -49,10 +49,10 @@ function currentTimeValue() {
     return {"type":"time","value":{"after":0,"before":0,"calendarmodel":"http://www.wikidata.org/entity/Q1985727","precision":11,"time":today,"timezone":0}};
 }
 
-export async function addReference(sourceUrl: string, claimId: string, wikiLanguage?: string) {
+export async function addReference(sourceUrl: string, claimId: string, wikiLanguage?: string, commentAddendum?: string) {
     let base_url = "https://www.wikidata.org/w/api.php?action=wbsetreference&format=json&tags=wwwyzzerdd&";
     let token = await checkedGetToken();
-    let summary = encodeURIComponent(commentText);
+    let summary = encodeURIComponent(commentText + (commentAddendum ? " (" + commentAddendum +")" : ""));
 
     let PAGE_VERSION_URL_PID = "P4656";
     let IMPORTED_FROM_WIKIMEDIA_PID = "P143";
@@ -97,14 +97,14 @@ export async function addReference(sourceUrl: string, claimId: string, wikiLangu
     let args = `token=${token}&summary=${summary}`;
     let snaks =  encodeURIComponent(JSON.stringify(refSnack));
     let getArgs = `statement=${claimId}&snaks=${snaks}`;
-    return fetch(base_url + getArgs, {
+    return retryWikimediaPromise(() => fetch(base_url + getArgs, {
         method: 'POST',
         body: args,
         headers: {
             "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
             "accept":"application/json, text/javascript, */*; q=0.01"
         }
-    });
+    }).then((res) => res.json()), 2);
 }
 
 async function checkedGetToken(): Promise<string> {

@@ -216,6 +216,16 @@ function boot() {
         let holder = document.createElement("div");
         footer.appendChild(holder);
         function setRef(ref: WwwyzzerddHolder) {
+
+            // pass the title bar to the holder
+            let titleBox: HTMLHeadingElement | null = document.querySelector("h1#firstHeading");
+            if (titleBox) {
+                let box = document.createElement("span");
+                titleBox.appendChild(box);
+                ref.addTitleBox(box);
+            }
+
+            // pass the wiki links to the holder
             operateWikiLinks(function(link:HTMLAnchorElement) {
                 // clone the anchor into itself to make a place for the orb
                 let linkAnchor  = link as HTMLAnchorElement;

@@ -1,10 +1,12 @@
 import { PropertyDB, PropertyMatch } from './propertyData';
 import { ItemDB, LinkedItemData } from './itemData'
 import {addItemClaim, addCoordClaim, addIdClaim, addReference} from "./write";
+import {suggestIdentifiers} from "./psychiq"
 
 export enum MessageType {
     GET_QIDS,
     GET_CLAIMS,
+    GET_CLAIM_SUGGESTIONS,
     GET_PROP_NAMES,
     GET_PROP_ICONS,
     GET_PROP_SUGGESTIONS,
@@ -65,6 +67,7 @@ interface AddPropertyReq {
     targetItemQid: string;
     sourceUrl: string;
     wikiLanguage?: string;
+    commentAddendum?: string;
 }
 
 interface GetLinkIdentifierAsk {
@@ -93,6 +96,9 @@ interface AddPropertyCoordReq {
 }
 
 
+interface GetStatementSuggestionReq {
+    pageId: number
+}
 
 const itemDB = new ItemDB();
 const propDB = new PropertyDB();
@@ -221,15 +227,15 @@ export class MessageBroker {
 
             case MessageType.SET_PROP_QID: {
                 // crappy debounce method
-                let now = Date.now();
-                if (now - lastWrite < MIN_WRITE_WAIT) break;
-                lastWrite = Date.now();
+                //let now = Date.now();
+                //if (now - lastWrite < MIN_WRITE_WAIT) break;
+                //lastWrite = Date.now();
                 const payload = msg.payload as AddPropertyReq;
-                let addResponse = addItemClaim(payload.sourceItemQid, payload.propId, payload.targetItemQid);
+                let addResponse = addItemClaim(payload.sourceItemQid, payload.propId, payload.targetItemQid, payload.commentAddendum);
                 addResponse.then((resp) => {
                     if (resp && resp.success) {
                         let claimId = resp.claim.id;                        
-                        addReference(payload.sourceUrl, claimId, payload.wikiLanguage);
+                        addReference(payload.sourceUrl, claimId, payload.wikiLanguage, payload.commentAddendum);
                     }
                     if (reply) reply({});
                     this.handleMessageBackend({
@@ -310,6 +316,21 @@ export class MessageBroker {
                     });
                 });
                 break;
+            }
+
+            case MessageType.GET_CLAIM_SUGGESTIONS: {
+                const payload = msg.payload as GetStatementSuggestionReq;
+                let suggestions = suggestIdentifiers(payload.pageId);
+                suggestions.then((sugg) => {
+                    let response = {
+                        type: MessageType.GET_CLAIM_SUGGESTIONS,
+                        payload: {
+                            suggestions: sugg
+                        }
+                    };
+                    if (reply) reply( response );
+                    this.postMessage(response);
+                });
             }
         }
     }
