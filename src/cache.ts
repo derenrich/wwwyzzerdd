@@ -52,7 +52,7 @@ export function put(key: string, value: any) {
 }
 
 export async function getOrCompute<T>(key: string, compute: () => Promise<T>, maxAge: number = 3600): Promise<T> {
-    let value = await get(key)
+    let value = await get(key, maxAge);
     if (value) {
         return Promise.resolve(value);
     } else {
