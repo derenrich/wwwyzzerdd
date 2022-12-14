@@ -106,6 +106,19 @@ const styles = createStyles({
     disconnectedOrb: {
         color: "#6c757d"
     },
+    loadingOrb: {
+        color: "#562bdb",
+        animation: "$pulse 2s infinite"
+    },
+    "@keyframes pulse": {
+        "0%": {
+            filter: "none"
+        },
+        "50%": {
+            filter: "contrast(500%) blur(3px) saturate(150%)",
+        },
+    },
+
     hiddenOrb: {
         display: "none"
     },
@@ -124,7 +137,8 @@ const styles = createStyles({
 enum OrbMode {
     Unknown,
     Unlinked,
-    Linked
+    Linked,
+    Loading
 }
 
 interface CloseParam {
@@ -159,8 +173,17 @@ let Orb = withStyles(styles)(class extends Component<OrbProps, OrbState> {
     };
 
     render() {
-        let orbClass = (this.props.mode == OrbMode.Unknown || this.props.hidden) ?  this.props.classes.hiddenOrb :
-            (this.props.mode == OrbMode.Unlinked) ? this.props.classes.disconnectedOrb : this.props.classes.connectedOrb;
+        let orbClass: string = "";
+        console.log(this.props.mode, this.props.hidden);        
+        if (this.props.mode == OrbMode.Unknown || this.props.hidden) {
+            orbClass = this.props.classes.hiddenOrb;
+        } else if (this.props.mode == OrbMode.Unlinked) {
+            orbClass = this.props.classes.disconnectedOrb;
+        }  else if (this.props.mode == OrbMode.Linked) {
+            orbClass = this.props.classes.connectedOrb;
+        } else if (this.props.mode == OrbMode.Loading) {
+            orbClass = this.props.classes.loadingOrb;
+        }
         let classes = [orbClass, this.props.classes.orb]
         if (this.props.location === "title") {
             // apply special styling for orbs in the title
@@ -539,12 +562,13 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
     renderTitleBoxPortal() : React.ReactNode {
         let topSuggestions = this.state.suggestedClaims.filter(sug => sug.pid != "unknown").slice(0, 5);
         let linkedSuggestion = topSuggestions.filter(sug => this.checkClaimExists(sug.pid, sug.qid)).length > 0;
+        let anySuggestions = topSuggestions.length > 0;
         return <Portal container={this.state.titleBox!}>
             <Orb
             location="title"
-            mode={linkedSuggestion? OrbMode.Linked : OrbMode.Unlinked}
-            hover={<Typography>suggested claims</Typography>}
-            popover={<SuggestedClaimsWindow
+            mode={linkedSuggestion ? OrbMode.Linked : (anySuggestions ? OrbMode.Unlinked : OrbMode.Loading)}
+            hover={anySuggestions ? <Typography>suggested claims</Typography>: <Typography>&lt;loading suggestions&gt;</Typography>}
+            popover={anySuggestions ? <SuggestedClaimsWindow
                 claimExists={this.checkClaimExists.bind(this)}
                 broker={this.broker}
                 claims={this.state.claims}
@@ -553,8 +577,8 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                 propNames={this.state.propNames}
                 qidMapping={this.state.qidMapping}
                 wikiLanguage={this.props.wikiLanguage}
-                 />}
-            hidden={this.orbsHidden() || (this.state.suggestedClaims.length == 0)}
+                 /> : undefined}
+            hidden={this.orbsHidden() || (this.props.wikiLanguage !== "en")}
             />
         </Portal>;
     }
