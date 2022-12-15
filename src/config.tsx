@@ -10,6 +10,13 @@ import ReactDom from "react-dom";
 
 export const CONFIG_KEY = "WYZRD_CONFIG";
 
+const DEFAULT_VALUE: ConfigObject = {
+    showOrbs: true,
+    allowAnon: false,
+    usePsychiq: true,
+    syncd: false
+}
+
 export function getConfig(): Promise<ConfigObject> {
     return new Promise<ConfigObject>(function (resolve, reject) {
         chrome.storage.sync.get(CONFIG_KEY,
@@ -18,10 +25,11 @@ export function getConfig(): Promise<ConfigObject> {
                     resolve(result[CONFIG_KEY]);
                 } else {
                     // initialize the config
+
                     chrome.storage.sync.set({
-                        [CONFIG_KEY]: {}
+                        [CONFIG_KEY]: DEFAULT_VALUE
                     });
-                    reject();
+                    resolve(DEFAULT_VALUE);
                 }
         });
     });
@@ -31,6 +39,7 @@ export interface ConfigObject {
     syncd: boolean;
     showOrbs?: boolean;
     allowAnon?: boolean;
+    usePsychiq?:  boolean;
 }
 
 class Config extends Component<{}, ConfigObject> {
@@ -75,13 +84,27 @@ class Config extends Component<{}, ConfigObject> {
 
     }
 
+    handleUsePsychiqChange(evt: React.ChangeEvent<{}>, checked: boolean) {
+        const update = {
+            usePsychiq: checked
+        }
+        let newState = Object.assign(this.state, update);
+
+        chrome.storage.sync.set({
+            [CONFIG_KEY]: newState
+        }, () => this.updateConfig());
+
+    }
+
 
     render() {
         if (this.state.syncd) {
-            return <React.Fragment> 
+            return <React.Fragment>
             <FormGroup>
-                <FormControlLabel control={<Switch checked={this.state.showOrbs} onChange={this.handleShowOrbChange.bind(this)} />} label="Show Orbs" />
-                <FormControlLabel control={<Switch checked={this.state.allowAnon} onChange={this.handleAllowAnonChange.bind(this)} />} label="Allow Anon" />
+                <FormControlLabel control={<Switch checked={this.state.showOrbs === true} onChange={this.handleShowOrbChange.bind(this)} />} label="Show Orbs" />
+                <FormControlLabel control={<Switch checked={this.state.allowAnon === true} onChange={this.handleAllowAnonChange.bind(this)} />} label="Allow Anon" />
+                <FormControlLabel control={<Switch checked={this.state.usePsychiq === true} onChange={this.handleUsePsychiqChange.bind(this)} />} label="Load Suggestions" />
+
                 <Button variant="contained" onClick={() => {chrome.storage.local.clear()}}>
                     Clear Cache
                 </Button>

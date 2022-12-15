@@ -304,7 +304,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                 wikiLanguage: this.props.wikiLanguage
             }
         });
-        if (this.props.wikiLanguage === "en") {
+        if (this.props.wikiLanguage === "en" && this.usePsychiq()) {
             this.broker.sendMessage({
                 type: MessageType.GET_CLAIM_SUGGESTIONS,
                 payload: {
@@ -555,7 +555,12 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
     }
 
     orbsHidden(): boolean {
+        // both config is set and orbs is set is not true
         return !(!!this.state.config && !!this.state.config.showOrbs);
+    }
+
+    usePsychiq(): boolean {
+        return !this.state.config || (!!this.state.config && !!this.state.config.usePsychiq);
     }
 
     renderTitleBoxPortal() : React.ReactNode {
@@ -680,7 +685,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                 let qidData = this.lookupWikidataQid(link.slug);
                 return this.renderLinkPortal(qidData, link);
             })}
-            {this.state.titleBox ? this.renderTitleBoxPortal() : null}
+            {this.state.titleBox && this.usePsychiq() ? this.renderTitleBoxPortal() : null}
 
         </React.Fragment>;
     }

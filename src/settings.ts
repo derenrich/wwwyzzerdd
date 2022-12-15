@@ -1,5 +1,4 @@
 
-
 export interface Settings {
     runOnLoad: boolean;
 }
