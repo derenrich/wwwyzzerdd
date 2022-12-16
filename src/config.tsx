@@ -101,9 +101,9 @@ class Config extends Component<{}, ConfigObject> {
         if (this.state.syncd) {
             return <React.Fragment>
             <FormGroup>
-                <FormControlLabel control={<Switch checked={this.state.showOrbs === true} onChange={this.handleShowOrbChange.bind(this)} />} label="Show Orbs" />
+                <FormControlLabel control={<Switch checked={this.state.showOrbs !== false} onChange={this.handleShowOrbChange.bind(this)} />} label="Show Orbs" />
                 <FormControlLabel control={<Switch checked={this.state.allowAnon === true} onChange={this.handleAllowAnonChange.bind(this)} />} label="Allow Anon" />
-                <FormControlLabel control={<Switch checked={this.state.usePsychiq === true} onChange={this.handleUsePsychiqChange.bind(this)} />} label="Load Suggestions" />
+                <FormControlLabel control={<Switch checked={this.state.usePsychiq !== false} onChange={this.handleUsePsychiqChange.bind(this)} />} label="Load Suggestions" />
 
                 <Button variant="contained" onClick={() => {chrome.storage.local.clear()}}>
                     Clear Cache

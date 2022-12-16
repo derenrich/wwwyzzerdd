@@ -284,6 +284,8 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
             this.setState({
                 config: conf
             });
+        }).then(() => {
+            this.bootPsychiq();
         });
 
         // handle config changes
@@ -304,13 +306,17 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                 wikiLanguage: this.props.wikiLanguage
             }
         });
-        if (this.props.wikiLanguage === "en" && this.usePsychiq()) {
-            this.broker.sendMessage({
-                type: MessageType.GET_CLAIM_SUGGESTIONS,
-                payload: {
-                    pageId: this.props.pageId
-                }
-            });
+
+    }
+
+    componentDidUpdate(_1: any, prevState: HolderState, _2: any) {
+        // if we just enabled psychiq then start the boot process
+        if (!!this.state.config) {
+            if (!prevState.config) {
+                this.bootPsychiq();
+            } else if (prevState.config.usePsychiq===false && this.state.config.usePsychiq === true){
+                this.bootPsychiq();
+            }
         }
     }
 
@@ -444,6 +450,17 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         });
     }
 
+    bootPsychiq() {
+        if (this.props.wikiLanguage === "en" && this.usePsychiq()) {
+            this.broker.sendMessage({
+                type: MessageType.GET_CLAIM_SUGGESTIONS,
+                payload: {
+                    pageId: this.props.pageId
+                }
+            });
+        }
+    }
+
     lookupSlug(slug?: string): QidData | undefined {
         if (!slug) {
             return undefined;
@@ -560,7 +577,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
     }
 
     usePsychiq(): boolean {
-        return !this.state.config || (!!this.state.config && !!this.state.config.usePsychiq);
+        return (!this.state.config) || (!!this.state.config && !!this.state.config.usePsychiq);
     }
 
     renderTitleBoxPortal() : React.ReactNode {
