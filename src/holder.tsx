@@ -284,8 +284,6 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
             this.setState({
                 config: conf
             });
-        }).then(() => {
-            this.bootPsychiq();
         });
 
         // handle config changes
@@ -314,7 +312,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         if (!!this.state.config) {
             if (!prevState.config) {
                 this.bootPsychiq();
-            } else if (prevState.config.usePsychiq===false && this.state.config.usePsychiq === true){
+            } else if (prevState.config.usePsychiq === false && this.state.config.usePsychiq === true){
                 this.bootPsychiq();
             }
         }
@@ -451,6 +449,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
     }
 
     bootPsychiq() {
+        // if we should be using psychiq then send the request to HF
         if (this.props.wikiLanguage === "en" && this.usePsychiq()) {
             this.broker.sendMessage({
                 type: MessageType.GET_CLAIM_SUGGESTIONS,
