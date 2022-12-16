@@ -1,8 +1,8 @@
 {
     "manifest_version": 2,
     "name": "Wwwyzzerdd for Wikidata",
-    "version": "0.0.2.13",
-    "description": "Edit wikidata from wikipedia!",
+    "version": "0.0.3.0",
+    "description": "Edit Wikidata from Wikipedia!",
     "icons": {
         "128": "./icon/wwwyzzerdd-128.png"
      },
