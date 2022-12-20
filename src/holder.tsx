@@ -576,7 +576,21 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
     }
 
     usePsychiq(): boolean {
-        return (!this.state.config) || (!!this.state.config && !!this.state.config.usePsychiq);
+
+        if (!this.state.config) {
+            // if there is no config at all
+            return true;
+        }
+        if (this.state.config.usePsychiq === true) {
+            // if there is a config and it's true
+            return true;
+        }
+        if (this.state.config.usePsychiq === undefined) {
+            // if there is a config and it's undefined
+            return true;
+        }
+
+        return false;
     }
 
     renderTitleBoxPortal() : React.ReactNode {
