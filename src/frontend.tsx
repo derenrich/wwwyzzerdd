@@ -218,7 +218,7 @@ function boot() {
     const wikiNamespace = document.getElementsByTagName("body")[0].getAttribute("mw-ns") || "";
     const wikiUserLang = document.getElementsByTagName("body")[0].getAttribute("mw-lang") || "";
     const pageId = parseInt(document.getElementsByTagName("body")[0].getAttribute("mw-page-id") || "") ;
-    const pageName = document.getElementsByTagName("body")[0].getAttribute("mw-page-name") || "";
+    const pageName = (document.getElementsByTagName("body")[0].getAttribute("mw-page-name") || "").replaceAll("_", " ",);
 
     const wikiLang = getWikiLanguage(document.baseURI);
     const wikiPage = parseWikiUrl(document.baseURI);
