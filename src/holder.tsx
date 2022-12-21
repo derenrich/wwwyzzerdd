@@ -232,6 +232,7 @@ interface HolderProps {
     curUrl: string;
     userLanguage?: string;
     wikiLanguage?: string;
+    pageName: string;
 }
 
 interface HolderState {
@@ -300,7 +301,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         this.broker.sendMessage({
             type: MessageType.GET_QIDS,
             payload: {
-                titles: [parseWikiUrl(document.baseURI)],
+                titles: [this.props.pageName],
                 wikiLanguage: this.props.wikiLanguage
             }
         });
@@ -346,7 +347,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
     }
 
     handleQids(payload: any) {
-        let curTitle = parseWikiUrl(document.baseURI);
+        let curTitle = this.props.pageName;
         if (!!curTitle && curTitle in payload.data) {
             let curPageQid = payload.data[curTitle].qid;
             this.setState({
@@ -576,6 +577,10 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
     }
 
     usePsychiq(): boolean {
+
+        if (this.props.pageId === 0) {
+            return false;
+        }
 
         if (!this.state.config) {
             // if there is no config at all

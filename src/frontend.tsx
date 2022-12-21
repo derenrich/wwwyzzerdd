@@ -45,6 +45,15 @@ function exposeVariables() {
                 f3.parentNode.removeChild(j3);
             }
 
+            // extract page name
+            const j4 = document.createElement('script');
+            const f4 = document.getElementsByTagName('script')[0];
+            if(f4 && f4.parentNode) {
+                j4.textContent = "document.getElementsByTagName(\"body\")[0].setAttribute(\"mw-page-name\", mw.config.get('wgPageName'));";
+                f4.parentNode.insertBefore(j4, f4);
+                f4.parentNode.removeChild(j4);
+            }
+
             booted = true;
             htmlElement.dispatchEvent(bootEvent);
         }
@@ -209,9 +218,11 @@ function boot() {
     const wikiNamespace = document.getElementsByTagName("body")[0].getAttribute("mw-ns") || "";
     const wikiUserLang = document.getElementsByTagName("body")[0].getAttribute("mw-lang") || "";
     const pageId = parseInt(document.getElementsByTagName("body")[0].getAttribute("mw-page-id") || "") ;
+    const pageName = document.getElementsByTagName("body")[0].getAttribute("mw-page-name") || "";
+
     const wikiLang = getWikiLanguage(document.baseURI);
     const wikiPage = parseWikiUrl(document.baseURI);
-    if (wikiNamespace == "0" && wikiPage != "Main Page") {
+    if (wikiNamespace == "0" && pageName !== "Main Page") {
         let footer = document.querySelectorAll("#footer")[0] || document.getElementsByTagName("body")[0];
         let holder = document.createElement("div");
         footer.appendChild(holder);
@@ -287,7 +298,7 @@ function boot() {
 
             ref.boot();
         }
-        const elm = <div><WwwyzzerddHolder wikiLanguage={wikiLang} userLanguage={wikiUserLang} pageId={pageId} curUrl={getSourceUrl()} wikiLinks={[]} ref={setRef} /></div>;
+        const elm = <div><WwwyzzerddHolder pageName={pageName} wikiLanguage={wikiLang} userLanguage={wikiUserLang} pageId={pageId} curUrl={getSourceUrl()} wikiLinks={[]} ref={setRef} /></div>;
         ReactDom.render(elm, holder);
     } else {
         console.log("Not running wwwyzzerdd.");
