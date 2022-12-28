@@ -54,6 +54,16 @@ function exposeVariables() {
                 f4.parentNode.removeChild(j4);
             }
 
+
+            // extract wgIsArticle
+            const j5 = document.createElement('script');
+            const f5 = document.getElementsByTagName('script')[0];
+            if(f5 && f5.parentNode) {
+                j5.textContent = "document.getElementsByTagName(\"body\")[0].setAttribute(\"mw-is-page\", mw.config.get('wgIsArticle'));";
+                f5.parentNode.insertBefore(j5, f5);
+                f5.parentNode.removeChild(j5);
+            }
+
             booted = true;
             htmlElement.dispatchEvent(bootEvent);
         }
@@ -221,11 +231,12 @@ function boot() {
     const wikiNamespace = document.getElementsByTagName("body")[0].getAttribute("mw-ns") || "";
     const wikiUserLang = document.getElementsByTagName("body")[0].getAttribute("mw-lang") || "";
     const pageId = parseInt(document.getElementsByTagName("body")[0].getAttribute("mw-page-id") || "") ;
+    const isPage = document.getElementsByTagName("body")[0].getAttribute("mw-is-page") === "true";
     const pageName = (document.getElementsByTagName("body")[0].getAttribute("mw-page-name") || "").replaceAll("_", " ",);
 
     const wikiLang = getWikiLanguage(document.baseURI);
     const wikiPage = parseWikiUrl(document.baseURI);
-    if (wikiNamespace == "0" && pageName !== "Main Page") {
+    if (isPage && wikiNamespace == "0" && pageName !== "Main Page") {
         let footer = document.querySelectorAll("#footer")[0] || document.getElementsByTagName("body")[0];
         let holder = document.createElement("div");
         footer.appendChild(holder);
