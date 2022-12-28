@@ -97,7 +97,8 @@ interface AddPropertyCoordReq {
 
 
 interface GetStatementSuggestionReq {
-    pageId: number
+    pageId: number,
+    wikiLanguage: string;
 }
 
 const itemDB = new ItemDB();
@@ -320,7 +321,7 @@ export class MessageBroker {
 
             case MessageType.GET_CLAIM_SUGGESTIONS: {
                 const payload = msg.payload as GetStatementSuggestionReq;
-                let suggestions = suggestIdentifiers(payload.pageId);
+                let suggestions = suggestIdentifiers(payload.pageId, payload.wikiLanguage);
                 suggestions.then((sugg) => {
                     let response = {
                         type: MessageType.GET_CLAIM_SUGGESTIONS,

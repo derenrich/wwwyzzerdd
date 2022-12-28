@@ -72,10 +72,10 @@ type QueryCatResponsePage = {
 };
 
 
-async function getPsychiqDocument(pageId: number): Promise<string> {
+async function getPsychiqDocument(pageId: number, wikiLanguage: string): Promise<string> {
     let categories: string[] = [];
 
-    const fetchURL = `https://en.wikipedia.org/w/api.php?action=query&format=json&pageids=${pageId}&prop=categories`;
+    const fetchURL = `https://${wikiLanguage}.wikipedia.org/w/api.php?action=query&format=json&pageids=${pageId}&prop=categories`;
     let title = "";
     let continueKey: string | undefined = "";
     do  {
@@ -116,8 +116,8 @@ function isValidCategory(category: string) {
     return true;
 }
 
-export async function suggestIdentifiers(pageId: number): Promise<StatementSuggestions[] | undefined> {
-    let document = await getPsychiqDocument(pageId);
+export async function suggestIdentifiers(pageId: number, wikiLanguage: string): Promise<StatementSuggestions[] | undefined> {
+    let document = await getPsychiqDocument(pageId, wikiLanguage);
     let query: PsychiqQuery = {
         inputs: document
     };

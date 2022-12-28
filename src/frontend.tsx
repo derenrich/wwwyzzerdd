@@ -83,7 +83,10 @@ function operateLinks(fn: (link:HTMLAnchorElement) => void) {
             }
         }
         if (notInNav) {
-            fn(link as HTMLAnchorElement)
+            // don't operate links to images
+            if (!link.classList.contains("image")) {
+                fn(link as HTMLAnchorElement)
+            }
         }
     }
 }

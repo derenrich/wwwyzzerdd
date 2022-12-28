@@ -451,11 +451,12 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
 
     bootPsychiq() {
         // if we should be using psychiq then send the request to HF
-        if (this.props.wikiLanguage === "en" && this.usePsychiq()) {
+        if (this.usePsychiq()) {
             this.broker.sendMessage({
                 type: MessageType.GET_CLAIM_SUGGESTIONS,
                 payload: {
-                    pageId: this.props.pageId
+                    pageId: this.props.pageId,
+                    wikiLanguage: this.props.wikiLanguage
                 }
             });
         }
@@ -578,6 +579,10 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
 
     usePsychiq(): boolean {
 
+        if (this.props.wikiLanguage !== "en") {
+            return false;
+        }
+
         if (this.props.pageId === 0) {
             return false;
         }
@@ -617,7 +622,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                 qidMapping={this.state.qidMapping}
                 wikiLanguage={this.props.wikiLanguage}
                  /> : undefined}
-            hidden={this.orbsHidden() || (this.props.wikiLanguage !== "en")}
+            hidden={this.orbsHidden()}
             />
         </Portal>;
     }
