@@ -532,7 +532,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
             let claims = d[k].claims;
             for (let statementV of Object.values(claims[pid] || {})) {
                 let statement = (statementV as any);
-                if (statement.rank != "deprecated" && statement.mainsnak.datatype == "external-id") {
+                if (statement.rank != "deprecated" && (statement.mainsnak.datatype == "external-id" || statement.mainsnak.datatype == "url")) {
                     if (statement.mainsnak.datavalue && statement.mainsnak.datavalue.value == identifier) {
                         return true;
                     }

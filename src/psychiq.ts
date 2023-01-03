@@ -21,7 +21,7 @@ const hfToken = "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";
 async function queryPsychiq(data: PsychiqQuery): Promise<PsychiqResponseRow[]> {
 
     const response = await fetch(
-		"https://api-inference.huggingface.co/models/derenrich/psychiq",
+		"https://api-inference.huggingface.co/models/derenrich/psychiq2",
 		{
 			headers: { Authorization: `Bearer ${hfToken}` },
 			method: "POST",
