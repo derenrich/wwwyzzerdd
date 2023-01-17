@@ -44,7 +44,7 @@
                     "https://api-inference.huggingface.co/models/derenrich/*"
                    ],
     "requirements": {},
-    "sandbox": [],
+    "sandbox": {},
     "short_name": "wwwyzzerdd",
     "storage": {},
     "web_accessible_resources": [],

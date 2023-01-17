@@ -340,7 +340,8 @@ export class MessageBroker {
         this.postMessage(msg);
     }
 
-    sendFrontendRequest(msg: Message, response?: (r: any) => any) {
+    sendFrontendRequest(msg: Message, response?: (r: any) => void) {
+        response = response ?? function (r:any) {};
         chrome.runtime.sendMessage(msg, response);          
     }
 
