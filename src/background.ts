@@ -1,8 +1,6 @@
 
 import {registerBackendBroker} from "./messageBroker";
 import {checkAllCaches} from "./cache";
-import {suggestIdentifiers} from "./psychiq";
-
 
 registerBackendBroker();
 

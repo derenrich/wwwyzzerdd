@@ -118,7 +118,9 @@ class Config extends Component<{}, ConfigObject> {
 
 function boot() {
     const settingDiv = document.getElementById("settings");
-    ReactDom.render(<Config />, settingDiv);
+    if (settingDiv) {
+        ReactDom.render(<Config />, settingDiv);
+    }
 }
 
 window.onload = boot;
