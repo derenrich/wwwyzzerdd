@@ -123,4 +123,6 @@ function boot() {
     }
 }
 
-window.onload = boot;
+if (typeof window !== 'undefined') {
+    window.onload = boot;
+}

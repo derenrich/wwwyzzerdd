@@ -17,60 +17,6 @@ const wikidataLinkRegex = new RegExp("^https?:\/\/([a-z]+)\.(?:m\.)?wikidata\.or
 const wikiExpandedRegex = new RegExp("^https?:\/\/[a-z]+\.(?:m\.)?(wikipedia|wikidata)\.org.+", "i");
 let booted = false;
 
-function exposeVariables() {
-    if (!booted) {
-        if (document.readyState == "complete") {
-            // extract 'wgNamespaceNumber'
-            const j = document.createElement('script');
-            const f = document.getElementsByTagName('script')[0];
-            if(f && f.parentNode) {
-                j.textContent = "document.getElementsByTagName(\"body\")[0].setAttribute(\"mw-ns\", mw.config.get('wgNamespaceNumber' ));";
-                f.parentNode.insertBefore(j, f);
-                f.parentNode.removeChild(j);
-            }
-            // extract 'wgUserLanguage'
-            const j2 = document.createElement('script');
-            const f2 = document.getElementsByTagName('script')[0];
-            if(f2 && f2.parentNode) {
-                j2.textContent = "document.getElementsByTagName(\"body\")[0].setAttribute(\"mw-lang\", mw.config.get('wgUserLanguage'));";
-                f2.parentNode.insertBefore(j2, f2);
-                f2.parentNode.removeChild(j2);
-            }
-            // extract page id
-            const j3 = document.createElement('script');
-            const f3 = document.getElementsByTagName('script')[0];
-            if(f3 && f3.parentNode) {
-                j3.textContent = "document.getElementsByTagName(\"body\")[0].setAttribute(\"mw-page-id\", mw.config.get('wgArticleId'));";
-                f3.parentNode.insertBefore(j3, f3);
-                f3.parentNode.removeChild(j3);
-            }
-
-            // extract page name
-            const j4 = document.createElement('script');
-            const f4 = document.getElementsByTagName('script')[0];
-            if(f4 && f4.parentNode) {
-                j4.textContent = "document.getElementsByTagName(\"body\")[0].setAttribute(\"mw-page-name\", mw.config.get('wgPageName'));";
-                f4.parentNode.insertBefore(j4, f4);
-                f4.parentNode.removeChild(j4);
-            }
-
-
-            // extract wgIsArticle
-            const j5 = document.createElement('script');
-            const f5 = document.getElementsByTagName('script')[0];
-            if(f5 && f5.parentNode) {
-                j5.textContent = "document.getElementsByTagName(\"body\")[0].setAttribute(\"mw-is-page\", mw.config.get('wgIsArticle'));";
-                f5.parentNode.insertBefore(j5, f5);
-                f5.parentNode.removeChild(j5);
-            }
-
-            booted = true;
-            htmlElement.dispatchEvent(bootEvent);
-        }
-    }
-}
-
-
 function getSourceUrl(): string {
     let link = document.querySelector("#t-permalink a")
     if (link) {
@@ -319,9 +265,4 @@ function boot() {
     }
 }
 
-htmlElement.addEventListener(bootEvent.type, boot);
-
-document.onreadystatechange = exposeVariables;
-if (document.readyState == "complete") {
-    exposeVariables();
-}
+window.addEventListener("load", boot);
