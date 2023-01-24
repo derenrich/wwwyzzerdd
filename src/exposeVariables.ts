@@ -1,6 +1,7 @@
 // Exposes some key information from the mw.config data into the DOM
 
 export function isExposed(): boolean {
+    // have the variables been exposed yet
     const wikiNamespace = document.getElementsByTagName("body")[0].getAttribute("mw-ns") || "";
     return wikiNamespace !== "";
 }
