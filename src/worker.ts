@@ -12,5 +12,3 @@ chrome.runtime.onMessage.addListener((message, sender, resp) => {
 
 registerExposeVariables();
 registerBackendBroker();
-
-

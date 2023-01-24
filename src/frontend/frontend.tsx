@@ -1,22 +1,21 @@
-import {registerFrontendBroker, MessageType, Message, GetLinkIdentifierReply} from "./messageBroker";
-import {exposeWikiVariables, isExposed} from "./exposeVariables";
+import {registerFrontendBroker, MessageType, Message, GetLinkIdentifierReply} from "../messageBroker";
+import {exposeWikiVariables, isExposed} from "../exposeVariables";
 import {WwwyzzerddHolder} from "./holder"
 import React from "react";
 import ReactDom from "react-dom";
 
 let broker = registerFrontendBroker();
 
-let htmlElement = document.getElementsByTagName("html")[0];
-const linksRegisteredEvent = new Event('links-registered');
-const bootEvent = new Event('wwwyzzerdd-boot');
-
-
 const wikiLinkRegex = new RegExp("^https?:\/\/([a-z]+)\.(?:m\.)?wikipedia\.org\/wiki\/([^#]+)", "i");
 // don't allow anything after the QID to prevent edit links
-const wikidataLinkRegex = new RegExp("^https?:\/\/([a-z]+)\.(?:m\.)?wikidata\.org\/wiki\/(Q\\d+)$", "i");
+const wikidataLinkRegex = new RegExp("^https?:\/\/(([a-z]+)\.)?(?:m\.)?wikidata\.org\/wiki\/(Q\\d+)$", "i");
 const wikiExpandedRegex = new RegExp("^https?:\/\/[a-z]+\.(?:m\.)?(wikipedia|wikidata)\.org.+", "i");
 let bootstrapped = false;
 
+/**
+ * 
+ * @returns the permalink of the current pages URL (containing oldid)
+ */
 function getSourceUrl(): string {
     let link = document.querySelector("#t-permalink a")
     if (link) {
@@ -57,7 +56,6 @@ function isWikidataLink(link:HTMLAnchorElement): boolean {
     return !!(link.href && (!hrefString.startsWith("#")) && wikidataLinkRegex.exec(link.href));
 }
 
-
 function isNotWikiLink(link:HTMLAnchorElement): boolean {
     const hrefString = link.getAttribute("href") || "";
     if (hrefString == "") {
@@ -83,7 +81,6 @@ function operateWikidataLinks(fn: (link:HTMLAnchorElement) => void) {
     });
 }
 
-
 function operateNonWikiLinks(fn: (link:HTMLAnchorElement) => void) {
     operateLinks((link) => {
         if (isNotWikiLink(link)) {
@@ -91,23 +88,6 @@ function operateNonWikiLinks(fn: (link:HTMLAnchorElement) => void) {
         }
     });
 
-}
-
-const bannedPrefixes: string[] = ["File:", "Template:", "Special:", "Template talk:", "Help:", "Wikipedia:", "Talk:", "Category:"];
-
-function parseWikiUrl(url: string): string | undefined {
-    let m = wikiLinkRegex.exec(url);
-    if(m && m.length > 1) {
-        const title = decodeURIComponent(m[2]).replaceAll("_", " ");
-        for (const p of bannedPrefixes) {
-            if (title.startsWith(p)) {
-                return undefined;
-            }
-        }
-        return title;
-    } else {
-        return undefined;
-    }
 }
 
 function getWikiLanguage(url: string): string | undefined {
@@ -200,12 +180,16 @@ function boot() {
     const pageName = (document.getElementsByTagName("body")[0].getAttribute("mw-page-name") || "").replaceAll("_", " ",);
 
     const wikiLang = getWikiLanguage(document.baseURI);
-    const wikiPage = parseWikiUrl(document.baseURI);
     if (isPage && wikiNamespace == "0" && pageName !== "Main Page") {
         let footer = document.querySelectorAll("#footer")[0] || document.getElementsByTagName("body")[0];
         let holder = document.createElement("div");
         footer.appendChild(holder);
         function setRef(ref: WwwyzzerddHolder) {
+
+            if (!ref) {
+                console.error("Failed to set ref for WwwyzzerddHolder");
+                return;
+            }
 
             // pass the title bar to the holder
             let titleBox: HTMLHeadingElement | null = document.querySelector("h1#firstHeading");

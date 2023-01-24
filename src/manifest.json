@@ -1,12 +1,12 @@
 {
-    "manifest_version": 2,
+    "manifest_version": 3,
     "name": "Wwwyzzerdd for Wikidata",
     "version": "0.1.0.0",
     "description": "Edit Wikidata from Wikipedia!",
     "icons": {
         "128": "./icon/wwwyzzerdd-128.png"
      },
-    "browser_action": {
+    "action": {
         "browser_style": true,
         "default_title": "Wwwyzzerdd",
         "default_popup": "config.html",
@@ -20,7 +20,7 @@
     "commands": { },
     "content_scripts": [{
         "matches": ["*://*.wikipedia.org/*"],
-        "js": ["frontend.tsx"],
+        "js": ["frontend/frontend.tsx"],
         "css": [],
         "run_at": "document_idle"
     }],
@@ -38,8 +38,10 @@
     "offline_enabled": false,
     "permissions": ["storage",
                     "alarms",
-                    "unlimitedStorage",
-                    "https://www.wikidata.org/*",
+                    "scripting",
+                    "webNavigation",
+                    "unlimitedStorage"],
+    "host_permissions": ["https://www.wikidata.org/*",
                     "https://*.wikipedia.org/*",
                     "https://api-inference.huggingface.co/models/derenrich/*"
                    ],
@@ -49,7 +51,8 @@
     "storage": {},
     "web_accessible_resources": [],
     "background": {
-        "scripts": ["background.ts"]
+        "service_worker": "worker.ts",
+        "type": "module"
     },
     "browser_specific_settings": {
         "gecko": {
