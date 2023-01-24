@@ -1,5 +1,5 @@
 import {registerFrontendBroker, MessageType, Message, GetLinkIdentifierReply} from "./messageBroker";
-
+import {exposeWikiVariables} from "./exposeVariables";
 import {WwwyzzerddHolder} from "./holder"
 import React from "react";
 import ReactDom from "react-dom";
@@ -15,7 +15,7 @@ const wikiLinkRegex = new RegExp("^https?:\/\/([a-z]+)\.(?:m\.)?wikipedia\.org\/
 // don't allow anything after the QID to prevent edit links
 const wikidataLinkRegex = new RegExp("^https?:\/\/([a-z]+)\.(?:m\.)?wikidata\.org\/wiki\/(Q\\d+)$", "i");
 const wikiExpandedRegex = new RegExp("^https?:\/\/[a-z]+\.(?:m\.)?(wikipedia|wikidata)\.org.+", "i");
-let booted = false;
+let bootstrapped = false;
 
 function getSourceUrl(): string {
     let link = document.querySelector("#t-permalink a")
@@ -174,6 +174,24 @@ function findCoordinate(href: string): undefined | Coordinate  {
 }
 
 function boot() {
+    if (bootstrapped) {
+        // already booted
+        return;
+    }
+
+    if (!(window as any).booted) {
+        let func = exposeWikiVariables.toString();
+
+        const j = document.createElement('script');
+        const f = document.getElementsByTagName('script')[0];
+        if (f && f.parentNode) {
+            j.textContent = "let ww_bootFunc = " + func + "\n; ww_bootFunc();"
+            f.parentNode.insertBefore(j, f);
+            f.parentNode.removeChild(j);
+        }
+        (window as any).booted = true;
+    }
+
     const wikiNamespace = document.getElementsByTagName("body")[0].getAttribute("mw-ns") || "";
     const wikiUserLang = document.getElementsByTagName("body")[0].getAttribute("mw-lang") || "";
     const pageId = parseInt(document.getElementsByTagName("body")[0].getAttribute("mw-page-id") || "") ;
@@ -265,4 +283,7 @@ function boot() {
     }
 }
 
-window.addEventListener("load", boot);
+document.addEventListener("DOMContentLoaded", boot);
+if (document.readyState == "complete") {
+    boot();
+}

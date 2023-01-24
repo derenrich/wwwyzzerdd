@@ -3,7 +3,6 @@ import {registerBackendBroker} from "./messageBroker";
 import {checkAllCaches} from "./cache";
 import {registerExposeVariables} from "./exposeVariables";
 
-registerExposeVariables();
 registerBackendBroker();
 
 
