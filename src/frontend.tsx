@@ -1,5 +1,5 @@
 import {registerFrontendBroker, MessageType, Message, GetLinkIdentifierReply} from "./messageBroker";
-import {exposeWikiVariables} from "./exposeVariables";
+import {exposeWikiVariables, isExposed} from "./exposeVariables";
 import {WwwyzzerddHolder} from "./holder"
 import React from "react";
 import ReactDom from "react-dom";
@@ -173,13 +173,14 @@ function findCoordinate(href: string): undefined | Coordinate  {
     */
 }
 
+
 function boot() {
     if (bootstrapped) {
         // already booted
         return;
     }
 
-    if (!(window as any).booted) {
+    if (!isExposed()) {
         let func = exposeWikiVariables.toString();
 
         const j = document.createElement('script');
@@ -278,12 +279,13 @@ function boot() {
         }
         const elm = <div><WwwyzzerddHolder pageName={pageName} wikiLanguage={wikiLang} userLanguage={wikiUserLang} pageId={pageId} curUrl={getSourceUrl()} wikiLinks={[]} ref={setRef} /></div>;
         ReactDom.render(elm, holder);
+        bootstrapped = true;
     } else {
         console.log("Not running wwwyzzerdd.");
     }
 }
 
-document.addEventListener("DOMContentLoaded", boot);
+window.addEventListener("load", boot);
 if (document.readyState == "complete") {
     boot();
 }
