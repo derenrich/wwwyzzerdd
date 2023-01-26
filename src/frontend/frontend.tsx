@@ -1,10 +1,8 @@
-import {registerFrontendBroker, MessageType, Message, GetLinkIdentifierReply} from "../messageBroker";
+import { MessageType, Message, GetLinkIdentifierReply} from "../messageBroker";
 import {exposeWikiVariables, isExposed} from "../exposeVariables";
 import {WwwyzzerddHolder} from "./holder"
 import React from "react";
 import ReactDom from "react-dom";
-
-let broker = registerFrontendBroker();
 
 const wikiLinkRegex = new RegExp("^https?:\/\/([a-z]+)\.(?:m\.)?wikipedia\.org\/wiki\/([^#]+)", "i");
 // don't allow anything after the QID to prevent edit links
@@ -245,7 +243,7 @@ function boot() {
                 if (latlonMatch) {
                     ref.addCoordLink(latlonMatch.lat, latlonMatch. lon, linkAnchor);
                 } else {
-                    broker.sendFrontendRequest({
+                    ref.broker.sendFrontendRequest({
                         type: MessageType.GET_LINK_ID,
                         payload: {
                             url: origLink.href

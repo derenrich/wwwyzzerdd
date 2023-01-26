@@ -21,24 +21,3 @@ export function exposeWikiVariables() {
     body.setAttribute("mw-page-name", pageName);
     body.setAttribute("mw-is-page", isPage);
   }
-
-  export function registerExposeVariables() {
-    const filter: chrome.webNavigation.WebNavigationEventFilter = {
-        url: [
-          {
-            hostSuffix: '.wikipedia.org',
-          },
-        ],
-      };
-
-    chrome.webNavigation.onDOMContentLoaded.addListener((details: any) => {
-        let tabId = details.tabId;
-        chrome.scripting.executeScript(
-            {
-              target: {tabId: tabId},
-              func: exposeWikiVariables,
-              world: "MAIN"
-            },        
-        );
-    }, filter);
-  }

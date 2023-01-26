@@ -1,27 +1,9 @@
 import React, { Component, ReactPortal } from 'react';
 import Portal from '@material-ui/core/Portal';
-import {Suggester} from "./suggester";
-import {MessageBroker, registerFrontendBroker, MessageType, Message, GetQidsReply, GetClaimsReply, GetPropNamesReply, GetLinkIdentifierReply} from "../messageBroker";
+import {FrontendMessageBroker, registerFrontendBroker, MessageType} from "../messageBroker";
 import {StatementSuggestions} from "../psychiq";
 import {CONFIG_KEY, ConfigObject, getConfig} from "../config"
-import { withStyles, createStyles, WithStyles } from '@material-ui/core/styles';
-import {styles} from "./styles";
-import Tooltip from '@material-ui/core/Tooltip';
-import Popover from '@material-ui/core/Popover';
-import Card from '@material-ui/core/Card';
-import CardHeader from '@material-ui/core/CardHeader';
-import CardContent from '@material-ui/core/CardContent';
-import AddIcon from '@material-ui/icons/Add';
-import List from '@material-ui/core/List';
-import ListItem, { ListItemProps } from '@material-ui/core/ListItem';
-import ListItemIcon from '@material-ui/core/ListItemIcon';
-import ListItemText from '@material-ui/core/ListItemText';
-import LinkIcon from '@material-ui/icons/Link';
-import HelpIcon from '@material-ui/icons/Help';
-import IconButton from '@material-ui/core/IconButton';
-import TextField from '@material-ui/core/TextField';
-import { Checkbox, FormControlLabel, FormGroup, Typography } from '@material-ui/core';
-import Button from '@material-ui/core/Button';
+import { Typography } from '@material-ui/core';
 import {QidData, PropTuple} from "./common";
 import {SuggestedClaimsWindow} from "./suggested_claims";
 import {Orb, OrbMode} from "./orb";
@@ -102,7 +84,7 @@ interface HolderState {
 }
 
 export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
-    broker: MessageBroker;
+    broker: FrontendMessageBroker;
 
     constructor(props: HolderProps) {
         super(props);
@@ -125,8 +107,6 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         this.broker.registerFrontendHandler(MessageType.GET_PROP_NAMES, this.handleProps.bind(this));
         this.broker.registerFrontendHandler(MessageType.GET_PROP_ICONS, this.handlePropIcons.bind(this));
         this.broker.registerFrontendHandler(MessageType.GET_CLAIM_SUGGESTIONS, this.handleClaimSuggestions.bind(this));
-
-
         this.broker.sendMessage({type: MessageType.GET_PROP_NAMES, payload: {}});
         this.broker.sendMessage({type: MessageType.GET_PROP_ICONS, payload: {}});
 

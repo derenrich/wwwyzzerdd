@@ -194,7 +194,7 @@ export class PropertyDB {
         let BASE_URL = "https://www.wikidata.org/w/api.php?action=wbsgetsuggestions&format=json&context=item";
         let full_url = BASE_URL + "&entity=" + encodeURIComponent(itemQid) + "&search=" + encodeURIComponent(typed);
         let propTypes = await this.prop_types;
-
+        console.log("proptypes", propTypes);
         let lastPidSuggestion: any | undefined = undefined;
         if (typed == "" && targetQid) {
             lastPidSuggestion = await this.getLastQidProperty(targetQid);
@@ -202,11 +202,14 @@ export class PropertyDB {
 
         return fetch(full_url).then((x) =>x.json()).then((x) => {
             let allSuggestions = (x.search || []);
+            console.log("allsugs", allSuggestions);
             let validSuggestions = allSuggestions.filter((sugg: any) => propTypes[sugg.id] == ITEM_PROP_TYPE);
             if (lastPidSuggestion) {
                 let pid = lastPidSuggestion.id;
                 validSuggestions = [lastPidSuggestion].concat(validSuggestions.filter((sugg: any) => sugg.id != pid)); 
             }
+
+            console.log("valid suggs", validSuggestions);
             return {
                 timestamp: now,
                 suggestions: validSuggestions

@@ -1,7 +1,7 @@
 import { withStyles, WithStyles } from '@material-ui/core/styles';
 import {styles} from "./styles";
 import {CloseParam, PropTuple} from "./common";
-import {MessageBroker, MessageType} from "../messageBroker";
+import {FrontendMessageBroker, MessageType} from "../messageBroker";
 import React, { Component } from 'react';
 import {getSourceUrl} from "./common";
 import ListItem, { ListItemProps } from '@material-ui/core/ListItem';
@@ -18,7 +18,7 @@ import AddIcon from '@material-ui/icons/Add';
 
 
  interface ItemWindowProps extends CloseParam, WithStyles<typeof styles> {
-     broker: MessageBroker;
+     broker: FrontendMessageBroker;
      qid: string;
      pageQid?: string;
      label?: string;
@@ -113,7 +113,7 @@ import AddIcon from '@material-ui/icons/Add';
 
 interface LinkWindowProps extends CloseParam, WithStyles<typeof styles> {
     pageQid?: string;
-    broker: MessageBroker;
+    broker: FrontendMessageBroker;
     pid: string;
     identifier: string;
     linked: boolean;
@@ -166,7 +166,7 @@ export const LinkWindow = withStyles(styles)(
 
     interface CoordLinkWindowProps extends CloseParam, WithStyles<typeof styles> {
         pageQid?: string;
-        broker: MessageBroker;
+        broker: FrontendMessageBroker;
         pid: string;
         lat: number;
         lon: number;

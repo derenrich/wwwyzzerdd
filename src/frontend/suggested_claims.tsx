@@ -1,7 +1,7 @@
 import HelpIcon from '@material-ui/icons/Help';
 import IconButton from '@material-ui/core/IconButton';
 import { withStyles, WithStyles } from '@material-ui/core/styles';
-import {MessageBroker, MessageType} from "../messageBroker";
+import {FrontendMessageBroker, MessageType} from "../messageBroker";
 import {StatementSuggestions} from "../psychiq";
 import React, { Component } from 'react';
 import {styles} from "./styles";
@@ -21,7 +21,7 @@ interface SuggestedClaimsWindowProps extends CloseParam, WithStyles<typeof style
     propNames: {[key: string]: string};
     qidMapping: {[key: string]: QidData};
     claims: {[key: string]: any};
-    broker: MessageBroker;
+    broker: FrontendMessageBroker;
     wikiLanguage?: string;
     claimExists: (pid: string, qid: string) => boolean;
 }

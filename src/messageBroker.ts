@@ -97,33 +97,43 @@ interface AddPropertyCoordReq {
 
 
 interface GetStatementSuggestionReq {
-    pageId: number,
+    pageId: number;
     wikiLanguage: string;
 }
 
-const itemDB = new ItemDB();
-const propDB = new PropertyDB();
+interface PortHandler {
+    messageType: MessageType;
+    handler: (_:any) => void;
+}
+
 
 
 const MIN_WRITE_WAIT = 300;
 let lastWrite = Date.now();
-let initBroker = false;
 
-export class MessageBroker {
+export class FrontendMessageBroker {
     port: chrome.runtime.Port;
     connected: boolean;
+    handlers: PortHandler[];
 
-    constructor(port: chrome.runtime.Port) {
-        this.port = port;
+    constructor() {
+        this.port = this.openPortToBackground();
         this.connected = true;
+        this.handlers = [];
         this.port.onDisconnect.addListener((d) => {
             this.connected = false;
         });
-        if (!initBroker) {
-            // only init once
-            chrome.runtime.onMessage.addListener(this.handleOneTimeRequest.bind(this));
-            initBroker = true;
-        }
+    }
+
+    openPortToBackground(): chrome.runtime.Port {
+        let port = chrome.runtime.connect({name: "www"});
+
+        port.onDisconnect.addListener((port) => {
+            // if we disconnected then reconnect
+            this.openPortToBackground();
+        });
+        this.port = port;
+        return port;
     }
 
     postMessage(msg: any) {
@@ -132,20 +142,61 @@ export class MessageBroker {
         }
     }
 
+    sendMessage(msg: Message) {
+        this.postMessage(msg);
+    }
+
+    sendFrontendRequest(msg: Message, response?: (r: any) => void) {
+        response = response ?? function (r:any) {};
+        chrome.runtime.sendMessage(msg, response);
+    }
+
+    registerFrontendHandler(type: MessageType, handler: ((_:any) => void)) {
+        this.port.onMessage.addListener((msg: Message) => {
+            if (msg.type === type) {
+                handler(msg.payload);
+            }
+        });
+
+        let handlerTuple: PortHandler = {
+            messageType: type,
+            handler
+        };
+        this.handlers = this.handlers.concat(handlerTuple);
+    }
+}
+
+
+export class BackendMessageBroker {
+    port: chrome.runtime.Port;
+    connected: boolean;
+    handlers: PortHandler[];
+    itemDB: ItemDB;
+    propDB: PropertyDB;
+
+    constructor(port: chrome.runtime.Port, itemDB: ItemDB, propDB: PropertyDB) {
+        this.port = port;
+        this.itemDB = itemDB;
+        this.propDB = propDB;
+
+        this.connected = true;
+        this.handlers = [];
+        this.port.onDisconnect.addListener((d) => {
+            this.connected = false;
+        });
+        chrome.runtime.onMessage.addListener(this.handleOneTimeRequest.bind(this));
+    }
+
     handleOneTimeRequest(msg: any, b: chrome.runtime.MessageSender, reply: (response?: any) => void): boolean {
         this.handleMessageBackend(msg, reply);
         return true;
-    }
-
-    _handlePortMesage(msg:Message) {
-        this.handleMessageBackend(msg);
     }
 
     handleMessageBackend(msg: Message, reply?: ((response?: any) => void)){
         switch(msg.type) {
             case MessageType.GET_QIDS: {
                 const payload = msg.payload as GetQidsAsk;
-                itemDB.lookupTitles(payload.titles, payload.wikiLanguage).then((data) => {
+                this.itemDB.lookupTitles(payload.titles, payload.wikiLanguage).then((data) => {
                     this.postMessage({
                         type: MessageType.GET_QIDS,
                         payload: {
@@ -158,7 +209,7 @@ export class MessageBroker {
 
             case MessageType.GET_CLAIMS: {
                 const payload = msg.payload as GetClaimsAsk;
-                itemDB.lookupQidContent([payload.qid], true).then((claims) => {
+                this.itemDB.lookupQidContent([payload.qid], true).then((claims) => {
                     let response = {
                         type: MessageType.GET_CLAIMS,
                         payload: {
@@ -174,7 +225,7 @@ export class MessageBroker {
             case MessageType.GET_PROP_NAMES: {
                 const payload = msg.payload as GetPropNamesAsk;
                 const language: string = payload.language || "en";
-                propDB.getProperties(language).then((props) => {
+                this.propDB.getProperties(language).then((props) => {
                     let propNames: {[key: string]: string} = {};
                     props.forEach((prop) => {
                         propNames[prop.prop] = prop.name;
@@ -194,7 +245,7 @@ export class MessageBroker {
 
             case MessageType.GET_PROP_ICONS: {
                 const payload = msg.payload as GetPropIconsAsk;
-                propDB.getProperties().then((props) => {
+                this.propDB.getProperties().then((props) => {
                     let propIcons: {[key: string]: string} = {};
                     props.forEach((prop) => {
                         if (prop.icon) {
@@ -215,7 +266,8 @@ export class MessageBroker {
 
             case MessageType.GET_PROP_SUGGESTIONS: {
                 const payload = msg.payload as GetPropSuggestionsAsk;
-                propDB.suggestProperty(payload.itemQid, payload.typed, payload.targetQid).then((resp) => {
+                this.propDB.suggestProperty(payload.itemQid, payload.typed, payload.targetQid).then((resp) => {
+                    console.log("prop suggestion", resp, msg);
                     let response = {
                         type: MessageType.GET_PROP_SUGGESTIONS,
                         payload: resp
@@ -251,7 +303,7 @@ export class MessageBroker {
 
             case MessageType.GET_LINK_ID: {
                 const payload = msg.payload as GetLinkIdentifierAsk;
-                const result = propDB.parseUrl(payload.url);                
+                const result = this.propDB.parseUrl(payload.url);
                 result.then((resp) => {
                     const message = {
                         type: MessageType.GET_LINK_ID,
@@ -308,7 +360,7 @@ export class MessageBroker {
             }
             case MessageType.LOOKUP_QIDS: {
                 const payload = msg.payload as LookupQidsAsk;
-                itemDB.lookupQids(payload.qids).then((data) => {
+                this.itemDB.lookupQids(payload.qids).then((data) => {
                     this.postMessage({
                         type: MessageType.GET_QIDS,
                         payload: {
@@ -335,37 +387,43 @@ export class MessageBroker {
             }
         }
     }
-
-    sendMessage(msg: Message) {
-        this.postMessage(msg);
+    postMessage(msg: any) {
+        if (this.connected) {
+            this.port.postMessage(msg);
+        }
     }
 
-    sendFrontendRequest(msg: Message, response?: (r: any) => void) {
-        response = response ?? function (r:any) {};
-        chrome.runtime.sendMessage(msg, response);          
+    _handlePortMesage(msg:Message) {
+        this.handleMessageBackend(msg);
     }
 
-    registerFrontendHandler(type: MessageType, handler: ((_:any) => void)) {
-        this.port.onMessage.addListener((msg: Message) => {
-            if (msg.type === type) {
-                handler(msg.payload);
-            }
-        });
+}
+
+var itemDB = new ItemDB();
+var propDB = new PropertyDB();
+
+function initializeResources() {
+    if (!itemDB) {
+        console.log("rebuilding item db");
+        itemDB = new ItemDB();
+    }
+    if (!propDB) {
+        console.log("rebuilding prop db");
+        propDB = new PropertyDB();
     }
 }
 
-
 export function registerBackendBroker() {
-
     chrome.runtime.onConnect.addListener(function(port) {
-        const mb = new MessageBroker(port);
+        console.log("opening port");
+        initializeResources();
+        const mb = new BackendMessageBroker(port, itemDB, propDB);
 
         port.onMessage.addListener(mb._handlePortMesage.bind(mb));        
     });
-
 }
 
-export function registerFrontendBroker(): MessageBroker {
-    var port = chrome.runtime.connect({name: "www"});
-    return new MessageBroker(port);
+export function registerFrontendBroker(): FrontendMessageBroker {
+    console.log("register g");
+    return new FrontendMessageBroker();
 }
