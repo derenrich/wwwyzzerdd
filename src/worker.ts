@@ -5,10 +5,6 @@ chrome.runtime.onInstalled.addListener(() => {
     console.log("Wwwyzzerdd insalled 🧙");
 });
 
-chrome.runtime.onMessage.addListener((message, sender, resp) => {
-  //console.log("msg", message, sender, resp);
-});
-
 function onWikipediaLoadRegister() {
   const filter: chrome.webNavigation.WebNavigationEventFilter = {
       url: [

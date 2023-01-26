@@ -185,7 +185,7 @@ function boot() {
         function setRef(ref: WwwyzzerddHolder) {
 
             if (!ref) {
-                console.error("Failed to set ref for WwwyzzerddHolder");
+                console.error("Unmounting wwwyzzerrdd");
                 return;
             }
 
@@ -263,7 +263,12 @@ function boot() {
         ReactDom.render(elm, holder);
         bootstrapped = true;
     } else {
-        console.log("Not running wwwyzzerdd.");
+        if (!isPage) {
+            console.log("Trying Wwwyzzerdd boot again.");
+            setTimeout(boot, 500);
+        } else {
+            console.log("Not running wwwyzzerdd.");
+        }
     }
 }
 

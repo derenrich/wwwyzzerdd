@@ -56,7 +56,6 @@ export class Suggester extends Component<SuggesterProps, SuggesterState> {
     }
 
     suggest() {
-        console.log(this.state, this.props);
         this.props.broker.sendFrontendRequest({
             type: MessageType.GET_PROP_SUGGESTIONS,
             payload: {

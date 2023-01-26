@@ -43,7 +43,7 @@ async function queryPsychiq(data: PsychiqQuery): Promise<PsychiqResponseRow[]> {
 
 const retryConfig: Partial<RetryConfig<PsychiqResponseRow[]>> = {
     retries: 30,
-    delay: 300,
+    delay: 360,
     backoff: "LINEAR",
     logger: console.log
 };

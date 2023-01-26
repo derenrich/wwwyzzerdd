@@ -27,3 +27,7 @@ Setup: Install npm / yarn
 To build: run bundle.sh
 
 Or if you are having trouble getting this build to work we now offer a Dockerfile. Just install docker and run docker_build.sh. The output bundled artifacts will be deposited in the dist folder.
+
+# Support
+
+This code is supported by a [generous grant from the Wikimedia Foundation](https://meta.wikimedia.org/wiki/Grants:Programs/Wikimedia_Community_Fund/Rapid_Fund/Wwwyzzerdd_user_experience_improvements_and_critical_maintenance_(ID:_22024892)).

@@ -127,10 +127,18 @@ export class FrontendMessageBroker {
 
     openPortToBackground(): chrome.runtime.Port {
         let port = chrome.runtime.connect({name: "www"});
-
+        this.connected = true;
         port.onDisconnect.addListener((port) => {
             // if we disconnected then reconnect
             this.openPortToBackground();
+            // after reconnecting we need to re-enable the listeners
+            for (let handler of this.handlers) {
+                this.port.onMessage.addListener((msg: Message) => {
+                    if (msg.type === handler.messageType) {
+                        handler.handler(msg.payload);
+                    }
+                });
+            }
         });
         this.port = port;
         return port;
@@ -139,6 +147,9 @@ export class FrontendMessageBroker {
     postMessage(msg: any) {
         if (this.connected) {
             this.port.postMessage(msg);
+        } else {
+            console.log("connection lost, trying again");
+            this.openPortToBackground().postMessage(msg);
         }
     }
 
@@ -170,7 +181,6 @@ export class FrontendMessageBroker {
 export class BackendMessageBroker {
     port: chrome.runtime.Port;
     connected: boolean;
-    handlers: PortHandler[];
     itemDB: ItemDB;
     propDB: PropertyDB;
 
@@ -180,7 +190,6 @@ export class BackendMessageBroker {
         this.propDB = propDB;
 
         this.connected = true;
-        this.handlers = [];
         this.port.onDisconnect.addListener((d) => {
             this.connected = false;
         });
@@ -267,7 +276,6 @@ export class BackendMessageBroker {
             case MessageType.GET_PROP_SUGGESTIONS: {
                 const payload = msg.payload as GetPropSuggestionsAsk;
                 this.propDB.suggestProperty(payload.itemQid, payload.typed, payload.targetQid).then((resp) => {
-                    console.log("prop suggestion", resp, msg);
                     let response = {
                         type: MessageType.GET_PROP_SUGGESTIONS,
                         payload: resp
@@ -399,31 +407,28 @@ export class BackendMessageBroker {
 
 }
 
-var itemDB = new ItemDB();
-var propDB = new PropertyDB();
+var itemDB: ItemDB | null = null;
+var propDB:  PropertyDB | null = null;
 
 function initializeResources() {
     if (!itemDB) {
-        console.log("rebuilding item db");
         itemDB = new ItemDB();
     }
     if (!propDB) {
-        console.log("rebuilding prop db");
         propDB = new PropertyDB();
     }
 }
 
 export function registerBackendBroker() {
     chrome.runtime.onConnect.addListener(function(port) {
-        console.log("opening port");
         initializeResources();
-        const mb = new BackendMessageBroker(port, itemDB, propDB);
-
-        port.onMessage.addListener(mb._handlePortMesage.bind(mb));        
+        if (itemDB && propDB) {
+            const mb = new BackendMessageBroker(port, itemDB, propDB);
+            port.onMessage.addListener(mb._handlePortMesage.bind(mb));
+        }
     });
 }
 
 export function registerFrontendBroker(): FrontendMessageBroker {
-    console.log("register g");
     return new FrontendMessageBroker();
 }
