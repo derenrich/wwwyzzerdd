@@ -14,7 +14,8 @@ export enum MessageType {
     GET_LINK_ID,
     SET_PROP_ID,
     SET_PROP_COORD,
-    LOOKUP_QIDS
+    LOOKUP_QIDS,
+    REPORT_ERROR
 }
 
 export interface Message {
@@ -29,6 +30,11 @@ interface GetQidsAsk {
 
 export interface GetQidsReply {
     data: {[key: string]: LinkedItemData};
+}
+
+
+export interface ReportError {
+    errorMessage: string;
 }
 
 interface LookupQidsAsk {
@@ -201,6 +207,19 @@ export class BackendMessageBroker {
         return true;
     }
 
+    reportError(err?: any) {
+        let msg = "unknown error";
+        if (err) {
+            msg = `${err}`;
+        }
+        this.postMessage({
+            type: MessageType.REPORT_ERROR,
+            payload: {
+                errorMessage: msg
+            } as ReportError
+        } as Message);
+    }
+
     handleMessageBackend(msg: Message, reply?: ((response?: any) => void)){
         switch(msg.type) {
             case MessageType.GET_QIDS: {
@@ -212,7 +231,7 @@ export class BackendMessageBroker {
                             data
                         }
                     });
-                });
+                }).catch(this.reportError.bind(this));
                 break;
             }
 
@@ -227,7 +246,7 @@ export class BackendMessageBroker {
                     };
                     if (reply) reply( response );
                     this.postMessage(response);
-                });
+                }).catch(this.reportError.bind(this));
                 break;
             }
 
@@ -247,7 +266,7 @@ export class BackendMessageBroker {
                     };
                     if (reply) reply( response );
                     this.postMessage(response);
-                });
+                }).catch(this.reportError.bind(this));
 
                 break;
             }
@@ -269,7 +288,7 @@ export class BackendMessageBroker {
                     };
                     if (reply) reply( response );
                     this.postMessage(response);
-                });
+                }).catch(this.reportError.bind(this));
                 break;
             }
 
@@ -282,15 +301,11 @@ export class BackendMessageBroker {
                     };
                     if (reply) reply( response );
                     this.postMessage(response);
-                });
+                }).catch(this.reportError.bind(this));
                 break;
             }
 
             case MessageType.SET_PROP_QID: {
-                // crappy debounce method
-                //let now = Date.now();
-                //if (now - lastWrite < MIN_WRITE_WAIT) break;
-                //lastWrite = Date.now();
                 const payload = msg.payload as AddPropertyReq;
                 let addResponse = addItemClaim(payload.sourceItemQid, payload.propId, payload.targetItemQid, payload.commentAddendum);
                 addResponse.then((resp) => {
@@ -305,7 +320,7 @@ export class BackendMessageBroker {
                             qid: payload.sourceItemQid
                         }
                     });
-                });
+                }).catch(this.reportError.bind(this));
                 break;
             }
 
@@ -319,7 +334,7 @@ export class BackendMessageBroker {
                     };
                     if (reply) reply(message);
                     this.postMessage(message);
-                });
+                }).catch(this.reportError.bind(this));
                 break;
             }
             case MessageType.SET_PROP_ID: {
@@ -341,7 +356,7 @@ export class BackendMessageBroker {
                             qid: payload.sourceItemQid
                         }
                     });
-                });
+                }).catch(this.reportError.bind(this));
                 break;
             }
             case MessageType.SET_PROP_COORD: {
@@ -363,7 +378,7 @@ export class BackendMessageBroker {
                             qid: payload.sourceItemQid
                         }
                     });
-                });
+                }).catch(this.reportError.bind(this));
                 break;
             }
             case MessageType.LOOKUP_QIDS: {
@@ -375,7 +390,7 @@ export class BackendMessageBroker {
                             data
                         }
                     });
-                });
+                }).catch(this.reportError.bind(this));
                 break;
             }
 
@@ -391,7 +406,7 @@ export class BackendMessageBroker {
                     };
                     if (reply) reply( response );
                     this.postMessage(response);
-                });
+                }).catch(this.reportError.bind(this));
             }
         }
     }

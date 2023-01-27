@@ -1,6 +1,7 @@
 import React, { Component, ReactPortal } from 'react';
 import Portal from '@material-ui/core/Portal';
-import {FrontendMessageBroker, registerFrontendBroker, MessageType} from "../messageBroker";
+import Snackbar from '@material-ui/core/Snackbar';
+import {FrontendMessageBroker, registerFrontendBroker, MessageType, ReportError} from "../messageBroker";
 import {StatementSuggestions} from "../psychiq";
 import {CONFIG_KEY, ConfigObject, getConfig} from "../config"
 import { Typography } from '@material-ui/core';
@@ -69,6 +70,7 @@ interface HolderProps {
 }
 
 interface HolderState {
+    errorMessage?: string;
     wikiLinks: LinkedElement[];
     wikidataLinks: LinkedElement[];
     externalLinks: ExternalLinkedElement[];
@@ -108,6 +110,8 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         this.broker.registerFrontendHandler(MessageType.GET_PROP_NAMES, this.handleProps.bind(this));
         this.broker.registerFrontendHandler(MessageType.GET_PROP_ICONS, this.handlePropIcons.bind(this));
         this.broker.registerFrontendHandler(MessageType.GET_CLAIM_SUGGESTIONS, this.handleClaimSuggestions.bind(this));
+        this.broker.registerFrontendHandler(MessageType.REPORT_ERROR, this.handleError.bind(this));
+
         this.broker.sendMessage({type: MessageType.GET_PROP_NAMES, payload: {}});
         this.broker.sendMessage({type: MessageType.GET_PROP_ICONS, payload: {}});
 
@@ -159,6 +163,14 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         this.setState({
             propIcons: payload.propIcons
         });
+    }
+
+    handleError(payload: any) {
+        this.setState({errorMessage: (payload as ReportError).errorMessage});
+    }
+
+    hideError() {
+        this.setState({errorMessage: undefined});
     }
 
 
@@ -563,7 +575,13 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                 return this.renderLinkPortal(qidData, link);
             })}
             {this.state.titleBox && this.usePsychiq() ? this.renderTitleBoxPortal() : null}
-
+            <Snackbar
+                open={!!this.state.errorMessage}
+                autoHideDuration={6000}
+                onClose={this.hideError.bind(this)}
+                message={`Wwwyzzerdd Error: ${this.state.errorMessage}`}
+                anchorOrigin={{vertical: "bottom", horizontal: "left"}}
+            />
         </React.Fragment>;
     }
 }
