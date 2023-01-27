@@ -579,7 +579,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                 open={!!this.state.errorMessage}
                 autoHideDuration={6000}
                 onClose={this.hideError.bind(this)}
-                message={`Wwwyzzerdd Error: ${this.state.errorMessage}`}
+                message={this.state.errorMessage ? `Wwwyzzerdd Error: ${this.state.errorMessage}` : ""}
                 anchorOrigin={{vertical: "bottom", horizontal: "left"}}
             />
         </React.Fragment>;

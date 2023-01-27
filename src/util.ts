@@ -10,9 +10,15 @@ export async function retryPromise<T>(fn: () => Promise<T>): Promise<T> {
         }
     }
 
+    // attempts 4 times (final time we get the Exception)
     const result = await tryCall(0) || await tryCall(1) || await tryCall(2);
     if (result == undefined) {
-        throw new Error("could not complete promise after retries");
+        try {
+            return await fn();
+        } catch (e) {
+            throw new Error(`Could not complete promise after retries due to "${e}"`);
+        }
+
     }
     return result;
 
@@ -40,12 +46,13 @@ export async function retryWikimediaPromise(fn: () => Promise<any>, retriesLeft?
                     if (nextRetry > 0) {
                         return retryWikimediaPromise(fn, nextRetry);
                     }
+                    throw new Error("Wikimedia authentication error");
                 } else if (r.error.code == "failed-save") {
                     if (nextRetry > 0) {
                         return retryWikimediaPromise(fn, nextRetry);
                     }
                 }
-                throw new Error("error in wikimedia request");
+                throw new Error("unknown error in Wikimedia request");
             } else {
                 return r;
             }
