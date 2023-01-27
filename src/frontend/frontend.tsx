@@ -251,7 +251,7 @@ function boot() {
                     }, (resp: Message) => {
                         const payload = resp.payload as GetLinkIdentifierReply;
                         if (payload.match) {
-                            ref.addExternalLink(payload.match.prop, payload.match.identifier, linkAnchor);
+                            ref.addExternalLink(payload.match.prop, payload.match.identifier, linkAnchor, payload.match.caseInsensitive);
                         }
                     });
                 }

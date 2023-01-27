@@ -50,6 +50,7 @@ interface ExternalLinkedElement {
     element: HTMLElement;
     pid: string;
     identifier: string;
+    caseInsensitive: boolean;
 }
 
 interface CoordLinkedElement {
@@ -135,7 +136,6 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                 wikiLanguage: this.props.wikiLanguage
             }
         });
-
     }
 
     componentDidUpdate(_1: any, prevState: HolderState, _2: any) {
@@ -232,13 +232,14 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         });
     }
 
-    addExternalLink(property: string, identifier: string, elm: HTMLAnchorElement) {
+    addExternalLink(property: string, identifier: string, elm: HTMLAnchorElement, caseInsensitive: boolean) {
         this.setState(function(state: HolderState) {
             return {
                 externalLinks: state.externalLinks.concat({
                    element: elm,
                    pid: property,
-                   identifier: identifier
+                   identifier: identifier,
+                   caseInsensitive
                 })
             };
         });
@@ -356,15 +357,21 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
     }
 
 
-    identifierChecker(pid:string, identifier: string): boolean {
+    identifierChecker(pid:string, identifier: string, caseInsensitive: boolean): boolean {
         let d = this.state.claims;
         for (let k of Object.keys(d)) {
             let claims = d[k].claims;
             for (let statementV of Object.values(claims[pid] || {})) {
                 let statement = (statementV as any);
                 if (statement.rank != "deprecated" && (statement.mainsnak.datatype == "external-id" || statement.mainsnak.datatype == "url")) {
-                    if (statement.mainsnak.datavalue && statement.mainsnak.datavalue.value == identifier) {
-                        return true;
+                    if (caseInsensitive) {
+                        if (statement.mainsnak.datavalue && (statement.mainsnak.datavalue.value as string).toLowerCase() == identifier.toLowerCase()) {
+                            return true;
+                        }
+                    } else {
+                        if (statement.mainsnak.datavalue && statement.mainsnak.datavalue.value == identifier) {
+                            return true;
+                        }
                     }
                 }
             }
@@ -494,7 +501,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
     render() {
         return <React.Fragment>
             {this.state.externalLinks.map((link) => {
-                let linked = this.identifierChecker(link.pid, link.identifier);
+                let linked = this.identifierChecker(link.pid, link.identifier, link.caseInsensitive);
                 let orbMode =  (!this.state.booted || !this.state.curPageQid) ? OrbMode.Unknown : (linked ? OrbMode.Linked : OrbMode.Unlinked);
                 return <Portal container={link.element}>
                     { this.state.propIcons[link.pid] ?

@@ -11,6 +11,7 @@ interface PropertyPatternData {
 export interface PropertyMatch {
     prop: string;
     identifier: string;
+    caseInsensitive: boolean;
 }
 
 interface PropertyData {
@@ -28,7 +29,7 @@ export interface PropertySuggestions {
 const ITEM_PROP_TYPE = "WikibaseItem";
 
 const patternQuery = `
-SELECT ?p ?regexValue (COALESCE(?replacement, "\\\\1") as ?replacementString) (COALESCE(?q = wd:Q55121297, false) as ?caseInsensitive)
+SELECT ?p ?regexValue (COALESCE(?replacement, "\\\\1") as ?replacementString) (COALESCE(?q = wd:Q55121183, false) as ?caseInsensitive)
 WHERE {
   ?p p:P8966 ?regex.
   ?regex ps:P8966 ?regexValue
@@ -91,7 +92,8 @@ function parsePropFetch(d: any): PropertyData[] {
 
 interface CachedRegexData {
     regex: RegExp;
-    propertyData: PropertyPatternData
+    propertyData: PropertyPatternData;
+    caseInsensitive: boolean;
 }
 
 export class PropertyDB {
@@ -113,12 +115,12 @@ export class PropertyDB {
         this.regex_results = this.pattern_results.then((results) => {
             let regexCache: CachedRegexData[] =  [];
             for (const propData of results) {
-                const regexMode = propData.caseInsensitive ? "i" : "";
                 try {
-                    const r = new RegExp(propData.regex, regexMode);
+                    const r = new RegExp(propData.regex);
                     regexCache.push({
                         regex: r,
-                        propertyData: propData
+                        propertyData: propData,
+                        caseInsensitive: propData.caseInsensitive
                     });
                 } catch (e) {
                     console.warn("Failed to parse URL with pattern " + propData.regex, e);
@@ -182,7 +184,8 @@ export class PropertyDB {
                 }
                 return {
                     prop: pid,
-                    identifier: key
+                    identifier: key,
+                    caseInsensitive: p.caseInsensitive
                 };
             }
         }
