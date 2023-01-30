@@ -1,9 +1,10 @@
 
 import {registerBackendBroker} from "./messageBroker";
 import {checkAllCaches} from "./cache";
+import {initContext} from "./context";
 
 registerBackendBroker();
-
+initContext();
 
 // occasionally cleanup caches
 const CLEAR_CACHE_ALARM = "clearWwwyzzerddCache";
