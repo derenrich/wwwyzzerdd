@@ -5,10 +5,12 @@ import {FrontendMessageBroker, registerFrontendBroker, MessageType, ReportError}
 import {StatementSuggestions} from "../psychiq";
 import {CONFIG_KEY, ConfigObject, getConfig} from "../config"
 import { Typography } from '@material-ui/core';
-import {QidData, PropTuple} from "./common";
+import {QidData, PropTuple, SpanField, renderSpanField} from "./common";
 import {SuggestedClaimsWindow} from "./suggested_claims";
 import {Orb, OrbMode} from "./orb";
-import {ItemWindow, LinkWindow, CoordLinkWindow} from "./windows";
+import {ItemWindow, LinkWindow, CoordLinkWindow, SpanWindow} from "./windows";
+import { insertSpan } from './insertSpan';
+import { SelectionData } from '~context';
 
 const wikiLinkRegex = new RegExp("^https?:\/\/[a-z]+\.(?:m\.)?wikipedia\.org\/wiki\/([^#]+)", "i");
 const wikidataLinkRegex = new RegExp("^https?:\/\/(?:m\.|www\.)?wikidata\.org\/wiki\/(Q\\d+)", "i");
@@ -47,6 +49,11 @@ interface LinkedElement {
     slug?: string;
 }
 
+interface TextSpan {
+    element: HTMLElement;
+    text: string;
+}
+
 interface ExternalLinkedElement {
     element: HTMLElement;
     pid: string;
@@ -71,6 +78,7 @@ interface HolderProps {
 
 interface HolderState {
     errorMessage?: string;
+    textSpans: TextSpan[];
     wikiLinks: LinkedElement[];
     wikidataLinks: LinkedElement[];
     externalLinks: ExternalLinkedElement[];
@@ -92,6 +100,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
     constructor(props: HolderProps) {
         super(props);
         this.state = {
+            textSpans: [],
             wikiLinks: [],
             wikidataLinks: [],
             coordLinks: [],
@@ -112,9 +121,10 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         this.broker.registerFrontendHandler(MessageType.GET_CLAIM_SUGGESTIONS, this.handleClaimSuggestions.bind(this));
         this.broker.registerFrontendHandler(MessageType.REPORT_ERROR, this.handleError.bind(this));
 
+        this.broker.registerFrontendMessageHandler(MessageType.SET_PARSE_DATA, this.handleContextParse.bind(this));
+
         this.broker.sendMessage({type: MessageType.GET_PROP_NAMES, payload: {}});
         this.broker.sendMessage({type: MessageType.GET_PROP_ICONS, payload: {}});
-
 
         getConfig().then((conf) => {
             this.setState({
@@ -153,6 +163,14 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         }
     }
 
+    handleContextParse(msg: any) {
+        let selectionData: SelectionData = msg;
+        let elm = insertSpan(selectionData);
+        if (elm) {
+            this.addTextSpan(elm, selectionData.text);
+        }
+    }
+
     handleProps(payload: any) {
         this.setState({
             propNames: payload.propNames
@@ -172,7 +190,6 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
     hideError() {
         this.setState({errorMessage: undefined});
     }
-
 
     handleClaimSuggestions(payload: any) {
         let suggestedClaims: StatementSuggestions[] = payload.suggestions;
@@ -211,6 +228,17 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
     handleClaims(payload: any) {
         this.setState({
             claims: payload.claims
+        });
+    }
+
+    addTextSpan(elm: HTMLElement, text: string) {
+        this.setState(function(state:HolderState) {
+            return {
+                textSpans: state.textSpans.concat({
+                    element: elm,
+                    text: text.trim()
+                })
+            };
         });
     }
 
@@ -303,6 +331,43 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                 }
             });
         }
+    }
+
+    getSpanFields(span?: string): (string | SpanField)[] {
+        let matchedFields = [];
+        let d = this.state.claims;
+        for (let k of Object.keys(d)) {
+            let claims = d[k].aliases;
+            for (let alias of (claims["en"] || [])) {
+                if (alias.value == span) {
+                    matchedFields.push({
+                        lang: "en",
+                        field: "alias"
+                    });
+                }
+            }
+
+            let descriptions = d[k].descriptions;
+            for (let lang of Object.keys((descriptions || {}))) {
+                if (descriptions[lang].value == span) {
+                    matchedFields.push({
+                        lang: lang,
+                        field: "description",
+                    });
+                }
+            }
+
+            let labels = d[k].labels;
+            for (let lang of Object.keys((labels || {}))) {
+                if (labels[lang].value == span) {
+                    matchedFields.push({
+                        lang: lang,
+                        field: "label"
+                    });
+                }
+            }
+        }
+        return matchedFields;
     }
 
     lookupSlug(slug?: string): QidData | undefined {
@@ -476,6 +541,33 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         </Portal>;
     }
 
+    renderSpanPortal(span: TextSpan): React.ReactNode {
+        let matchedFields = this.getSpanFields(span.text);
+
+        let mode = (!this.state.booted || !this.state.curPageQid) ? OrbMode.Unknown : (
+                matchedFields.length > 0 ? OrbMode.Linked : OrbMode.Unlinked);
+
+        let hoverText = matchedFields.length > 0 ?  <Typography>
+                {Array.from(new Set(matchedFields.map((f) => renderSpanField(f)))).join(" & ")}
+            </Typography> : null;
+
+        return <Portal container={span.element}>
+            <Orb
+                mode = {mode}
+                hidden={this.orbsHidden()}
+                hover={hoverText}
+                popover={
+                    <SpanWindow 
+                        wikiLanguage={this.props.wikiLanguage ?? "en"}
+                        pageQid={this.state.curPageQid ?? ""}
+                        broker={this.broker}
+                        spanText={span.text}
+                    />
+                }
+                />
+        </Portal>;
+    }
+
     renderLinkPortal(qidData: QidData | undefined, link: LinkedElement): React.ReactNode {
         let matchedProps: string[] = !qidData ? [] : this.getProps(qidData.qid);
         let propTuples = this.mapProps(matchedProps);
@@ -574,6 +666,11 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                 let qidData = this.lookupWikidataQid(link.slug);
                 return this.renderLinkPortal(qidData, link);
             })}
+
+            {this.state.textSpans.map((span) => {
+                return this.renderSpanPortal(span);  
+            })}
+
             {this.state.titleBox && this.usePsychiq() ? this.renderTitleBoxPortal() : null}
             <Snackbar
                 open={!!this.state.errorMessage}

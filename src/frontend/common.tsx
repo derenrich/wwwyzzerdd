@@ -8,11 +8,23 @@ export interface QidData {
     description?: string;
 }
 
+export interface SpanField {
+    lang: string;
+    field: string;
+}
+
+export function renderSpanField(sf: SpanField | string): string {
+    if (typeof sf === "string" ) {
+        return sf as string;
+    } else {
+        return `${(sf as SpanField).field}[${(sf as SpanField).lang}]`;
+    }
+}
+
 export interface PropTuple {
     propId: string;
     propName?: string;
 }
-
 
 export function getSourceUrl(): string {
     let link = document.querySelector("#t-permalink a");

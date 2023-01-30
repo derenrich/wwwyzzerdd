@@ -273,6 +273,7 @@ function boot() {
 }
 
 window.addEventListener("load", boot);
+
 if (document.readyState == "complete") {
     boot();
 }

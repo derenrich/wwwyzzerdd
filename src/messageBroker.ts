@@ -1,6 +1,6 @@
 import { PropertyDB, PropertyMatch } from './propertyData';
 import { ItemDB, LinkedItemData } from './itemData'
-import {addItemClaim, addCoordClaim, addIdClaim, addReference} from "./write";
+import {addItemClaim, addCoordClaim, addIdClaim, addReference, addString} from "./write";
 import {suggestIdentifiers} from "./psychiq"
 
 export enum MessageType {
@@ -15,7 +15,9 @@ export enum MessageType {
     SET_PROP_ID,
     SET_PROP_COORD,
     LOOKUP_QIDS,
-    REPORT_ERROR
+    REPORT_ERROR,
+    SET_PARSE_DATA,
+    ADD_STRING
 }
 
 export interface Message {
@@ -101,6 +103,14 @@ interface AddPropertyCoordReq {
     wikiLanguage?: string;
 }
 
+export interface AddStringReq {
+    sourceItemQid: string;
+    field: string;
+    language: string;
+    sourceUrl: string;
+    wikiLanguage?: string;
+    text: string;
+}
 
 interface GetStatementSuggestionReq {
     pageId: number;
@@ -180,6 +190,15 @@ export class FrontendMessageBroker {
             handler
         };
         this.handlers = this.handlers.concat(handlerTuple);
+    }
+
+    // registers a one time request handler
+    registerFrontendMessageHandler(type: MessageType, handler: ((_:any) => void)) {
+        chrome.runtime.onMessage.addListener(function(request: Message, sender, sendResponse) {
+                if (request.type == type) {
+                    handler(request.payload);
+                }
+        });
     }
 }
 
@@ -407,7 +426,24 @@ export class BackendMessageBroker {
                     if (reply) reply( response );
                     this.postMessage(response);
                 }).catch(this.reportError.bind(this));
+                break;
             }
+
+            case MessageType.ADD_STRING: {
+                const payload = msg.payload as AddStringReq;
+                let addResponse = addString(payload.sourceItemQid, payload.field, payload.language, payload.text);
+                addResponse.then((resp) => {
+                    if (reply) reply({});
+                    this.handleMessageBackend({
+                        type: MessageType.GET_CLAIMS,
+                        payload: {
+                            qid: payload.sourceItemQid
+                        }
+                    });
+                }).catch(this.reportError.bind(this));
+                break;
+            }
+
         }
     }
     postMessage(msg: any) {

@@ -38,6 +38,7 @@
     "offline_enabled": false,
     "permissions": ["storage",
                     "alarms",
+                    "contextMenus",
                     "scripting",
                     "webNavigation",
                     "unlimitedStorage"],

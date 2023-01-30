@@ -1,13 +1,17 @@
 import { withStyles, WithStyles } from '@material-ui/core/styles';
 import {styles} from "./styles";
 import {CloseParam, PropTuple} from "./common";
-import {FrontendMessageBroker, MessageType} from "../messageBroker";
-import React, { Component } from 'react';
+import {AddStringReq, FrontendMessageBroker, MessageType} from "../messageBroker";
+import React, { ChangeEvent, Component } from 'react';
 import {getSourceUrl} from "./common";
 import ListItem, { ListItemProps } from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 import LinkIcon from '@material-ui/icons/Link';
+import Select from '@material-ui/core/Select';
+import MenuItem from '@material-ui/core/MenuItem';
+import FormControl from '@material-ui/core/FormControl';
+import InputLabel  from '@material-ui/core/InputLabel';
 import Card from '@material-ui/core/Card';
 import CardHeader from '@material-ui/core/CardHeader';
 import CardContent from '@material-ui/core/CardContent';
@@ -164,61 +168,142 @@ export const LinkWindow = withStyles(styles)(
         }
     });
 
-    interface CoordLinkWindowProps extends CloseParam, WithStyles<typeof styles> {
-        pageQid?: string;
-        broker: FrontendMessageBroker;
-        pid: string;
-        lat: number;
-        lon: number;
-        linked: boolean;
-        propNames: {[key: string]: string};
+interface CoordLinkWindowProps extends CloseParam, WithStyles<typeof styles> {
+    pageQid?: string;
+    broker: FrontendMessageBroker;
+    pid: string;
+    lat: number;
+    lon: number;
+    linked: boolean;
+    propNames: {[key: string]: string};
+}
 
+export const CoordLinkWindow = withStyles(styles)(
+    class extends Component<CoordLinkWindowProps, {}> {
+    constructor(props: CoordLinkWindowProps) {
+        super(props);
     }
 
-    export const CoordLinkWindow = withStyles(styles)(
-        class extends Component<CoordLinkWindowProps, {}> {
-            constructor(props: CoordLinkWindowProps) {
-                super(props);
-            }
-
-            link (): void {
-                if (!this.props.linked && !!this.props.pageQid) {
-                    this.props.broker.sendMessage({
-                        type: MessageType.SET_PROP_COORD,
-                        payload: {
-                            sourceItemQid: this.props.pageQid,
-                            propId: this.props.pid,
-                            lat: this.props.lat,
-                            lon: this.props.lon,
-                            sourceUrl: getSourceUrl()
-                        }
-                    });
-                    this.close();
+    link (): void {
+        if (!this.props.linked && !!this.props.pageQid) {
+            this.props.broker.sendMessage({
+                type: MessageType.SET_PROP_COORD,
+                payload: {
+                    sourceItemQid: this.props.pageQid,
+                    propId: this.props.pid,
+                    lat: this.props.lat,
+                    lon: this.props.lon,
+                    sourceUrl: getSourceUrl()
                 }
-            }
+            });
+            this.close();
+        }
+    }
 
-            close = () => {
-                !!this.props.close ? this.props.close() : null;
-            }
+    close = () => {
+        !!this.props.close ? this.props.close() : null;
+    }
 
-            render() {
-            const pidLink = <React.Fragment>
-                <a href={`https://www.wikidata.org/wiki/Property:${this.props.pid}`}>{this.props.pid}</a>
-                {" "}·{" "}
-                {this.props.propNames[this.props.pid || ""] ?? "«no description»"}
-            </React.Fragment>;
+    render() {
+    const pidLink = <React.Fragment>
+        <a href={`https://www.wikidata.org/wiki/Property:${this.props.pid}`}>{this.props.pid}</a>
+        {" "}·{" "}
+        {this.props.propNames[this.props.pid || ""] ?? "«no description»"}
+    </React.Fragment>;
 
-            let coordString = this.props.lat + ", " + this.props.lon;
+    let coordString = this.props.lat + ", " + this.props.lon;
 
-            return <Card elevation={3} className={this.props.classes.card}>
-                <CardHeader title={coordString} subheader={pidLink}/>
-                {!this.props.linked ?
-                <CardContent>
-                    <Button style={{width: "100%"}} startIcon={<AddIcon />} variant="contained" color="primary" onClick={this.link.bind(this)}>Link</Button>
-                </CardContent> : null
-                }
-            </Card>;
-            }
+    return <Card elevation={3} className={this.props.classes.card}>
+        <CardHeader title={coordString} subheader={pidLink}/>
+        {!this.props.linked ?
+        <CardContent>
+            <Button style={{width: "100%"}} startIcon={<AddIcon />} variant="contained" color="primary" onClick={this.link.bind(this)}>Link</Button>
+        </CardContent> : null
+        }
+    </Card>;
+    }
+});
+
+
+interface SpanWindowProps extends CloseParam, WithStyles<typeof styles> {
+    pageQid: string;
+    broker: FrontendMessageBroker;
+    spanText: string;
+    wikiLanguage: string;
+}
+
+interface SpanWindowState {
+    field: string;
+    language: string;
+}
+
+
+export const SpanWindow = withStyles(styles)(class extends Component<SpanWindowProps, SpanWindowState> {
+    constructor(props: SpanWindowProps) {
+        super(props);
+        this.state = {
+            field: "alias",
+            language: "en" // should eventually default to the current language
+        };
+    }
+
+    link (): void {
+        let payload: AddStringReq = {
+            sourceItemQid: this.props.pageQid,
+            sourceUrl: getSourceUrl(),
+            wikiLanguage: this.props.wikiLanguage,
+            language: this.state.language,
+            field: this.state.field,
+            text: this.props.spanText
+        }
+        this.props.broker.sendMessage({
+            type: MessageType.ADD_STRING,
+            payload
         });
+        this.close();
+    }
+
+    close = () => {
+        !!this.props.close ? this.props.close() : null;
+    }
 
 
+    changeField(evt: any, child: any) {
+        let fieldValue = evt.target.value;
+        this.setState({
+            field: fieldValue
+        });
+    } 
+
+    changeLang(evt: any, child: any) {
+        let langValue = evt.target.value;
+        this.setState({
+            language: langValue
+        });
+    }
+
+    render() {
+        return <Card elevation={3} className={this.props.classes.card}>
+            <CardHeader title={`“${this.props.spanText}”`} subheader={"string"}/>
+            <CardContent style={{"paddingTop": "0px"}}>
+                <FormControl style={{width: "50%"}}>
+                    <InputLabel>Field</InputLabel>
+                    <Select label="field" defaultValue="alias" onChange={this.changeField.bind(this)}>
+                        <MenuItem value="label">Label</MenuItem>
+                        <MenuItem value="description">Description</MenuItem>
+                        <MenuItem value="alias">Alias</MenuItem>
+                    </Select>
+                </FormControl>
+                <FormControl style={{width: "50%"}}>
+                    <InputLabel>Language</InputLabel>
+                    <Select defaultValue="en" label="language" onChange={this.changeLang.bind(this)}>
+                        <MenuItem value="en">English</MenuItem>
+                        <MenuItem value="de">German</MenuItem>
+                        <MenuItem value="jp">Japanese</MenuItem>
+                    </Select>
+                </FormControl>
+                <Button style={{width: "100%", marginTop: "1em"}} startIcon={<AddIcon />} variant="contained" color="primary" onClick={this.link.bind(this)}>Add</Button>
+            </CardContent>
+        </Card>;
+    }
+});

@@ -2,6 +2,7 @@ import { getAuthToken, ANON_TOKEN } from "./auth";
 import { retryWikimediaPromise } from "./util";
 import { getConfig, ConfigObject } from "./config";
 import {saveLastQidProperty} from "./propertyData";
+import { StepLabel } from "@material-ui/core";
 
 const commentText = "import w/ [[Wikidata:Wwwyzzerdd|🧙 Wwwyzzerdd for Wikidata]]";
 
@@ -38,6 +39,80 @@ export async function addClaim(entity: string, property: string, value: any, com
 
 export async function addCoordClaim(entity: string, property: string, lat: number, lon: number): Promise<any> {
     
+}
+
+async function setLabel(entity: string, language: string, text: string, commentAddendum?: string) {
+    let base_url = "https://www.wikidata.org/w/api.php?action=wbsetlabel&tags=wwwyzzerdd&format=json&";
+    let token = await checkedGetToken();
+    let wrappedValue = encodeURIComponent(text);
+    let getArgs = `id=${entity}&language=${language}&value=${wrappedValue}`;
+    let summary = encodeURIComponent(commentText + (commentAddendum ? " (" + commentAddendum +")" : ""));
+    let args = `token=${token}&summary=${summary}`;
+
+    return retryWikimediaPromise(() => {
+        return fetch(base_url + getArgs, {
+            method: 'POST',
+            body: args,
+            headers: {
+             "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+             "accept":"application/json, text/javascript, */*; q=0.01"
+            }
+        }).then((res) => res.json());
+    }, 2);
+}
+
+
+async function setDescription(entity: string, language: string, text: string, commentAddendum?: string) {
+    let base_url = "https://www.wikidata.org/w/api.php?action=wbsetdescription&tags=wwwyzzerdd&format=json&";
+    let token = await checkedGetToken();
+    let wrappedValue = encodeURIComponent(text);
+    let getArgs = `id=${entity}&language=${language}&value=${wrappedValue}`;
+    let summary = encodeURIComponent(commentText + (commentAddendum ? " (" + commentAddendum +")" : ""));
+    let args = `token=${token}&summary=${summary}`;
+
+    return retryWikimediaPromise(() => {
+        return fetch(base_url + getArgs, {
+            method: 'POST',
+            body: args,
+            headers: {
+             "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+             "accept":"application/json, text/javascript, */*; q=0.01"
+            }
+        }).then((res) => res.json());
+    }, 2);
+}
+
+async function addAlias(entity: string, language: string, text: string, commentAddendum?: string) {
+    let base_url = "https://www.wikidata.org/w/api.php?action=wbsetaliases&tags=wwwyzzerdd&format=json&";
+    let token = await checkedGetToken();
+    // prepend with %1F to avoid splitting on pipe
+    let wrappedValue = "%1F" + encodeURIComponent(text);
+    let getArgs = `id=${entity}&language=${language}&add=${wrappedValue}`;
+    let summary = encodeURIComponent(commentText + (commentAddendum ? " (" + commentAddendum +")" : ""));
+    let args = `token=${token}&summary=${summary}`;
+
+    return retryWikimediaPromise(() => {
+        return fetch(base_url + getArgs, {
+            method: 'POST',
+            body: args,
+            headers: {
+             "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+             "accept":"application/json, text/javascript, */*; q=0.01"
+            }
+        }).then((res) => res.json());
+    }, 2);
+}
+
+export async function addString(entity: string, field: string, language: string, text: string): Promise<any> {
+    if (field == "description") {
+        await setDescription(entity, language, text);
+    } else if (field == "label") {
+        await setLabel(entity, language, text);
+    } else if (field == "alias") {
+        await addAlias(entity, language, text);
+    } else {
+        throw new Error(`Unexpcted field type "${field}" when setting string.`);
+    }
 }
 
 function currentTimeValue() {

@@ -1,5 +1,6 @@
 import {registerBackendBroker} from "./messageBroker";
 import {exposeWikiVariables} from "./exposeVariables";
+import {initContext} from "./context";
 
 chrome.runtime.onInstalled.addListener(() => {
     console.log("Wwwyzzerdd insalled 🧙");
@@ -28,3 +29,4 @@ function onWikipediaLoadRegister() {
 
 onWikipediaLoadRegister();
 registerBackendBroker();
+initContext();
