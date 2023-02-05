@@ -1,6 +1,7 @@
 import { getOrComputeMultiple } from "./cache";
 
-const GET_ENTITIES_URL="https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&languages=en"
+//TODO: stop always getting all the languages
+const GET_ENTITIES_URL="https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&languages=pt|en|ar|be|cs|de|es|fr|ja|ru|sr|zh"
 const REQ_LIMIT = 50;
 const SOURCE_PROPS = ['info', 'descriptions', 'aliases', 'labels', 'claims'].join("|");
 const LINKED_PROPS = ['labels', 'descriptions', 'sitelinks'].join('|');

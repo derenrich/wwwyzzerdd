@@ -8,9 +8,10 @@ import { Typography } from '@material-ui/core';
 import {QidData, PropTuple, SpanField, renderSpanField} from "./common";
 import {SuggestedClaimsWindow} from "./suggested_claims";
 import {Orb, OrbMode} from "./orb";
-import {ItemWindow, LinkWindow, CoordLinkWindow, SpanWindow} from "./windows";
+import {ItemWindow, LinkWindow, CoordLinkWindow, SpanWindow, SpanDateWindow} from "./windows";
 import { insertSpan } from './insertSpan';
 import { SelectionData } from '~context';
+import { ParsedDate } from '~parseString';
 
 const wikiLinkRegex = new RegExp("^https?:\/\/[a-z]+\.(?:m\.)?wikipedia\.org\/wiki\/([^#]+)", "i");
 const wikidataLinkRegex = new RegExp("^https?:\/\/(?:m\.|www\.)?wikidata\.org\/wiki\/(Q\\d+)", "i");
@@ -54,6 +55,11 @@ interface TextSpan {
     text: string;
 }
 
+interface DateSpan {
+    element: HTMLElement;
+    date: ParsedDate;
+}
+
 interface ExternalLinkedElement {
     element: HTMLElement;
     pid: string;
@@ -79,6 +85,7 @@ interface HolderProps {
 interface HolderState {
     errorMessage?: string;
     textSpans: TextSpan[];
+    dateSpans: DateSpan[];
     wikiLinks: LinkedElement[];
     wikidataLinks: LinkedElement[];
     externalLinks: ExternalLinkedElement[];
@@ -101,6 +108,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         super(props);
         this.state = {
             textSpans: [],
+            dateSpans: [],
             wikiLinks: [],
             wikidataLinks: [],
             coordLinks: [],
@@ -122,6 +130,8 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         this.broker.registerFrontendHandler(MessageType.REPORT_ERROR, this.handleError.bind(this));
 
         this.broker.registerFrontendMessageHandler(MessageType.SET_PARSE_DATA, this.handleContextParse.bind(this));
+        this.broker.registerFrontendMessageHandler(MessageType.SET_PARSE_DATE, this.handleContextParseDate.bind(this));
+
 
         this.broker.sendMessage({type: MessageType.GET_PROP_NAMES, payload: {}});
         this.broker.sendMessage({type: MessageType.GET_PROP_ICONS, payload: {}});
@@ -163,11 +173,36 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         }
     }
 
+    handleContextParseDate(msg: any) {
+        let selectionData: SelectionData = msg;
+        try {
+            let elm = insertSpan(selectionData);
+            if (elm) {
+                this.addDateSpan(elm, selectionData.payload);
+            }
+        } catch(e) {
+            if (e instanceof Error) {
+                this.errorMessage(e.message);
+            } else if (typeof e === "string")  {
+                this.errorMessage(e);
+            }
+        }
+
+    }
+
     handleContextParse(msg: any) {
         let selectionData: SelectionData = msg;
-        let elm = insertSpan(selectionData);
-        if (elm) {
-            this.addTextSpan(elm, selectionData.text);
+        try {
+            let elm = insertSpan(selectionData);
+            if (elm) {
+                this.addTextSpan(elm, selectionData.text);
+            }
+        } catch(e) {
+            if (e instanceof Error) {
+                this.errorMessage(e.message);
+            } else if (typeof e === "string")  {
+                this.errorMessage(e);
+            }
         }
     }
 
@@ -183,8 +218,12 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         });
     }
 
+    errorMessage(message: string) {
+        this.setState({errorMessage: message});
+    }
+
     handleError(payload: any) {
-        this.setState({errorMessage: (payload as ReportError).errorMessage});
+        this.errorMessage((payload as ReportError).errorMessage);
     }
 
     hideError() {
@@ -228,6 +267,17 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
     handleClaims(payload: any) {
         this.setState({
             claims: payload.claims
+        });
+    }
+
+    addDateSpan(elm: HTMLElement, date: ParsedDate) {
+        this.setState(function(state:HolderState) {
+            return {
+                dateSpans: state.dateSpans.concat({
+                    element: elm,
+                    date: date
+                })
+            };
         });
     }
 
@@ -337,13 +387,15 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         let matchedFields = [];
         let d = this.state.claims;
         for (let k of Object.keys(d)) {
-            let claims = d[k].aliases;
-            for (let alias of (claims["en"] || [])) {
-                if (alias.value == span) {
-                    matchedFields.push({
-                        lang: "en",
-                        field: "alias"
-                    });
+            let aliases = d[k].aliases;
+            for (let aliasLang of Object.keys(aliases)) {
+                for (let alias of (aliases[aliasLang] || [])) {
+                    if (alias.value == span) {
+                        matchedFields.push({
+                            lang: aliasLang,
+                            field: "alias"
+                        });
+                    }
                 }
             }
 
@@ -540,8 +592,25 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
             />
         </Portal>;
     }
+    renderDateSpanPortal(span: DateSpan): React.ReactNode {
+        return <Portal container={span.element}>
+            <Orb
+                mode = {OrbMode.Unlinked}
+                hidden={this.orbsHidden()}
+                popover={
+                    <SpanDateWindow
+                        wikiLanguage={this.props.wikiLanguage ?? "en"}
+                        pageQid={this.state.curPageQid ?? ""}
+                        broker={this.broker}
+                        date={span.date}
+                    />
+                }
+                />
+        </Portal>;
 
-    renderSpanPortal(span: TextSpan): React.ReactNode {
+    }
+
+    renderTextSpanPortal(span: TextSpan): React.ReactNode {
         let matchedFields = this.getSpanFields(span.text);
 
         let mode = (!this.state.booted || !this.state.curPageQid) ? OrbMode.Unknown : (
@@ -668,8 +737,13 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
             })}
 
             {this.state.textSpans.map((span) => {
-                return this.renderSpanPortal(span);  
+                return this.renderTextSpanPortal(span);
             })}
+
+            {this.state.dateSpans.map((span) => {
+                return this.renderDateSpanPortal(span);
+            })}
+
 
             {this.state.titleBox && this.usePsychiq() ? this.renderTitleBoxPortal() : null}
             <Snackbar

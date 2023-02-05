@@ -17,8 +17,9 @@ import CardHeader from '@material-ui/core/CardHeader';
 import CardContent from '@material-ui/core/CardContent';
 import List from '@material-ui/core/List';
 import Button from '@material-ui/core/Button';
-import { Suggester } from './suggester';
+import { Suggester, SuggesterMode } from './suggester';
 import AddIcon from '@material-ui/icons/Add';
+import { ParsedDate } from '~parseString';
 
 
  interface ItemWindowProps extends CloseParam, WithStyles<typeof styles> {
@@ -95,6 +96,7 @@ import AddIcon from '@material-ui/icons/Add';
             {propItems}
             {this.state.addMode ?
             <Suggester
+                mode={SuggesterMode.QID_SUGGEST}
                 targetQid={this.props.pageQid || ""}
                 objectQid={this.props.qid}
                 broker={this.props.broker}
@@ -243,7 +245,7 @@ export const SpanWindow = withStyles(styles)(class extends Component<SpanWindowP
         super(props);
         this.state = {
             field: "alias",
-            language: "en" // should eventually default to the current language
+            language: this.props.wikiLanguage
         };
     }
 
@@ -296,13 +298,88 @@ export const SpanWindow = withStyles(styles)(class extends Component<SpanWindowP
                 </FormControl>
                 <FormControl style={{width: "50%"}}>
                     <InputLabel>Language</InputLabel>
-                    <Select defaultValue="en" label="language" onChange={this.changeLang.bind(this)}>
-                        <MenuItem value="en">English</MenuItem>
+                    <Select defaultValue={this.props.wikiLanguage} label="language" onChange={this.changeLang.bind(this)}>
+                        <MenuItem value="ar">Arabic</MenuItem>
+                        <MenuItem value="be">Belarusian</MenuItem>
+                        <MenuItem value="cs">Czech</MenuItem>
                         <MenuItem value="de">German</MenuItem>
-                        <MenuItem value="jp">Japanese</MenuItem>
+                        <MenuItem value="en">English</MenuItem>
+                        <MenuItem value="es">Spanish</MenuItem>
+                        <MenuItem value="fr">French</MenuItem>
+                        <MenuItem value="ja">Japanese</MenuItem>
+                        <MenuItem value="pt">Portuguese</MenuItem>
+                        <MenuItem value="ru">Russian</MenuItem>
+                        <MenuItem value="sr">Serbian</MenuItem>
+                        <MenuItem value="zh">Chinese</MenuItem>
                     </Select>
                 </FormControl>
                 <Button style={{width: "100%", marginTop: "1em"}} startIcon={<AddIcon />} variant="contained" color="primary" onClick={this.link.bind(this)}>Add</Button>
+            </CardContent>
+        </Card>;
+    }
+});
+
+
+interface SpanDateWindowProps extends CloseParam, WithStyles<typeof styles> {
+    pageQid: string;
+    broker: FrontendMessageBroker;
+    date: ParsedDate;
+    wikiLanguage: string;
+}
+
+interface SpanDateWindowState {
+    prop?: string;
+    addMode: boolean;
+}
+
+export const SpanDateWindow = withStyles(styles)(class extends Component<SpanDateWindowProps, SpanDateWindowState> {
+    constructor(props: SpanDateWindowProps) {
+        super(props);
+        this.state = {addMode: false};
+    }
+    close = () => {
+        !!this.props.close ? this.props.close() : null;
+    }
+
+    addMode = () => {
+        this.setState({
+            addMode: true
+        });
+    };
+
+    add (pid?: string): void {
+        if (pid && this.props.pageQid) {
+            this.props.broker.sendMessage({
+                type: MessageType.SET_PROP_DATE,
+                payload: {
+                    sourceItemQid: this.props.pageQid,
+                    propId: pid,
+                    date: this.props.date.value,
+                    sourceUrl: getSourceUrl(),
+                    wikiLanguage: this.props.wikiLanguage
+                }
+            });
+            this.close();
+        }
+    }
+
+    render() {
+        return <Card elevation={3} className={this.props.classes.card}>
+            <CardHeader title={`${this.props.date.renderedText}`} subheader={"date"}/>
+            <CardContent style={{"paddingTop": "0px"}}>
+            {this.state.addMode ?
+            <Suggester
+                targetQid={this.props.pageQid}
+                mode={SuggesterMode.DATE_SUGGEST}
+                broker={this.props.broker}
+                onSubmit={this.add.bind(this)} />  :
+            <ListItem button onClick={this.addMode}>
+                <ListItemIcon>
+                  <AddIcon />
+                </ListItemIcon>
+                <ListItemText primary="Add Statement" />
+            </ListItem>
+            }
             </CardContent>
         </Card>;
     }

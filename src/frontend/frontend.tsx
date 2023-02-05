@@ -1,5 +1,6 @@
 import { MessageType, Message, GetLinkIdentifierReply} from "../messageBroker";
 import {exposeWikiVariables, isExposed} from "../exposeVariables";
+import {getWikiLanguage} from "../util"
 import {WwwyzzerddHolder} from "./holder"
 import React from "react";
 import ReactDom from "react-dom";
@@ -86,15 +87,6 @@ function operateNonWikiLinks(fn: (link:HTMLAnchorElement) => void) {
         }
     });
 
-}
-
-function getWikiLanguage(url: string): string | undefined {
-    let m = wikiLinkRegex.exec(url);
-    if(m && m.length > 1) {
-        const lang = m[1].toLowerCase();
-        return lang;
-    }
-    return undefined;
 }
 
 interface Coordinate {

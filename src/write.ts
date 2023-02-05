@@ -12,6 +12,11 @@ export async function addItemClaim(entity: string, property: string, qid: string
     return addClaim(entity, property, {"entity-type": "item", "id": qid}, commentAddendum);
 }
 
+export async function addDateClaim(entity: string, property: string, date: any, commentAddendum?: string): Promise<any> {
+    return addClaim(entity, property, date, commentAddendum);
+}
+
+
 export async function addIdClaim(entity: string, property: string, value: string): Promise<any> {
     return addClaim(entity, property, value);
 }

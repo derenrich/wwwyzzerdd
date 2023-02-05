@@ -1,6 +1,6 @@
 import { PropertyDB, PropertyMatch } from './propertyData';
 import { ItemDB, LinkedItemData } from './itemData'
-import {addItemClaim, addCoordClaim, addIdClaim, addReference, addString} from "./write";
+import {addItemClaim, addCoordClaim, addIdClaim, addReference, addString, addDateClaim} from "./write";
 import {suggestIdentifiers} from "./psychiq"
 
 export enum MessageType {
@@ -17,7 +17,9 @@ export enum MessageType {
     LOOKUP_QIDS,
     REPORT_ERROR,
     SET_PARSE_DATA,
-    ADD_STRING
+    SET_PARSE_DATE,
+    ADD_STRING,
+    SET_PROP_DATE
 }
 
 export interface Message {
@@ -67,6 +69,7 @@ interface GetPropSuggestionsAsk {
     itemQid: string;
     typed: string;
     targetQid?: string;
+    mode: string;
 }
 
 interface AddPropertyReq {
@@ -102,6 +105,15 @@ interface AddPropertyCoordReq {
     sourceUrl: string;
     wikiLanguage?: string;
 }
+
+interface AddPropertyDateReq {
+    sourceItemQid: string;
+    propId: string;
+    date: any;
+    sourceUrl: string;
+    wikiLanguage?: string;
+}
+
 
 export interface AddStringReq {
     sourceItemQid: string;
@@ -313,7 +325,7 @@ export class BackendMessageBroker {
 
             case MessageType.GET_PROP_SUGGESTIONS: {
                 const payload = msg.payload as GetPropSuggestionsAsk;
-                this.propDB.suggestProperty(payload.itemQid, payload.typed, payload.targetQid).then((resp) => {
+                this.propDB.suggestProperty(payload.itemQid, payload.typed, payload.mode, payload.targetQid).then((resp) => {
                     let response = {
                         type: MessageType.GET_PROP_SUGGESTIONS,
                         payload: resp
@@ -342,6 +354,26 @@ export class BackendMessageBroker {
                 }).catch(this.reportError.bind(this));
                 break;
             }
+
+            case MessageType.SET_PROP_DATE: {
+                const payload = msg.payload as AddPropertyDateReq;
+                let addResponse = addDateClaim(payload.sourceItemQid, payload.propId, payload.date);
+                addResponse.then((resp) => {
+                    if (resp && resp.success) {
+                        let claimId = resp.claim.id;
+                        addReference(payload.sourceUrl, claimId, payload.wikiLanguage);
+                    }
+                    if (reply) reply({});
+                    this.handleMessageBackend({
+                        type: MessageType.GET_CLAIMS,
+                        payload: {
+                            qid: payload.sourceItemQid
+                        }
+                    });
+                }).catch(this.reportError.bind(this));
+                break;
+            }
+
 
             case MessageType.GET_LINK_ID: {
                 const payload = msg.payload as GetLinkIdentifierAsk;

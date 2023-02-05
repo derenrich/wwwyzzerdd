@@ -6,9 +6,16 @@ import Autocomplete from '@material-ui/lab/Autocomplete';
 import IconButton from '@material-ui/core/IconButton';
 import TextField from '@material-ui/core/TextField';
 import AddIcon from '@material-ui/icons/Add';
+import { ParsedDate } from "~parseString";
 
+
+export enum SuggesterMode {
+    QID_SUGGEST,
+    DATE_SUGGEST
+}
 
 interface SuggesterProps {
+    mode: SuggesterMode;
     targetQid: string;
     objectQid?: string;
     broker: FrontendMessageBroker;
@@ -23,6 +30,7 @@ interface Suggestion {
 interface SuggesterState {
     typed: string;
     selectedPid?: string;
+    // apparently we're never using this?
     propNames: {[key: string]: string};
     suggestedProps: Suggestion[];
 }
@@ -61,7 +69,8 @@ export class Suggester extends Component<SuggesterProps, SuggesterState> {
             payload: {
                 itemQid: this.props.targetQid,
                 targetQid: this.props.objectQid, // yes the variable naming here is bad (sorry)
-                typed: this.state.typed
+                typed: this.state.typed,
+                mode: this.props.mode == SuggesterMode.QID_SUGGEST ? "qid" : "date"
             }
         }, (resp: any) => {
             this.setState({

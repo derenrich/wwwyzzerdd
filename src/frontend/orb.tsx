@@ -31,9 +31,11 @@ export const Orb = withStyles(styles)(class extends Component<OrbProps, OrbState
         this.state = {};
     }
 
-    handlePopoverOpen = (event: React.MouseEvent<HTMLElement, MouseEvent>) => {
+    handlePopoverOpen = (event: React.MouseEvent<HTMLElement, MouseEvent>):boolean => {
         this.setState({targetElement: event.currentTarget});
         event.stopPropagation();
+        event.preventDefault();
+        return false;
     };
 
     handlePopoverClose = () => {

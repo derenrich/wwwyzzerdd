@@ -1,4 +1,6 @@
 import { MessageType } from "./messageBroker";
+import { getWikiLanguage } from "./util";
+import { parseDate } from "./parseString";
 
 export enum SelectionType {
     STRING_SELECTION,
@@ -7,8 +9,11 @@ export enum SelectionType {
 
 export interface SelectionData {
     selectionType: SelectionType,
-    text: string
+    text: string,
+    payload?: any
 }
+
+
 
 export function initContext() {
     chrome.contextMenus.create(
@@ -30,9 +35,19 @@ function addListener() {
     chrome.contextMenus.onClicked.addListener((info, tab) => {
         switch (info.menuItemId) {
             case "selection-date":
-                console.log(info, tab);
                 if (tab && tab.id) {
-                    chrome.tabs.sendMessage(tab.id, {type: MessageType.SET_PARSE_DATA, payload: info.selectionText}, {frameId: info.frameId});
+                    if (tab.url) {
+                        let lang = getWikiLanguage(tab.url)
+                        let parsedDatePromise = parseDate(info.selectionText ?? "", lang ?? "en");
+                        parsedDatePromise.then((parsedDate) => {
+                            let payload: SelectionData = {
+                                selectionType: SelectionType.STRING_SELECTION,
+                                text: info.selectionText ?? "",
+                                payload: parsedDate
+                            }
+                            chrome.tabs.sendMessage(tab.id ?? 0, {type: MessageType.SET_PARSE_DATE, payload: payload}, {frameId: info.frameId});
+                        });
+                    }
                 }
                 break;
             case "selection-string":

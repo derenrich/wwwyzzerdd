@@ -1,5 +1,18 @@
 import { getAuthToken } from "./auth";
 
+
+const wikiLinkRegex = new RegExp("^https?:\/\/([a-z]+)\.(?:m\.)?wikipedia\.org\/wiki\/([^#]+)", "i");
+
+export function getWikiLanguage(url: string): string | undefined {
+    let m = wikiLinkRegex.exec(url);
+    if(m && m.length > 1) {
+        const lang = m[1].toLowerCase();
+        return lang;
+    }
+    return undefined;
+}
+
+
 export async function retryPromise<T>(fn: () => Promise<T>): Promise<T> {
     async function tryCall(callNum: number): Promise<T | undefined> {
         try {
