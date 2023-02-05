@@ -128,7 +128,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         this.broker.registerFrontendHandler(MessageType.GET_PROP_ICONS, this.handlePropIcons.bind(this));
         this.broker.registerFrontendHandler(MessageType.GET_CLAIM_SUGGESTIONS, this.handleClaimSuggestions.bind(this));
         this.broker.registerFrontendHandler(MessageType.REPORT_ERROR, this.handleError.bind(this));
-
+        this.broker.registerFrontendMessageHandler(MessageType.REPORT_ERROR, this.handleError.bind(this));
         this.broker.registerFrontendMessageHandler(MessageType.SET_PARSE_DATA, this.handleContextParse.bind(this));
         this.broker.registerFrontendMessageHandler(MessageType.SET_PARSE_DATE, this.handleContextParseDate.bind(this));
 

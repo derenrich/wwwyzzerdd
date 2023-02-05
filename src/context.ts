@@ -17,18 +17,17 @@ export interface SelectionData {
 
 export function initContext() {
     chrome.contextMenus.create(
-    {
-      id: "selection-date",
-      title: "Parse As Date",
-      contexts: ["selection"],
-    });
-
-    chrome.contextMenus.create(
         {
           id: "selection-string",
           title: "Parse As String",
           contexts: ["selection"],
         }, addListener);
+    chrome.contextMenus.create(
+    {
+      id: "selection-date",
+      title: "Parse As Date",
+      contexts: ["selection"],
+    });
 }
 
 function addListener() {
@@ -46,6 +45,12 @@ function addListener() {
                                 payload: parsedDate
                             }
                             chrome.tabs.sendMessage(tab.id ?? 0, {type: MessageType.SET_PARSE_DATE, payload: payload}, {frameId: info.frameId});
+                        }).catch((e) => {
+                            let errorMessage: string = "Error parsing date.";
+                            if (e instanceof Error) {
+                                errorMessage = e.message;
+                            }
+                            chrome.tabs.sendMessage(tab.id ?? 0, {type: MessageType.REPORT_ERROR, payload: {errorMessage}}, {frameId: info.frameId});
                         });
                     }
                 }
