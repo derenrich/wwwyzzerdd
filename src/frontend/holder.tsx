@@ -383,6 +383,53 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         }
     }
 
+    compareDates(dt1: any, dt2: any): boolean {
+        // compare two dates for equality
+        if (dt1.calendarmodel !== dt2.calendarmodel) {
+            return false;
+        }
+        if (dt1.precision !== dt2.precision) {
+            return false;
+        }
+
+        if (dt1.precision === 9) {
+            // year precision
+            let [year1] = dt1.time.split("-")
+            let [year2] = dt2.time.split("-")
+            return year1===year2;
+        } else if (dt1.precision == 10) {
+            // month precision
+            let [year1, mo1] = dt1.time.split("-")
+            let [year2, mo2] = dt2.time.split("-")
+            return year1===year2 && mo1 === mo2;
+        } else {
+            return dt1.time === dt2.time;
+        }
+    }
+
+    getDateSpanFields(date: ParsedDate): string[] {
+        let matchedProps: string[] = [];
+        let d = this.state.claims;
+        for (let k of Object.keys(d)) {
+            let claims = d[k].claims;
+            for (let prop of Object.keys(claims)) {
+                for (let statementV of Object.values(claims[prop])) {
+                    let statement = (statementV as any);
+                    if (statement.rank != "deprecated" && statement.mainsnak.datatype == "time") {
+                        if (statement.mainsnak.datavalue && statement.mainsnak.datavalue.value) {
+                            let propDt = statement.mainsnak.datavalue.value;
+                            if (this.compareDates(propDt, date.value)) {
+                                matchedProps.push(prop);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return matchedProps;
+    }
+
+
     getSpanFields(span?: string): (string | SpanField)[] {
         let matchedFields = [];
         let d = this.state.claims;
@@ -593,10 +640,27 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         </Portal>;
     }
     renderDateSpanPortal(span: DateSpan): React.ReactNode {
+        let matchedProps = this.getDateSpanFields(span.date);
+
+        let mode = (!this.state.booted || !this.state.curPageQid) ? OrbMode.Unknown : (
+            (!span) ? OrbMode.Unknown : (
+                matchedProps.length > 0 ?
+                OrbMode.Linked
+                 : OrbMode.Unlinked
+            )
+        );
+
+        let hoverText = matchedProps.length > 0 ?  <Typography>
+            {Array.from(new Set(matchedProps
+                .map((p) => this.state.propNames[p] || "")
+                .filter((p) => p.length > 0))).join(" & ")}
+        </Typography> : null;
+
         return <Portal container={span.element}>
             <Orb
-                mode = {OrbMode.Unlinked}
+                mode={mode}
                 hidden={this.orbsHidden()}
+                hover={hoverText}
                 popover={
                     <SpanDateWindow
                         wikiLanguage={this.props.wikiLanguage ?? "en"}
@@ -607,7 +671,6 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                 }
                 />
         </Portal>;
-
     }
 
     renderTextSpanPortal(span: TextSpan): React.ReactNode {
