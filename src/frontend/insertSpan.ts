@@ -13,7 +13,6 @@ function setAsEndContext(elm:HTMLElement) {
 
 export function insertSpan(selection: SelectionData): HTMLElement | undefined {
     if (selection.text.length > 200) {
-        console.error("invalidly long selection");
         throw Error("Selection is too long.")
     }
 
@@ -31,7 +30,40 @@ export function insertSpan(selection: SelectionData): HTMLElement | undefined {
         if (!anchor || !focus || !anchorParent || !focusParent) {
             throw Error("Selection ends in an invalid region");
         } else if (anchor == focus && anchor?.nodeType != Node.TEXT_NODE) {
-            throw Error("Selection includes non-text.")
+            if (anchor.nodeType == Node.ELEMENT_NODE) {
+                if (anchor.nodeName == "LI" || anchor.nodeName == "TD" || anchor.nodeName == "DIV") {
+                    let start = sel.anchorOffset < sel.focusOffset ? sel.anchorOffset : sel.focusOffset;
+                    let end = sel.anchorOffset < sel.focusOffset ? sel.focusOffset : sel.anchorOffset;
+                    let node = anchor as HTMLElement;
+                    let initialSize = node.childNodes.length;
+                    let addedNodes = 0;
+                    if (start === 0) {
+                        setAsStartContext(node);
+                    } else {
+                        let startNode = node.childNodes[start];
+                        if (startNode.nodeType == Node.ELEMENT_NODE) {
+                            setAsStartContext(startNode as HTMLElement);
+                        } else {
+                            const startSentinel = document.createElement('span');
+                            node.insertBefore(startSentinel, startNode);
+                            setAsStartContext(startSentinel);
+                            addedNodes += 1;
+                        }
+                    }
+                    const spanNode = document.createElement('span');
+                    if (end === initialSize) {
+                        setAsEndContext(node);
+                        node.appendChild(spanNode);
+                    } else {
+                        // maybe specially handle cases where endNode is a <br />?
+                        let endNode = node.childNodes[end + addedNodes];
+                        setAsEndContext(spanNode as HTMLElement);
+                        node.insertBefore(spanNode, endNode.nextSibling);
+                    }
+                    return spanNode;
+                }
+            }
+            throw Error("Selection includes non-text. Report this as a bug.")
         } else if (anchor === focus && anchor.nodeType == Node.TEXT_NODE) {
             // simple case where both offsets are in the same node
             let start = sel.anchorOffset < sel.focusOffset ? sel.anchorOffset : sel.focusOffset;
@@ -89,7 +121,6 @@ export function insertSpan(selection: SelectionData): HTMLElement | undefined {
                 rightOffset -= 1;
             }
             let rightRemainder = right.splitText(rightOffset);
-            console.log(right, rightOffset, rightRemainder, );
             const rightSpanNode = document.createElement('span');
             right.remove();
             rightSpanNode.appendChild(right);
@@ -97,7 +128,7 @@ export function insertSpan(selection: SelectionData): HTMLElement | undefined {
             setAsEndContext(rightSpanNode);
             return rightSpanNode;
         } else {
-            throw Error("Could not parse text. Still under development. Try selecting again.")
+            throw Error("Could not parse text. Still under development. Try selecting again. If this persists report a bug.")
         }
     }
     throw Error("Unknown error occured");
