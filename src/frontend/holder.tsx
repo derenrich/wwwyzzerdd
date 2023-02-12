@@ -624,7 +624,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
             <Orb
             location="title"
             mode={linkedSuggestion ? OrbMode.Linked : (anySuggestions ? OrbMode.Unlinked : OrbMode.Loading)}
-            hover={anySuggestions ? <Typography>suggested claims</Typography>: <Typography>&lt;loading suggestions&gt;</Typography>}
+            hover={anySuggestions ? <Typography>{chrome.i18n.getMessage("suggestedClaims")}</Typography>: <Typography>&lt;{chrome.i18n.getMessage("loadingSuggestions")}&gt;</Typography>}
             popover={anySuggestions ? <SuggestedClaimsWindow
                 claimExists={this.checkClaimExists.bind(this)}
                 broker={this.broker}

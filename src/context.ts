@@ -13,19 +13,17 @@ export interface SelectionData {
     payload?: any
 }
 
-
-
 export function initContext() {
     chrome.contextMenus.create(
         {
           id: "selection-string",
-          title: "Parse As String",
+          title: chrome.i18n.getMessage("parseAsString"),
           contexts: ["selection"],
         }, addListener);
     chrome.contextMenus.create(
     {
       id: "selection-date",
-      title: "Parse As Date",
+      title: chrome.i18n.getMessage("parseAsDate"),
       contexts: ["selection"],
     });
 }

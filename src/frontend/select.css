@@ -1,0 +1,15 @@
+.ww-selection-before::before {
+    content: "{";
+    font-weight: bolder;
+    font-size: 130%;
+    color: #EF476F;
+    font-style: normal;;
+}
+
+.ww-selection-after::after {
+    content: "}";
+    font-weight: bolder;
+    font-size: 130%;
+    color: #EF476F;
+    font-style: normal;
+}

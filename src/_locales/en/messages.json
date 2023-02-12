@@ -1,0 +1,41 @@
+{
+    "extName" : {
+        "message": "Wwwyzzerdd for Wikidata"
+    },
+    "extDesc" : {
+        "message": "Edit Wikidata From Wikipedia!"
+    },
+    "showOrbs" : {
+        "message": "Show Orbs"
+    },
+    "allowAnon" : {
+        "message": "Allow Anon"
+    },
+    "loadSuggestions" : {
+        "message": "Load Suggestions"
+    },
+    "clearCache" : {
+        "message": "Clear Cache"
+    },
+    "addStatement" : {
+        "message": "Add Statement"
+    },
+    "suggestedStatements": {
+        "message": "Suggested Statements"
+    },
+    "suggestedStatementsDesc": {
+        "message": "These are statements that we predict are applicable to this item. Click the checkbox and hit save to add them to the item"
+    },
+    "loadingSuggestions": {
+        "message": "loading suggestions"
+    },
+    "suggestedClaims": {
+        "message": "suggested claims"
+    },
+    "parseAsString": {
+        "message": "Parse As String"
+    },
+    "parseAsDate": {
+        "message": "Parse As Date"
+    }
+}

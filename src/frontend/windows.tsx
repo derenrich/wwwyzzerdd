@@ -105,7 +105,7 @@ import { ParsedDate } from '~parseString';
                 <ListItemIcon>
                   <AddIcon />
                 </ListItemIcon>
-                <ListItemText primary="Add Statement" />
+                <ListItemText primary={chrome.i18n.getMessage("addStatement")} />
             </ListItem>
             }
              </List>
@@ -377,7 +377,7 @@ export const SpanDateWindow = withStyles(styles)(class extends Component<SpanDat
                 <ListItemIcon>
                   <AddIcon />
                 </ListItemIcon>
-                <ListItemText primary="Add Statement" />
+                <ListItemText primary={chrome.i18n.getMessage("addStatement")} />
             </ListItem>
             }
             </CardContent>

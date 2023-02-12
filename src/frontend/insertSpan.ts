@@ -123,11 +123,12 @@ export function insertSpan(selection: SelectionData): HTMLElement | undefined {
             let rightRemainder = right.splitText(rightOffset);
             const rightSpanNode = document.createElement('span');
             right.remove();
-            rightSpanNode.appendChild(right);
+            rightSpanNode.appendChild(right);   
             rightRemainder.parentElement?.insertBefore(rightSpanNode, rightRemainder);
             setAsEndContext(rightSpanNode);
             return rightSpanNode;
         } else {
+            console.log(anchor, focus, sel.anchorOffset, sel.focusOffset);
             throw Error("Could not parse text. Still under development. Try selecting again. If this persists report a bug.")
         }
     }

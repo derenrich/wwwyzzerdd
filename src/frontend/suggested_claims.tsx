@@ -107,8 +107,8 @@ export const SuggestedClaimsWindow = withStyles(styles)(
 
         render() {
             return <Card elevation={3} className={this.props.classes.card}>
-                <CardHeader title={"Suggested Statements"} action={
-                    <Tooltip placement='right-start' title="These are statements that we predict are applicable to this item. Click the checkbox and hit save to add them to the item." arrow>
+                <CardHeader title={chrome.i18n.getMessage("suggestedStatements")} action={
+                    <Tooltip placement='right-start' title={chrome.i18n.getMessage("suggestedStatementsDesc")} arrow>
                     <HelpIcon />
                   </Tooltip>
                 }/>
