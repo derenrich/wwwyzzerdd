@@ -37,5 +37,23 @@
     },
     "parseAsDate": {
         "message": "Parse As Date"
+    },
+    "noLabel": {
+        "message": "no label"
+    },
+    "noDescription": {
+        "message": "no description"
+    },
+    "label": {
+        "message": "label"
+    },
+    "description": {
+        "message": "Description"
+    },
+    "alias": {
+        "message": "Alias"
+    },
+    "language": {
+        "message": "Language"
     }
 }

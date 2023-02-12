@@ -156,11 +156,11 @@ export const LinkWindow = withStyles(styles)(
         const pidLink = <React.Fragment>
             <a href={`https://www.wikidata.org/wiki/Property:${this.props.pid}`}>{this.props.pid}</a>
             {" "}·{" "}
-            {this.props.propNames[this.props.pid || ""] ?? "«no description»"}
+            {this.props.propNames[this.props.pid || ""] ?? "«" + chrome.i18n.getMessage("noDescription") + "»"}
         </React.Fragment>;
 
         return <Card elevation={3} className={this.props.classes.card}>
-            <CardHeader title={this.props.identifier ?? "«no label»"} subheader={pidLink}/>
+            <CardHeader title={this.props.identifier ?? "«" + chrome.i18n.getMessage("noLabel")  + "»"} subheader={pidLink}/>
             {!this.props.linked ?
             <CardContent>
                 <Button style={{width: "100%"}} startIcon={<AddIcon />} variant="contained" color="primary" onClick={this.link.bind(this)}>Link</Button>
@@ -291,13 +291,13 @@ export const SpanWindow = withStyles(styles)(class extends Component<SpanWindowP
                 <FormControl style={{width: "50%"}}>
                     <InputLabel>Field</InputLabel>
                     <Select label="field" defaultValue="alias" onChange={this.changeField.bind(this)}>
-                        <MenuItem value="label">Label</MenuItem>
-                        <MenuItem value="description">Description</MenuItem>
-                        <MenuItem value="alias">Alias</MenuItem>
+                        <MenuItem value="label">{chrome.i18n.getMessage("label")}</MenuItem>
+                        <MenuItem value="description">{chrome.i18n.getMessage("description")}</MenuItem>
+                        <MenuItem value="alias">{chrome.i18n.getMessage("alias")}</MenuItem>
                     </Select>
                 </FormControl>
                 <FormControl style={{width: "50%"}}>
-                    <InputLabel>Language</InputLabel>
+                    <InputLabel>{chrome.i18n.getMessage("language")}</InputLabel>
                     <Select defaultValue={this.props.wikiLanguage} label="language" onChange={this.changeLang.bind(this)}>
                         <MenuItem value="ar">Arabic</MenuItem>
                         <MenuItem value="be">Belarusian</MenuItem>
