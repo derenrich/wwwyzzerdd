@@ -19,12 +19,14 @@ export function initContext() {
           id: "selection-string",
           title: chrome.i18n.getMessage("parseAsString"),
           contexts: ["selection"],
+          documentUrlPatterns: ["*://*.wikipedia.org/*"]
         }, addListener);
     chrome.contextMenus.create(
     {
       id: "selection-date",
       title: chrome.i18n.getMessage("parseAsDate"),
       contexts: ["selection"],
+      documentUrlPatterns: ["*://*.wikipedia.org/*"]
     });
 }
 
