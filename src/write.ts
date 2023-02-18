@@ -140,20 +140,27 @@ export async function addReference(sourceUrl: string, claimId: string, wikiLangu
     let FRENCH_WIKI = "Q8447";
     let GERMAN_WIKI = "Q48183";
     let JAPANESE_WIKI = "Q177837";
-    let RETRIEVED_TIME_PID = "P813";
     let SPANISH_WIKI = "Q8449";
+    let RUSSIAN_WIKI = "Q206855";
+    let UKRAINIAN_WIKI = "Q199698";
+    let CHINESE_WIKI = "Q30239";
+
+    let RETRIEVED_TIME_PID = "P813";
     // for now just support these top wikis
     let wikiLookup: { [key: string]: string; } = {
         "en": ENGLISH_WIKI,
         "fr": FRENCH_WIKI,
         "de": GERMAN_WIKI,
         "es": SPANISH_WIKI,
-        "ja": JAPANESE_WIKI
+        "ja": JAPANESE_WIKI,
+        "ru": RUSSIAN_WIKI,
+        "uk": UKRAINIAN_WIKI,
+        "zh": CHINESE_WIKI
     }
 
     let refSnack: { [key: string]: any; } = { };
 
-    if (wikiLanguage && wikiLanguage   in wikiLookup) {
+    if (wikiLanguage && wikiLanguage in wikiLookup) {
         let wikiQid = wikiLookup[wikiLanguage];
         refSnack[IMPORTED_FROM_WIKIMEDIA_PID] =
             [
