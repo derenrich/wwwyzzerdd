@@ -1,59 +1,130 @@
 {
     "extName" : {
-        "message": "Wwwyzzerdd for Wikidata"
+        "message": "Wwwyzzerdd for Wikidata",
+        "description": "The name of the extension. 'Wwwyzzerdd' and 'Wikidata' are proper nouns. 'For' means that it works on Wikidata."
     },
     "extDesc" : {
-        "message": "Edit Wikidata From Wikipedia!"
+        "message": "Edit Wikidata From Wikipedia!",
+        "description": "The main use of the extension. You can modify entries on Wikidata while browsing Wikipedia."
     },
     "showOrbs" : {
-        "message": "Show Orbs"
+        "message": "Show Orbs",
+        "description": "Option to show or hide 'orbs'. Orbs are colored circles (vaguely magic themed) that users click on."        
     },
     "allowAnon" : {
-        "message": "Allow Anon"
+        "message": "Allow Anon",
+        "description": "Option to allow anonymous editing."
     },
     "loadSuggestions" : {
-        "message": "Load Suggestions"
+        "message": "Load Suggestions",
+        "description": "Option to enable/disable the loading of suggestions for the topic of the article.",        
     },
     "clearCache" : {
-        "message": "Clear Cache"
+        "message": "Clear Cache",
+        "description": "Button to clear the cache of the application."
     },
     "addStatement" : {
-        "message": "Add Statement"
+        "message": "Add Statement",
+        "description": "Button to attach the statement (as in https://www.wikidata.org/wiki/Help:Statements) to the item."
     },
     "suggestedStatements": {
-        "message": "Suggested Statements"
+        "message": "Suggested Statements",
+        "description": "Header for list of statements (as in https://www.wikidata.org/wiki/Help:Statements) suggested to attach to the item."
     },
     "suggestedStatementsDesc": {
-        "message": "These are statements that we predict are applicable to this item. Click the checkbox and hit save to add them to the item"
+        "message": "These are statements that we predict are applicable to this item. Click the checkbox and hit save to add them to the item",
+        "description": "Tooltip that explains that this is a menu showing suggested statements (as in https://www.wikidata.org/wiki/Help:Statements) and a user-interface to link those statements to the item."
     },
     "loadingSuggestions": {
-        "message": "loading suggestions"
+        "message": "loading suggestions",
+        "description": "Loading message indicating that we are waiting for suggestions to be loaded."
     },
     "suggestedClaims": {
-        "message": "suggested claims"
+        "message": "suggested claims",
+        "description": "Header for a list of suggested claims (as meant in https://www.wikidata.org/wiki/Wikidata:Glossary)"
     },
     "parseAsString": {
-        "message": "Parse As String"
+        "message": "Parse As String",
+        "description": "Option offering to let the user parse the selected text as a string."
+
     },
     "parseAsDate": {
-        "message": "Parse As Date"
+        "message": "Parse As Date",
+        "description": "Option offering to let the user parse the selected text as a date."        
     },
+    "parseAsLink": {
+        "message": "Parse As External Link",
+        "description": "Option offering to let the user parse the selected text as a hyperlink (external implies that it's not to a link on Wikipedia)."        
+
+    },
+    "parseAsCoordinate": {
+        "message": "Parse As Coordinate",
+        "description": "Option offering to let the user parse the selected text as a GPS coordinate (lattitude/longitude)."        
+
+    },
+    "linkImage": {
+        "message": "Link Image",
+        "description": "Option offering to let the link the image to the article's item."        
+
+    },    
     "noLabel": {
-        "message": "no label"
+        "message": "no label",
+        "description": "Message indicating that the current item has no label (as in https://www.wikidata.org/wiki/Help:Label)."
     },
     "noDescription": {
-        "message": "no description"
+        "message": "no description",
+        "description": "Message indicating that the current item has no description (as in https://www.wikidata.org/wiki/Help:Description)."
     },
     "label": {
-        "message": "label"
+        "message": "label",
+        "description": "The name for something. As in https://www.wikidata.org/wiki/Help:Label"
     },
     "description": {
-        "message": "Description"
+        "message": "Description",
+        "description": "Description of an item. As in https://www.wikidata.org/wiki/Help:Description"
     },
     "alias": {
-        "message": "Alias"
+        "message": "Alias",
+        "description": "Another name for something. As in https://www.wikidata.org/wiki/Help:Aliases"
     },
     "language": {
-        "message": "Language"
+        "message": "Language",
+        "description": "Option label indicating that you are selecting what language this text is in"
+    },
+    "errorParsingDate": {
+        "message": "Error parsing date",
+        "description": "Error message indicating that we tried to parse a string as a date but that it failed for some reasons"
+    },
+    "errorParsingCoordinate": {
+        "message": "Error parsing coordinate",
+        "description": "Error message for when we cannot parse a GPS coordinate"
+    },
+    "errorAddingStatements": {
+        "message": "Error adding statement",
+        "description": "Error message shown when we cannot add a statement (as in https://www.wikidata.org/wiki/Help:Statements)."
+    },
+    "errorEditingAnonymously": {
+        "message": "Editing Wikidata anonymously is disallowed",
+        "description": "Error message indicating that the user tried to edit anonymously and that ability is disabled"
+    },
+    "changeTarget": {
+        "message": "change target item",
+        "description": "Option to change what we are linking to. Item is as in https://www.wikidata.org/wiki/Help:Items"
+    },
+    "addInverseLinks": {
+        "message": "add inverse statements",
+        "description": "Option to enable adding inverse statements. That is if we are adding 'john is bob's dad' we should also add 'bob is john's son'. Statement as in https://www.wikidata.org/wiki/Help:Statements"
+    },
+    "linkedInverse": {
+        "message": "inverse link",
+        "description": "Message indicating that the link is backwards from the normal direction (usually it's from A to B but now it's from B to A)"
+    },
+    "inCountry": {
+        "message": "in country",
+        "description": "Message indicating that the location is in the country shown."
+    },
+    "constraintViolation": {
+        "message": "constraint violation",
+        "description": "Message indicating that a 'constraint' (as in https://www.wikidata.org/wiki/Help:Property_constraints_portal) has been violated and that there is a problem."
     }
 }

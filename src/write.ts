@@ -200,7 +200,7 @@ async function checkedGetToken(): Promise<string> {
         // are we ok editing anonymously?
         let config = await getConfig();
         if (!config.allowAnon) {
-            throw new Error("Editing wikidata anonymously is disallowed.");
+            throw new Error("Editing Wikidata anonymously is disallowed.");
         }
     }
     let token = encodeURIComponent(auth_token);
