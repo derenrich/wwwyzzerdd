@@ -9,10 +9,10 @@
         "message": "Mostrar Orbes"
     },
     "allowAnon" : {
-        "message": "permitir anon"
+        "message": "Permitir anon"
     },
     "loadSuggestions" : {
-        "message": "cargar sugerencias"
+        "message": "Cargar sugerencias"
     },
     "clearCache" : {
         "message": "Borrar Caché"
