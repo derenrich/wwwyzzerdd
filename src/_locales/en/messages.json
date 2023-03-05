@@ -17,7 +17,7 @@
     },
     "loadSuggestions" : {
         "message": "Load Suggestions",
-        "description": "Option to enable/disable the loading of suggestions for the topic of the article.",        
+        "description": "Option to enable/disable the loading of suggestions for the topic of the article."
     },
     "clearCache" : {
         "message": "Clear Cache",
