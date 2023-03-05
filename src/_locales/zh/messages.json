@@ -1,0 +1,95 @@
+{
+    "extName" : {
+        "message": "维基数据的 wwwyzzerdd"
+    },
+    "extDesc" : {
+        "message": "编辑 Wikipedia 上的 Wikidata 数据!"
+    },
+    "showOrbs" : {
+        "message": "显示魔环"
+    },
+    "allowAnon" : {
+        "message": "允许匿名"
+    },
+    "loadSuggestions" : {
+        "message": "加载建议"
+    },
+    "clearCache" : {
+        "message": "清除缓存"
+    },
+    "addStatement" : {
+        "message": "添加陈述"
+    },
+    "suggestedStatements": {
+        "message": "建议声明"
+    },
+    "suggestedStatementsDesc": {
+        "message": "这些是我们预测的适用于此条目的陈述。点击选择框，点击保存将它们保存到条目"
+    },
+    "loadingSuggestions": {
+        "message": "正在加载建议"
+    },
+    "suggestedClaims": {
+        "message": "建议索赔"
+    },
+    "parseAsString": {
+        "message": "解析为字符串"
+    },
+    "parseAsDate": {
+        "message": "解析为数据"
+    },
+    "parseAsLink": {
+        "message": "解析为外部链接"
+    },
+    "parseAsCoordinate": {
+        "message": "解析为坐标"
+    },
+    "linkImage": {
+        "message": "链接图像"
+    },    
+    "noLabel": {
+        "message": "没有标签"
+    },
+    "noDescription": {
+        "message": "没有描述"
+    },
+    "label": {
+        "message": "标签"
+    },
+    "description": {
+        "message": "描述"
+    },
+    "alias": {
+        "message": "别名"
+    },
+    "language": {
+        "message": "语言"
+    },
+    "errorParsingDate": {
+        "message": "解析日期时发生错误"
+    },
+    "errorParsingCoordinate": {
+        "message": "解析坐标时出错"
+    },
+    "errorAddingStatements": {
+        "message": "添加声明时出错"
+    },
+    "errorEditingAnonymously": {
+        "message": "不允许匿名编辑Wiki数据"
+    },
+    "changeTarget": {
+        "message": "更改目标项目"
+    },
+    "addInverseLinks": {
+        "message": "添加反向声明"
+    },
+    "linkedInverse": {
+        "message": "反向链接"
+    },
+    "inCountry": {
+        "message": "所在国家/地区为"
+    },
+    "constraintViolation": {
+        "message": "约束违规"
+    }
+}

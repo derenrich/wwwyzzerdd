@@ -1,0 +1,95 @@
+{
+    "extName" : {
+        "message": "Wikidata용 Wwwyzzerdd"
+    },
+    "extDesc" : {
+        "message": "위키피디아에서 위키데이터를 편집하세요!"
+    },
+    "showOrbs" : {
+        "message": "오브 표시"
+    },
+    "allowAnon" : {
+        "message": "익명 허용"
+    },
+    "loadSuggestions" : {
+        "message": "제안 불러오기"
+    },
+    "clearCache" : {
+        "message": "캐시 삭제"
+    },
+    "addStatement" : {
+        "message": "서술 추가"
+    },
+    "suggestedStatements": {
+        "message": "제안된 서술"
+    },
+    "suggestedStatementsDesc": {
+        "message": "다음은 이 항목에 적용될 것으로 예상되는 서술입니다. 서술을 항목에 추가하려면 체크박스를 클릭하고 저장을 누르세요."
+    },
+    "loadingSuggestions": {
+        "message": "제안 불러오는 중"
+    },
+    "suggestedClaims": {
+        "message": "제안된 주장"
+    },
+    "parseAsString": {
+        "message": "문자열로 구문 분석"
+    },
+    "parseAsDate": {
+        "message": "날짜로 구문 분석"
+    },
+    "parseAsLink": {
+        "message": "외부 링크로 구문 분석"
+    },
+    "parseAsCoordinate": {
+        "message": "좌표로 구문 분석"
+    },
+    "linkImage": {
+        "message": "이미지 링크"
+    },    
+    "noLabel": {
+        "message": "라벨 없음"
+    },
+    "noDescription": {
+        "message": "설명 없음"
+    },
+    "label": {
+        "message": "라벨"
+    },
+    "description": {
+        "message": "설명"
+    },
+    "alias": {
+        "message": "별칭"
+    },
+    "language": {
+        "message": "언어"
+    },
+    "errorParsingDate": {
+        "message": "날짜 파싱 오류"
+    },
+    "errorParsingCoordinate": {
+        "message": "좌표 파싱 오류"
+    },
+    "errorAddingStatements": {
+        "message": "서술 추가 중 오류 발생"
+    },
+    "errorEditingAnonymously": {
+        "message": "Wikidata를 익명으로 수정하는 것은 허용되지 않습니다"
+    },
+    "changeTarget": {
+        "message": "대상 항목 변경"
+    },
+    "addInverseLinks": {
+        "message": "반대 방향 서술 추가"
+    },
+    "linkedInverse": {
+        "message": "역링크"
+    },
+    "inCountry": {
+        "message": "국가 내"
+    },
+    "constraintViolation": {
+        "message": "제약 위반"
+    }
+}

@@ -1,0 +1,95 @@
+{
+    "extName" : {
+        "message": "Wwwyzzerdd ل Wikidata"
+    },
+    "extDesc" : {
+        "message": "تعديل Wikidata من Wikipedia!"
+    },
+    "showOrbs" : {
+        "message": "مشاهدة الأجرام السماوية"
+    },
+    "allowAnon" : {
+        "message": "اسمح للمجهول"
+    },
+    "loadSuggestions" : {
+        "message": "تحميل الاقتراحات"
+    },
+    "clearCache" : {
+        "message": "مسح ذاكرة التخزين المؤقت"
+    },
+    "addStatement" : {
+        "message": "إضافة بيان"
+    },
+    "suggestedStatements": {
+        "message": "البيانات المقترحة"
+    },
+    "suggestedStatementsDesc": {
+        "message": "هذه هي البيانات التي نتوقع أنها قابلة للتطبيق على هذا العنصر. انقر فوق مربع الاختيار واضغط على حفظ لإضافتها إلى العنصر"
+    },
+    "loadingSuggestions": {
+        "message": "جارٍ تحميل الاقتراحات"
+    },
+    "suggestedClaims": {
+        "message": "مطالبات مقترحة"
+    },
+    "parseAsString": {
+        "message": "تحليل كالشريط "
+    },
+    "parseAsDate": {
+        "message": "تحليل كتاريخ"
+    },
+    "parseAsLink": {
+        "message": "تحليل كرابط خارجي"
+    },
+    "parseAsCoordinate": {
+        "message": "تحليل كمنسق"
+    },
+    "linkImage": {
+        "message": "صورة الرابط"
+    },    
+    "noLabel": {
+        "message": "بدون تسمية"
+    },
+    "noDescription": {
+        "message": "لا يوجد وصف"
+    },
+    "label": {
+        "message": "التسمية"
+    },
+    "description": {
+        "message": "الوصف"
+    },
+    "alias": {
+        "message": "الاسم المستعار"
+    },
+    "language": {
+        "message": "اللغة"
+    },
+    "errorParsingDate": {
+        "message": "خطأ في تحليل التاريخ"
+    },
+    "errorParsingCoordinate": {
+        "message": "خطأ في تحليل التنسيق"
+    },
+    "errorAddingStatements": {
+        "message": "حدث خطأ في إضافة البيان"
+    },
+    "errorEditingAnonymously": {
+        "message": "ممنوع تعديل Wikidata كمستخدم مجهول"
+    },
+    "changeTarget": {
+        "message": "تغيير العنصر المستهدف"
+    },
+    "addInverseLinks": {
+        "message": "إضافة عبارات معكوسة"
+    },
+    "linkedInverse": {
+        "message": "رابط عكسي"
+    },
+    "inCountry": {
+        "message": "في البلد"
+    },
+    "constraintViolation": {
+        "message": "مخالفة محددات الخواص"
+    }
+}

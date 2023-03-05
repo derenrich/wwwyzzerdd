@@ -1,0 +1,95 @@
+{
+    "extName" : {
+        "message": "Wwwyzzerdd per Wikidata"
+    },
+    "extDesc" : {
+        "message": "Modifica Wikidata da Wikipedia!"
+    },
+    "showOrbs" : {
+        "message": "Mostra sfere"
+    },
+    "allowAnon" : {
+        "message": "Consenti Anonimo"
+    },
+    "loadSuggestions" : {
+        "message": "caricamento dei suggerimenti"
+    },
+    "clearCache" : {
+        "message": "Cancella cache"
+    },
+    "addStatement" : {
+        "message": "Aggiungi dichiarazione"
+    },
+    "suggestedStatements": {
+        "message": "Dichiarazioni suggerite"
+    },
+    "suggestedStatementsDesc": {
+        "message": "Queste sono dichiarazioni che prevediamo siano applicabili a questo articolo. Fai clic sulla casella di spunta e premi salva per aggiungerle all'elemento."
+    },
+    "loadingSuggestions": {
+        "message": "caricamento dei suggerimenti"
+    },
+    "suggestedClaims": {
+        "message": "affermazioni suggerite"
+    },
+    "parseAsString": {
+        "message": "Analizza come stringa"
+    },
+    "parseAsDate": {
+        "message": "Analizza come data"
+    },
+    "parseAsLink": {
+        "message": "Analizza come collegamento esterno"
+    },
+    "parseAsCoordinate": {
+        "message": "Analizza come coordinata"
+    },
+    "linkImage": {
+        "message": "Link immagine"
+    },    
+    "noLabel": {
+        "message": "nessuna etichetta"
+    },
+    "noDescription": {
+        "message": "nessuna descrizione"
+    },
+    "label": {
+        "message": "etichetta"
+    },
+    "description": {
+        "message": "Descrizione"
+    },
+    "alias": {
+        "message": "Alias"
+    },
+    "language": {
+        "message": "Lingua"
+    },
+    "errorParsingDate": {
+        "message": "Errore durante l'analisi della data"
+    },
+    "errorParsingCoordinate": {
+        "message": "Errore durante l'analisi delle coordinate"
+    },
+    "errorAddingStatements": {
+        "message": "Errore nell'aggiunta della dichiarazione"
+    },
+    "errorEditingAnonymously": {
+        "message": "La modifica anonima di Wikidata non è consentita"
+    },
+    "changeTarget": {
+        "message": "cambia oggetto di destinazione"
+    },
+    "addInverseLinks": {
+        "message": "aggiungere dichiarazioni inverse"
+    },
+    "linkedInverse": {
+        "message": "collegamento inverso"
+    },
+    "inCountry": {
+        "message": "nel paese"
+    },
+    "constraintViolation": {
+        "message": "violazione del vincolo"
+    }
+}

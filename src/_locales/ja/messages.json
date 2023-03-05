@@ -1,0 +1,95 @@
+{
+    "extName" : {
+        "message": "Wikidata用Wwwyzzerdd"
+    },
+    "extDesc" : {
+        "message": "ウィキペディアからウィキデータを編集できます!"
+    },
+    "showOrbs" : {
+        "message": "オーブを表示"
+    },
+    "allowAnon" : {
+        "message": "匿名を許可"
+    },
+    "loadSuggestions" : {
+        "message": "提案を読み込む"
+    },
+    "clearCache" : {
+        "message": "キャッシュをクリア"
+    },
+    "addStatement" : {
+        "message": "文を追加"
+    },
+    "suggestedStatements": {
+        "message": "提案された文"
+    },
+    "suggestedStatementsDesc": {
+        "message": "これらはこちらのアイテムに適用可能であると考えられる文です。これらをアイテムへと追加するには、チェックボックスをクリックして、保存を押してください"
+    },
+    "loadingSuggestions": {
+        "message": "提案を読み込み中"
+    },
+    "suggestedClaims": {
+        "message": "提案された要求"
+    },
+    "parseAsString": {
+        "message": "文字列として解析"
+    },
+    "parseAsDate": {
+        "message": "日付として解析"
+    },
+    "parseAsLink": {
+        "message": "外部リンクとして解析"
+    },
+    "parseAsCoordinate": {
+        "message": "コーディネートとして分析"
+    },
+    "linkImage": {
+        "message": "画像をリンク"
+    },    
+    "noLabel": {
+        "message": "ラベルなし"
+    },
+    "noDescription": {
+        "message": "解説なし"
+    },
+    "label": {
+        "message": "ラベル"
+    },
+    "description": {
+        "message": "解説"
+    },
+    "alias": {
+        "message": "別名"
+    },
+    "language": {
+        "message": "言語"
+    },
+    "errorParsingDate": {
+        "message": "日付の解析中にエラーが発生しました"
+    },
+    "errorParsingCoordinate": {
+        "message": "座標の解析中にエラーが発生しました"
+    },
+    "errorAddingStatements": {
+        "message": "文の追加中にエラーが発生しました"
+    },
+    "errorEditingAnonymously": {
+        "message": "匿名でのWikidataの編集は許可されていません"
+    },
+    "changeTarget": {
+        "message": "ターゲットのアイテムを変更"
+    },
+    "addInverseLinks": {
+        "message": "逆の文を追加"
+    },
+    "linkedInverse": {
+        "message": "逆リンク"
+    },
+    "inCountry": {
+        "message": "にあります"
+    },
+    "constraintViolation": {
+        "message": "制約違反"
+    }
+}

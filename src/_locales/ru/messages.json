@@ -1,0 +1,95 @@
+{
+    "extName" : {
+        "message": "Wwwyzzerdd для Wikidata"
+    },
+    "extDesc" : {
+        "message": "Редактировать викиданные из Википедии!"
+    },
+    "showOrbs" : {
+        "message": "Показать сферы"
+    },
+    "allowAnon" : {
+        "message": "Разрешить анонимный доступ"
+    },
+    "loadSuggestions" : {
+        "message": "Загрузить предложения"
+    },
+    "clearCache" : {
+        "message": "Очистить кеш"
+    },
+    "addStatement" : {
+        "message": "Добавить утверждение"
+    },
+    "suggestedStatements": {
+        "message": "Предлагаемые утверждения"
+    },
+    "suggestedStatementsDesc": {
+        "message": "Это утверждения, которые, по нашим прогнозам, можно применить к этому элементу. Установите флажок и нажмите «Сохранить», чтобы добавить их к элементу"
+    },
+    "loadingSuggestions": {
+        "message": "Загрузка рекомендаций"
+    },
+    "suggestedClaims": {
+        "message": "предлагаемые претензии"
+    },
+    "parseAsString": {
+        "message": "Разбор Как Строка"
+    },
+    "parseAsDate": {
+        "message": "Разбор Как Дата"
+    },
+    "parseAsLink": {
+        "message": "Парсить как внешнюю ссылку"
+    },
+    "parseAsCoordinate": {
+        "message": "Разбор Как Координата"
+    },
+    "linkImage": {
+        "message": "Прикрепить изображение"
+    },    
+    "noLabel": {
+        "message": "без метки"
+    },
+    "noDescription": {
+        "message": "нет описания"
+    },
+    "label": {
+        "message": "метак"
+    },
+    "description": {
+        "message": "Описание"
+    },
+    "alias": {
+        "message": "Алиас"
+    },
+    "language": {
+        "message": "Язык"
+    },
+    "errorParsingDate": {
+        "message": "Ошибка при обработке даты"
+    },
+    "errorParsingCoordinate": {
+        "message": "Ошибка анализа координаты"
+    },
+    "errorAddingStatements": {
+        "message": "Ошибка при добавлении утверждения"
+    },
+    "errorEditingAnonymously": {
+        "message": "Анонимное редактирование Wikidata запрещено"
+    },
+    "changeTarget": {
+        "message": "изменить целевой объект"
+    },
+    "addInverseLinks": {
+        "message": "Добавить обратные утверждения"
+    },
+    "linkedInverse": {
+        "message": "Обратная ссылка"
+    },
+    "inCountry": {
+        "message": "в стране"
+    },
+    "constraintViolation": {
+        "message": "нарушение ограничения"
+    }
+}

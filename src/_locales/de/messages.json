@@ -1,0 +1,95 @@
+{
+    "extName" : {
+        "message": "Wwwyzzerdd für Wikidata"
+    },
+    "extDesc" : {
+        "message": "Wikidata von Wikipedia bearbeiten!"
+    },
+    "showOrbs" : {
+        "message": "Orbs anzeigen"
+    },
+    "allowAnon" : {
+        "message": "Anonym zulassen"
+    },
+    "loadSuggestions" : {
+        "message": "Vorschläge laden"
+    },
+    "clearCache" : {
+        "message": "Cache löschen"
+    },
+    "addStatement" : {
+        "message": "Aussage hinzufügen"
+    },
+    "suggestedStatements": {
+        "message": "Vorgeschlagene Aussagen"
+    },
+    "suggestedStatementsDesc": {
+        "message": "Dies sind Aussagen, von denen wird vorhersagen, dass sie auf diesen Gegenstand anwendbar sind. Markieren Sie das Kontrollkästchen und klicken Sie 'Speichern', um sie dem Gegenstand hinzuzufügen."
+    },
+    "loadingSuggestions": {
+        "message": "Vorschläge werden geladen"
+    },
+    "suggestedClaims": {
+        "message": "Vorgeschlagene Behauptungen"
+    },
+    "parseAsString": {
+        "message": "Als Zeichenfolge parsen"
+    },
+    "parseAsDate": {
+        "message": "Als Daten parsen"
+    },
+    "parseAsLink": {
+        "message": "Als externen Link parsen"
+    },
+    "parseAsCoordinate": {
+        "message": "Als Koordinate parsen"
+    },
+    "linkImage": {
+        "message": "Bild verlinken"
+    },    
+    "noLabel": {
+        "message": "keine Bezeichnung"
+    },
+    "noDescription": {
+        "message": "keine Beschreibung"
+    },
+    "label": {
+        "message": "Bezeichnung"
+    },
+    "description": {
+        "message": "Beschreibung"
+    },
+    "alias": {
+        "message": "Alias"
+    },
+    "language": {
+        "message": "Sprache"
+    },
+    "errorParsingDate": {
+        "message": "Fehler beim Parsen des Datums"
+    },
+    "errorParsingCoordinate": {
+        "message": "Fehler beim Parsen der Koordinate"
+    },
+    "errorAddingStatements": {
+        "message": "Fehler beim Hinzufügen der Anweisung"
+    },
+    "errorEditingAnonymously": {
+        "message": "Die anonyme Bearbeitung von Wikidata ist nicht erlaubt"
+    },
+    "changeTarget": {
+        "message": "Zielelement ändern"
+    },
+    "addInverseLinks": {
+        "message": "add inverse statements"
+    },
+    "linkedInverse": {
+        "message": "reziproker Link"
+    },
+    "inCountry": {
+        "message": "im Land"
+    },
+    "constraintViolation": {
+        "message": "Beschränkungsverletzung"
+    }
+}

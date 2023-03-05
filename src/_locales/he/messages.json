@@ -1,0 +1,95 @@
+{
+    "extName" : {
+        "message": "Wwwyzzerdd לוויקידאטה"
+    },
+    "extDesc" : {
+        "message": "עריכת ויקידאטה מוויקיפדיה!"
+    },
+    "showOrbs" : {
+        "message": "הצג עיגולים"
+    },
+    "allowAnon" : {
+        "message": "הרשה אנונימי"
+    },
+    "loadSuggestions" : {
+        "message": "טען הצעות"
+    },
+    "clearCache" : {
+        "message": "נקה מטמון"
+    },
+    "addStatement" : {
+        "message": "הוסף קביעה"
+    },
+    "suggestedStatements": {
+        "message": "קביעות מוצעות"
+    },
+    "suggestedStatementsDesc": {
+        "message": "אלו הן קביעות שאנו חוזים שתהיינה ישימות לפריט זה. לחצו על תיבת הסימון ולחצו על 'שמור' כדי להוסיף אותן לפריט"
+    },
+    "loadingSuggestions": {
+        "message": "טוען הצעות"
+    },
+    "suggestedClaims": {
+        "message": "טענות מוצעות"
+    },
+    "parseAsString": {
+        "message": "נתח כמחרוזת"
+    },
+    "parseAsDate": {
+        "message": "נתח כתאריך"
+    },
+    "parseAsLink": {
+        "message": "נתח כקישור חיצוני"
+    },
+    "parseAsCoordinate": {
+        "message": "נתח כקואורדינטה"
+    },
+    "linkImage": {
+        "message": "תמונת קישור"
+    },    
+    "noLabel": {
+        "message": "ללא תווית"
+    },
+    "noDescription": {
+        "message": "ללא תיאור"
+    },
+    "label": {
+        "message": "תווית"
+    },
+    "description": {
+        "message": "תיאור"
+    },
+    "alias": {
+        "message": "כינוי"
+    },
+    "language": {
+        "message": "שפה"
+    },
+    "errorParsingDate": {
+        "message": "שגיאה בניתוח תאריך"
+    },
+    "errorParsingCoordinate": {
+        "message": "שגיאה בניתוח קואורדינטה"
+    },
+    "errorAddingStatements": {
+        "message": "שגיאה בהוספת קביעה"
+    },
+    "errorEditingAnonymously": {
+        "message": "עריכת ויקידאטה באנונימיות אסורה"
+    },
+    "changeTarget": {
+        "message": "שנה פריט יעד"
+    },
+    "addInverseLinks": {
+        "message": "הוסף משפט הופכי"
+    },
+    "linkedInverse": {
+        "message": "קישור הופכי"
+    },
+    "inCountry": {
+        "message": "במדינה"
+    },
+    "constraintViolation": {
+        "message": "הפרת אילוץ"
+    }
+}

@@ -1,0 +1,95 @@
+{
+    "extName" : {
+        "message": "Wwwyzzerdd para Wikidata"
+    },
+    "extDesc" : {
+        "message": "¡Edita Wikidata desde Wikipedia!"
+    },
+    "showOrbs" : {
+        "message": "Mostrar Orbes"
+    },
+    "allowAnon" : {
+        "message": "permitir anon"
+    },
+    "loadSuggestions" : {
+        "message": "cargar sugerencias"
+    },
+    "clearCache" : {
+        "message": "Borrar Caché"
+    },
+    "addStatement" : {
+        "message": "añadir declaración"
+    },
+    "suggestedStatements": {
+        "message": "declaraciones sugeridas"
+    },
+    "suggestedStatementsDesc": {
+        "message": "Estas son declaraciones que predecimos que aplican a este artículo. Haz clic en la casilla de verificación y luego en guardar para añadirlas al artículo."
+    },
+    "loadingSuggestions": {
+        "message": "cargando sugerencias"
+    },
+    "suggestedClaims": {
+        "message": "reclamaciones propuestas"
+    },
+    "parseAsString": {
+        "message": "Parse como String"
+    },
+    "parseAsDate": {
+        "message": "Representar como Fecha"
+    },
+    "parseAsLink": {
+        "message": "Analizar como enlace externo"
+    },
+    "parseAsCoordinate": {
+        "message": "Analizar como coordenada"
+    },
+    "linkImage": {
+        "message": "Enlazar imagen"
+    },    
+    "noLabel": {
+        "message": "sin etiqueta"
+    },
+    "noDescription": {
+        "message": "sin descripción"
+    },
+    "label": {
+        "message": "etiqueta"
+    },
+    "description": {
+        "message": "Descripción"
+    },
+    "alias": {
+        "message": "Alias"
+    },
+    "language": {
+        "message": "Idioma"
+    },
+    "errorParsingDate": {
+        "message": "Error al analizar la fecha"
+    },
+    "errorParsingCoordinate": {
+        "message": "Error al analizar la coordenada"
+    },
+    "errorAddingStatements": {
+        "message": "Error al añadir declaración"
+    },
+    "errorEditingAnonymously": {
+        "message": "No se permite editar la Wikidata de forma anónima"
+    },
+    "changeTarget": {
+        "message": "cambiar elemento de destino"
+    },
+    "addInverseLinks": {
+        "message": "añadir declaraciones inversas"
+    },
+    "linkedInverse": {
+        "message": "enlace inverso"
+    },
+    "inCountry": {
+        "message": "en el país"
+    },
+    "constraintViolation": {
+        "message": "violación de la restricción"
+    }
+}
