@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "__MSG_extName__",
-    "version": "0.1.0.0",
+    "version": "0.1.0.1",
     "description": "__MSG_extDesc__",
     "default_locale": "en",
     "icons": {
@@ -40,8 +40,6 @@
     "permissions": ["storage",
                     "alarms",
                     "contextMenus",
-                    "scripting",
-                    "webNavigation",
                     "unlimitedStorage",
                     "https://www.wikidata.org/*",
                     "https://*.wikipedia.org/*",
