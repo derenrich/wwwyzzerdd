@@ -1,6 +1,7 @@
 import { PropertyDB, PropertyMatch } from './propertyData';
 import { ItemDB, LinkedItemData } from './itemData'
 import {addItemClaim, addCoordClaim, addIdClaim, addReference, addString, addDateClaim} from "./write";
+import {getConstaintViolations} from "./statementData";
 import {suggestIdentifiers} from "./psychiq"
 
 export enum MessageType {
@@ -19,7 +20,8 @@ export enum MessageType {
     SET_PARSE_DATA,
     SET_PARSE_DATE,
     ADD_STRING,
-    SET_PROP_DATE
+    SET_PROP_DATE,
+    PUSH_CONSTRAINT_VIOLATION
 }
 
 export interface Message {
@@ -342,7 +344,23 @@ export class BackendMessageBroker {
                 addResponse.then((resp) => {
                     if (resp && resp.success) {
                         let claimId = resp.claim.id;                        
-                        addReference(payload.sourceUrl, claimId, payload.wikiLanguage, payload.commentAddendum);
+                        let addRefPromise = addReference(payload.sourceUrl, claimId, payload.wikiLanguage, payload.commentAddendum);
+                        addRefPromise.then((res) => {
+                            // schedule this after so that the reference is present when checking for a constraint violation
+                            let violation = getConstaintViolations(claimId);
+                            violation.then((violation) => {
+                                if (violation) {
+                                    this.postMessage({
+                                        type: MessageType.PUSH_CONSTRAINT_VIOLATION,
+                                        payload: {
+                                            pid: payload.propId,
+                                            targetQid: payload.targetItemQid,
+                                            violation: violation
+                                        }
+                                    } as Message);
+                                }
+                            });
+                    }   );
                     }
                     if (reply) reply({});
                     this.handleMessageBackend({

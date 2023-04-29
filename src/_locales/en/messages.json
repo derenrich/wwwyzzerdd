@@ -76,7 +76,7 @@
         "description": "Message indicating that the current item has no description (as in https://www.wikidata.org/wiki/Help:Description)."
     },
     "label": {
-        "message": "label",
+        "message": "Label",
         "description": "The name for something. As in https://www.wikidata.org/wiki/Help:Label"
     },
     "description": {

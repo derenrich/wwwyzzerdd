@@ -93,6 +93,7 @@ interface HolderState {
     titleBox?: HTMLElement;
     booted: boolean;
     claims: {[key: string]: any};
+    violations: {[key: string]: string};
     propNames: {[key: string]: string};
     propIcons: {[key: string]: string};
     qidMapping: {[key: string]: QidData};
@@ -119,7 +120,8 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
             propIcons: {},
             qidMapping: {},
             suggestedClaims: [],
-            titleBox: undefined
+            titleBox: undefined,
+            violations: {}
         };
         this.broker = registerFrontendBroker();
         this.broker.registerFrontendHandler(MessageType.GET_QIDS, this.handleQids.bind(this));
@@ -128,9 +130,12 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         this.broker.registerFrontendHandler(MessageType.GET_PROP_ICONS, this.handlePropIcons.bind(this));
         this.broker.registerFrontendHandler(MessageType.GET_CLAIM_SUGGESTIONS, this.handleClaimSuggestions.bind(this));
         this.broker.registerFrontendHandler(MessageType.REPORT_ERROR, this.handleError.bind(this));
+        this.broker.registerFrontendHandler(MessageType.PUSH_CONSTRAINT_VIOLATION, this.handleConstraintViolation.bind(this));
         this.broker.registerFrontendMessageHandler(MessageType.REPORT_ERROR, this.handleError.bind(this));
         this.broker.registerFrontendMessageHandler(MessageType.SET_PARSE_DATA, this.handleContextParse.bind(this));
         this.broker.registerFrontendMessageHandler(MessageType.SET_PARSE_DATE, this.handleContextParseDate.bind(this));
+        this.broker.registerFrontendMessageHandler(MessageType.PUSH_CONSTRAINT_VIOLATION, this.handleConstraintViolation.bind(this));
+
 
 
         this.broker.sendMessage({type: MessageType.GET_PROP_NAMES, payload: {}});
@@ -225,6 +230,23 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
     handleError(payload: any) {
         this.errorMessage((payload as ReportError).errorMessage);
     }
+
+    handleConstraintViolation(payload: any) {
+        if (payload.violation) {
+            let pid = payload.pid as string;
+            let qid = payload.targetQid as string;
+            let violation = payload.violation as string;
+
+            let data: {[key: string]: string} = {};
+            data[pid+"-"+qid] = violation;
+
+            this.setState(function(prevState){
+                let newViolations = Object.assign({}, prevState.violations, data);
+                return {violations: newViolations};
+            });
+        }
+    }
+
 
     hideError() {
         this.setState({errorMessage: undefined});
@@ -711,11 +733,24 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
             )
         );
 
+        let violationText = "";
+        for (let prop of matchedProps) {
+            if (qidData) {
+                let key = (prop +"-"+qidData.qid);
+                if (key in this.state.violations) {
+                    mode = OrbMode.Violation;
+                    violationText = this.state.violations[key];
+                }
+            }
+        }
+
         let hoverText = matchedProps.length > 0 ?  <Typography>
             {Array.from(new Set(matchedProps
                 .map((p) => this.state.propNames[p] || "")
                 .filter((p) => p.length > 0))).join(" & ")}
         </Typography> : null;
+
+        let warningText = violationText ? <span dangerouslySetInnerHTML={{ __html:  violationText ?? "" }}/>  : null;
 
         return <Portal container={link.element}>
             {!!qidData ?
@@ -723,6 +758,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                 mode={mode}
                 hidden={this.orbsHidden()}
                 hover={hoverText}
+                hoverWarning={warningText}
                 popover={<ItemWindow broker={this.broker}
                     wikiLanguage={this.props.wikiLanguage}
                     pageQid={this.state.curPageQid}

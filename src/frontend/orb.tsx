@@ -4,18 +4,20 @@ import { withStyles, WithStyles } from '@material-ui/core/styles';
 import {styles} from "./styles";
 import Tooltip from '@material-ui/core/Tooltip';
 import Popover from '@material-ui/core/Popover';
-
+import { Typography } from '@material-ui/core';
 
 export const enum OrbMode {
     Unknown = 1,
     Unlinked = 2,
     Linked = 3,
-    Loading = 4
+    Loading = 4,
+    Violation = 5
 }
 
 interface OrbProps extends WithStyles<typeof styles> {
     mode: OrbMode;
     hover?: React.ReactNode;
+    hoverWarning?: React.ReactNode;
     popover?: React.ReactElement<CloseParam>;
     hidden?: boolean;
     location?: string;
@@ -52,14 +54,22 @@ export const Orb = withStyles(styles)(class extends Component<OrbProps, OrbState
             orbClass = this.props.classes.connectedOrb;
         } else if (this.props.mode == OrbMode.Loading) {
             orbClass = this.props.classes.loadingOrb;
+        } else if (this.props.mode == OrbMode.Violation) {
+            orbClass = this.props.classes.violationOrb;
         }
         let classes = [orbClass, this.props.classes.orb]
         if (this.props.location === "title") {
             // apply special styling for orbs in the title
             classes = classes.concat(this.props.classes.orbTitle);
         }
+        let hoverElement = (this.props.hover || this.props.hoverWarning) ? <Typography className={this.props.classes.hoverTip}>
+            {this.props.hover}
+            {(this.props.hover && this.props.hoverWarning) ? <br /> : "" }
+            <React.Fragment>{this.props.hoverWarning ? (chrome.i18n.getMessage("constraintViolation") + ": "): null}{this.props.hoverWarning}</React.Fragment>
+        </Typography> : "";
+
         return <React.Fragment>
-        <Tooltip title={this.props.hover ?? ""}>
+        <Tooltip title={hoverElement}>
          <span
             onClick={this.handlePopoverOpen}
             className={classes.join(" ")}>

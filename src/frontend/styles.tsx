@@ -24,11 +24,20 @@ export const styles = createStyles({
     hoverText: {
         fontSize: "large"
     },
+    hoverTip: {
+        textAlign: "center",
+        "& a": {
+            color: "#2bdb56"
+        }
+    },
     connectedOrb: {
         color: "#2bdb56",
     },
     disconnectedOrb: {
         color: "#6c757d"
+    },
+    violationOrb: {
+        color: "#db2b46"
     },
     loadingOrb: {
         color: "#562bdb",
