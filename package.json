@@ -13,7 +13,7 @@
     },
     "scripts": {
         "start": "parcel src/manifest.json --host localhost --target webext-dev",
-        "build": "parcel build src/manifest.json --target webext-prod",
+        "build": "parcel build src/manifest.json --target webext-prod  --no-source-maps",
         "build-debug": "parcel build src/manifest.json --target webext-prod --no-optimize ",
         "bundle": "cd dist/webext-prod; zip -r ../wwwyzzerdd.zip *",
         "clean": "rm -rf dist/*",
