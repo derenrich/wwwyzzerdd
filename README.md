@@ -4,7 +4,7 @@ Easily edit and view the information in wikidata from Wikipedia
 
 Definitely still in beta. Use at your own risk. Audit all the edits you make.
 
-![wwwyzzerdd screenshot](/docs/wwwyzzerdd screenshot.png?raw=true )
+![wwwyzzerdd screenshot](/docs/wwwyzzerdd%20screenshot.png?raw=true)
 
 ## Installation
 
