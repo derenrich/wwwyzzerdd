@@ -16,26 +16,25 @@ export interface StatementSuggestions {
     score: number;
 }
 
-const hfToken = "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";
-
 async function queryPsychiq(data: PsychiqQuery): Promise<PsychiqResponseRow[]> {
 
+
+
     const response = await fetch(
-		"https://api-inference.huggingface.co/models/derenrich/psychiq2",
-		{
-			headers: { Authorization: `Bearer ${hfToken}` },
-			method: "POST",
-			body: JSON.stringify(data)
+        "https://hf-proxy.toolforge.org/proxy/models/derenrich/psychiq2",
+        {
+            method: "POST",
+            body: JSON.stringify(data)
         }
-	);
+    );
     try {
-	    const result: any[] = await response.json();
+        const result: any[] = await response.json();
         if (result.length == 1) {
-	        return result[0];
+            return result[0];
         } else {
             throw new Error("Unexpected result from huggingface");
         }
-    } catch(err) {
+    } catch (err) {
         throw err;
     }
 }
@@ -56,7 +55,7 @@ type QueryCatResponse = {
         clcontinue?: string;
     }
     query: {
-        pages: {[key: number]: QueryCatResponsePage}
+        pages: { [key: number]: QueryCatResponsePage }
     }
 }
 type QueryCatResponseItem = {
@@ -78,7 +77,7 @@ async function getPsychiqDocument(pageId: number, wikiLanguage: string): Promise
     const fetchURL = `https://${wikiLanguage}.wikipedia.org/w/api.php?action=query&format=json&pageids=${pageId}&prop=categories`;
     let title = "";
     let continueKey: string | undefined = "";
-    do  {
+    do {
         const thisFetchUrl = continueKey ? fetchURL + `&clcontinue=${continueKey}` : fetchURL;
         const result = await fetch(thisFetchUrl);
         const responseBody: QueryCatResponse = await result.json();
@@ -104,11 +103,11 @@ async function getPsychiqDocument(pageId: number, wikiLanguage: string): Promise
 const BANNED_SUBSTRINGS = [
     "Short description", "Articles with", "All stub articles", "Wikidata", "Noindexed pages",
     "Redirects", "All articles", " dates", "Wikipedia articles", "wayback links", "Pages containing",
-    "Articles containing","Articles using", "Articles needing"
+    "Articles containing", "Articles using", "Articles needing"
 ];
 
 function isValidCategory(category: string) {
-    for(let infix of BANNED_SUBSTRINGS) {
+    for (let infix of BANNED_SUBSTRINGS) {
         if (category.includes(infix)) {
             return false;
         }
