@@ -1,7 +1,7 @@
-import { MessageType, Message, GetLinkIdentifierReply} from "../messageBroker";
-import {exposeWikiVariables, isExposed} from "../exposeVariables";
-import {getWikiLanguage} from "../util"
-import {WwwyzzerddHolder} from "./holder"
+import { MessageType, Message, GetLinkIdentifierReply } from "../messageBroker";
+import { exposeWikiVariables, isExposed } from "../exposeVariables";
+import { getWikiLanguage } from "../util"
+import { WwwyzzerddHolder } from "./holder"
 import React from "react";
 import ReactDom from "react-dom";
 
@@ -24,10 +24,10 @@ function getSourceUrl(): string {
     }
 }
 
-function operateLinks(fn: (link:HTMLAnchorElement) => void) {
+function operateLinks(fn: (link: HTMLAnchorElement) => void) {
     let navBoxes = Array.from(document.querySelectorAll("#bodyContent .navbox"));
     let bodyLinkElms = Array.from(document.querySelectorAll("#mw-content-text a"));
-    for(const link of bodyLinkElms) {
+    for (const link of bodyLinkElms) {
         // skip links in nav boxes for now
         let notInNav = true;
         for (const navBox of navBoxes) {
@@ -36,7 +36,11 @@ function operateLinks(fn: (link:HTMLAnchorElement) => void) {
                 break;
             }
         }
-        if (notInNav) {
+
+        // skip links with role="button"
+        let roleIsButton = link.getAttribute("role") === "button";
+
+        if (notInNav && !roleIsButton) {
             // don't operate links to images
             if (!link.classList.contains("image")) {
                 fn(link as HTMLAnchorElement)
@@ -45,17 +49,17 @@ function operateLinks(fn: (link:HTMLAnchorElement) => void) {
     }
 }
 
-function isWikiLink(link:HTMLAnchorElement): boolean {
+function isWikiLink(link: HTMLAnchorElement): boolean {
     const hrefString = link.getAttribute("href") || "";
     return !!(link.href && (!hrefString.startsWith("#")) && wikiLinkRegex.exec(link.href));
 }
 
-function isWikidataLink(link:HTMLAnchorElement): boolean {
+function isWikidataLink(link: HTMLAnchorElement): boolean {
     const hrefString = link.getAttribute("href") || "";
     return !!(link.href && (!hrefString.startsWith("#")) && wikidataLinkRegex.exec(link.href));
 }
 
-function isNotWikiLink(link:HTMLAnchorElement): boolean {
+function isNotWikiLink(link: HTMLAnchorElement): boolean {
     const hrefString = link.getAttribute("href") || "";
     if (hrefString == "") {
         return false;
@@ -64,7 +68,7 @@ function isNotWikiLink(link:HTMLAnchorElement): boolean {
 }
 
 
-function operateWikiLinks(fn: (link:HTMLAnchorElement) => void) {
+function operateWikiLinks(fn: (link: HTMLAnchorElement) => void) {
     operateLinks((link) => {
         if (isWikiLink(link)) {
             fn(link);
@@ -72,7 +76,7 @@ function operateWikiLinks(fn: (link:HTMLAnchorElement) => void) {
     });
 }
 
-function operateWikidataLinks(fn: (link:HTMLAnchorElement) => void) {
+function operateWikidataLinks(fn: (link: HTMLAnchorElement) => void) {
     operateLinks((link) => {
         if (isWikidataLink(link)) {
             fn(link);
@@ -80,7 +84,7 @@ function operateWikidataLinks(fn: (link:HTMLAnchorElement) => void) {
     });
 }
 
-function operateNonWikiLinks(fn: (link:HTMLAnchorElement) => void) {
+function operateNonWikiLinks(fn: (link: HTMLAnchorElement) => void) {
     operateLinks((link) => {
         if (isNotWikiLink(link)) {
             fn(link as HTMLAnchorElement);
@@ -97,7 +101,7 @@ interface Coordinate {
 const decimalCoordRegex = new RegExp(".*\/\/geohack\.toolforge\.org\/geohack\.php\\?(?:pagename=(?:.*)&)?params=([\\d.-]+_[NS])_([\\d.-]+_[WE])", "i")
 const secondsCoordRegex = new RegExp(".*\/\/geohack\.toolforge\.org\/geohack\.php\\?(?:pagename=(?:.*)&)?params=(\\d+)_(\\d+)_([\\d.]+)_([NS])_(\\d+)_(\\d+)_([\\d.]+)_([WE])", "i")
 
-function findCoordinate(href: string): undefined | Coordinate  {
+function findCoordinate(href: string): undefined | Coordinate {
     // WARNING: for now keep this functionality disabled
     return;
     /*
@@ -165,7 +169,7 @@ function boot() {
 
     const wikiNamespace = document.getElementsByTagName("body")[0].getAttribute("mw-ns") || "";
     const wikiUserLang = document.getElementsByTagName("body")[0].getAttribute("mw-lang") || "";
-    const pageId = parseInt(document.getElementsByTagName("body")[0].getAttribute("mw-page-id") || "") ;
+    const pageId = parseInt(document.getElementsByTagName("body")[0].getAttribute("mw-page-id") || "");
     const isPage = document.getElementsByTagName("body")[0].getAttribute("mw-is-page") === "true";
     const pageName = (document.getElementsByTagName("body")[0].getAttribute("mw-page-name") || "").replaceAll("_", " ",);
 
@@ -190,9 +194,9 @@ function boot() {
             }
 
             // pass the wiki links to the holder
-            operateWikiLinks(function(link:HTMLAnchorElement) {
+            operateWikiLinks(function (link: HTMLAnchorElement) {
                 // clone the anchor into itself to make a place for the orb
-                let linkAnchor  = link as HTMLAnchorElement;
+                let linkAnchor = link as HTMLAnchorElement;
                 let origLink = linkAnchor.cloneNode(true) as HTMLAnchorElement;
                 linkAnchor.removeAttribute("href");
                 // used for debugging
@@ -205,9 +209,9 @@ function boot() {
                 ref.addWikiLink(origLink.href, linkAnchor);
             });
 
-            operateWikidataLinks(function(link:HTMLAnchorElement) {
+            operateWikidataLinks(function (link: HTMLAnchorElement) {
                 // clone the anchor into itself to make a place for the orb
-                let linkAnchor  = link as HTMLAnchorElement;
+                let linkAnchor = link as HTMLAnchorElement;
                 let origLink = linkAnchor.cloneNode(true) as HTMLAnchorElement;
                 linkAnchor.removeAttribute("href");
                 // used for debugging
@@ -221,9 +225,9 @@ function boot() {
             });
 
 
-            operateNonWikiLinks(function(link:HTMLAnchorElement) {
+            operateNonWikiLinks(function (link: HTMLAnchorElement) {
                 // clone the anchor into itself to make a place for the orb
-                let linkAnchor  = link as HTMLAnchorElement;
+                let linkAnchor = link as HTMLAnchorElement;
                 let origLink = linkAnchor.cloneNode(true) as HTMLAnchorElement;
                 linkAnchor.removeAttribute("href");
                 linkAnchor.innerHTML = '';
@@ -233,7 +237,7 @@ function boot() {
                 linkAnchor.setAttribute("data-x-wwwyzzerdd", "ext-holder-element");
                 let latlonMatch = findCoordinate(origLink.href);
                 if (latlonMatch) {
-                    ref.addCoordLink(latlonMatch.lat, latlonMatch. lon, linkAnchor);
+                    ref.addCoordLink(latlonMatch.lat, latlonMatch.lon, linkAnchor);
                 } else {
                     ref.broker.sendFrontendRequest({
                         type: MessageType.GET_LINK_ID,
