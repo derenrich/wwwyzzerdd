@@ -1,15 +1,14 @@
 import { getAuthToken, ANON_TOKEN } from "./auth";
 import { retryWikimediaPromise } from "./util";
 import { getConfig, ConfigObject } from "./config";
-import {saveLastQidProperty} from "./propertyData";
-import { StepLabel } from "@material-ui/core";
+import { saveLastQidProperty } from "./propertyData";
 
 const commentText = "import w/ [[Wikidata:Wwwyzzerdd|🧙 Wwwyzzerdd for Wikidata]]";
 
 
 export async function addItemClaim(entity: string, property: string, qid: string, commentAddendum?: string): Promise<any> {
     saveLastQidProperty(qid, property);
-    return addClaim(entity, property, {"entity-type": "item", "id": qid}, commentAddendum);
+    return addClaim(entity, property, { "entity-type": "item", "id": qid }, commentAddendum);
 }
 
 export async function addDateClaim(entity: string, property: string, date: any, commentAddendum?: string): Promise<any> {
@@ -26,7 +25,7 @@ export async function addClaim(entity: string, property: string, value: any, com
     let token = await checkedGetToken();
     let wrappedValue = encodeURIComponent(JSON.stringify(value));
     let getArgs = `entity=${entity}&property=${property}&value=${wrappedValue}`;
-    let summary = encodeURIComponent(commentText + (commentAddendum ? " (" + commentAddendum +")" : ""));
+    let summary = encodeURIComponent(commentText + (commentAddendum ? " (" + commentAddendum + ")" : ""));
     let args = `token=${token}&summary=${summary}`;
 
 
@@ -35,15 +34,15 @@ export async function addClaim(entity: string, property: string, value: any, com
             method: 'POST',
             body: args,
             headers: {
-             "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-             "accept":"application/json, text/javascript, */*; q=0.01"
+                "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "accept": "application/json, text/javascript, */*; q=0.01"
             }
         }).then((res) => res.json());
     }, 2);
 }
 
 export async function addCoordClaim(entity: string, property: string, lat: number, lon: number): Promise<any> {
-    
+
 }
 
 async function setLabel(entity: string, language: string, text: string, commentAddendum?: string) {
@@ -51,7 +50,7 @@ async function setLabel(entity: string, language: string, text: string, commentA
     let token = await checkedGetToken();
     let wrappedValue = encodeURIComponent(text);
     let getArgs = `id=${entity}&language=${language}&value=${wrappedValue}`;
-    let summary = encodeURIComponent(commentText + (commentAddendum ? " (" + commentAddendum +")" : ""));
+    let summary = encodeURIComponent(commentText + (commentAddendum ? " (" + commentAddendum + ")" : ""));
     let args = `token=${token}&summary=${summary}`;
 
     return retryWikimediaPromise(() => {
@@ -59,8 +58,8 @@ async function setLabel(entity: string, language: string, text: string, commentA
             method: 'POST',
             body: args,
             headers: {
-             "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-             "accept":"application/json, text/javascript, */*; q=0.01"
+                "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "accept": "application/json, text/javascript, */*; q=0.01"
             }
         }).then((res) => res.json());
     }, 2);
@@ -72,7 +71,7 @@ async function setDescription(entity: string, language: string, text: string, co
     let token = await checkedGetToken();
     let wrappedValue = encodeURIComponent(text);
     let getArgs = `id=${entity}&language=${language}&value=${wrappedValue}`;
-    let summary = encodeURIComponent(commentText + (commentAddendum ? " (" + commentAddendum +")" : ""));
+    let summary = encodeURIComponent(commentText + (commentAddendum ? " (" + commentAddendum + ")" : ""));
     let args = `token=${token}&summary=${summary}`;
 
     return retryWikimediaPromise(() => {
@@ -80,8 +79,8 @@ async function setDescription(entity: string, language: string, text: string, co
             method: 'POST',
             body: args,
             headers: {
-             "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-             "accept":"application/json, text/javascript, */*; q=0.01"
+                "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "accept": "application/json, text/javascript, */*; q=0.01"
             }
         }).then((res) => res.json());
     }, 2);
@@ -93,7 +92,7 @@ async function addAlias(entity: string, language: string, text: string, commentA
     // prepend with %1F to avoid splitting on pipe
     let wrappedValue = "%1F" + encodeURIComponent(text);
     let getArgs = `id=${entity}&language=${language}&add=${wrappedValue}`;
-    let summary = encodeURIComponent(commentText + (commentAddendum ? " (" + commentAddendum +")" : ""));
+    let summary = encodeURIComponent(commentText + (commentAddendum ? " (" + commentAddendum + ")" : ""));
     let args = `token=${token}&summary=${summary}`;
 
     return retryWikimediaPromise(() => {
@@ -101,8 +100,8 @@ async function addAlias(entity: string, language: string, text: string, commentA
             method: 'POST',
             body: args,
             headers: {
-             "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-             "accept":"application/json, text/javascript, */*; q=0.01"
+                "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "accept": "application/json, text/javascript, */*; q=0.01"
             }
         }).then((res) => res.json());
     }, 2);
@@ -125,14 +124,14 @@ function currentTimeValue() {
     now.setUTCSeconds(0, 0);
     now.setUTCHours(0);
     now.setUTCMinutes(0);
-    let today = "+" + now.toISOString().replace(".000","");
-    return {"type":"time","value":{"after":0,"before":0,"calendarmodel":"http://www.wikidata.org/entity/Q1985727","precision":11,"time":today,"timezone":0}};
+    let today = "+" + now.toISOString().replace(".000", "");
+    return { "type": "time", "value": { "after": 0, "before": 0, "calendarmodel": "http://www.wikidata.org/entity/Q1985727", "precision": 11, "time": today, "timezone": 0 } };
 }
 
 export async function addReference(sourceUrl: string, claimId: string, wikiLanguage?: string, commentAddendum?: string) {
     let base_url = "https://www.wikidata.org/w/api.php?action=wbsetreference&format=json&tags=wwwyzzerdd&";
     let token = await checkedGetToken();
-    let summary = encodeURIComponent(commentText + (commentAddendum ? " (" + commentAddendum +")" : ""));
+    let summary = encodeURIComponent(commentText + (commentAddendum ? " (" + commentAddendum + ")" : ""));
 
     let PAGE_VERSION_URL_PID = "P4656";
     let IMPORTED_FROM_WIKIMEDIA_PID = "P143";
@@ -158,7 +157,7 @@ export async function addReference(sourceUrl: string, claimId: string, wikiLangu
         "zh": CHINESE_WIKI
     }
 
-    let refSnack: { [key: string]: any; } = { };
+    let refSnack: { [key: string]: any; } = {};
 
     if (wikiLanguage && wikiLanguage in wikiLookup) {
         let wikiQid = wikiLookup[wikiLanguage];
@@ -167,29 +166,31 @@ export async function addReference(sourceUrl: string, claimId: string, wikiLangu
                 {
                     snaktype: "value",
                     property: IMPORTED_FROM_WIKIMEDIA_PID,
-                    datavalue: { type:"wikibase-entityid", value:{"id": wikiQid}}
+                    datavalue: { type: "wikibase-entityid", value: { "id": wikiQid } }
                 }
             ];
     }
-    refSnack[RETRIEVED_TIME_PID] = [ { snaktype:"value",
-                                       property: RETRIEVED_TIME_PID,
-                                       datavalue: currentTimeValue()}];
+    refSnack[RETRIEVED_TIME_PID] = [{
+        snaktype: "value",
+        property: RETRIEVED_TIME_PID,
+        datavalue: currentTimeValue()
+    }];
     if (sourceUrl) {
         refSnack[PAGE_VERSION_URL_PID] = [{
             snaktype: "value",
             property: PAGE_VERSION_URL_PID,
-            datavalue: {"type":"string", "value": sourceUrl}
+            datavalue: { "type": "string", "value": sourceUrl }
         }];
     }
     let args = `token=${token}&summary=${summary}`;
-    let snaks =  encodeURIComponent(JSON.stringify(refSnack));
+    let snaks = encodeURIComponent(JSON.stringify(refSnack));
     let getArgs = `statement=${claimId}&snaks=${snaks}`;
     return retryWikimediaPromise(() => fetch(base_url + getArgs, {
         method: 'POST',
         body: args,
         headers: {
             "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "accept":"application/json, text/javascript, */*; q=0.01"
+            "accept": "application/json, text/javascript, */*; q=0.01"
         }
     }).then((res) => res.json()), 2);
 }
