@@ -4,6 +4,8 @@ Easily edit and view the information in wikidata from Wikipedia
 
 Definitely still in beta. Use at your own risk. Audit all the edits you make.
 
+![wwwyzzerdd screenshot](docs/wwwyzzerdd_screenshot.png)
+
 ## Installation
 
 You can find wwwyzzerdd in the browser extension stores
