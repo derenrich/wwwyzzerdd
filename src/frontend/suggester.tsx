@@ -1,4 +1,4 @@
-import {FrontendMessageBroker, MessageType} from "../messageBroker";
+import { FrontendMessageBroker, MessageType } from "../messageBroker";
 import React, { Component } from 'react';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
@@ -31,7 +31,7 @@ interface SuggesterState {
     typed: string;
     selectedPid?: string;
     // apparently we're never using this?
-    propNames: {[key: string]: string};
+    propNames: { [key: string]: string };
     suggestedProps: Suggestion[];
 }
 
@@ -47,6 +47,11 @@ export class Suggester extends Component<SuggesterProps, SuggesterState> {
             propNames: {},
             typed: ""
         };
+        this.props.broker.registerFrontendHandler(MessageType.GET_PROP_SUGGESTIONS, (resp: any) => {
+            this.setState({
+                suggestedProps: resp.suggestions
+            });
+        });
         this.props.broker.sendFrontendRequest({
             type: MessageType.GET_PROP_NAMES,
             payload: {}
@@ -57,6 +62,7 @@ export class Suggester extends Component<SuggesterProps, SuggesterState> {
             });
         });
         this.suggest();
+
     }
 
     submit() {
@@ -64,7 +70,7 @@ export class Suggester extends Component<SuggesterProps, SuggesterState> {
     }
 
     suggest() {
-        this.props.broker.sendFrontendRequest({
+        this.props.broker.sendMessage({
             type: MessageType.GET_PROP_SUGGESTIONS,
             payload: {
                 itemQid: this.props.targetQid,
@@ -72,11 +78,7 @@ export class Suggester extends Component<SuggesterProps, SuggesterState> {
                 typed: this.state.typed,
                 mode: this.props.mode == SuggesterMode.QID_SUGGEST ? "qid" : "date"
             }
-        }, (resp: any) => {
-            this.setState({
-                suggestedProps: resp.payload.suggestions
-            })
-        })
+        });
     }
 
     componentDidUpdate(prevProps: SuggesterProps, prevState: SuggesterState) {
@@ -87,30 +89,30 @@ export class Suggester extends Component<SuggesterProps, SuggesterState> {
     }
 
     render() {
-       return <ListItem>
-        <ListItemIcon>
-             <IconButton onClick={this.submit.bind(this)}>
-             <AddIcon />
-        </IconButton>
-        </ListItemIcon>
-        <Autocomplete
-            fullWidth
-            autoHighlight
-            autoSelect
-            openOnFocus
-            onInputChange={(evt, value, reason) => {
-                this.setState({
-                    typed: value
-                });
-            }}
-            onChange={(evt, obj, reason) => {
-                this.setState({"selectedPid": !!obj ? obj['pid'] : undefined});
-            }}
-            filterOptions={(x) => x}
-            renderInput={(params) => <TextField {...params} label="Property" variant="outlined"  />}
-            options={this.state.suggestedProps.map((sugg) => {return {"pid": sugg.id, "label": sugg.label};})}
-            getOptionLabel={(opt) => opt.label}
-            id="prop-box"  />
+        return <ListItem>
+            <ListItemIcon>
+                <IconButton onClick={this.submit.bind(this)}>
+                    <AddIcon />
+                </IconButton>
+            </ListItemIcon>
+            <Autocomplete
+                fullWidth
+                autoHighlight
+                autoSelect
+                openOnFocus
+                onInputChange={(evt, value, reason) => {
+                    this.setState({
+                        typed: value
+                    });
+                }}
+                onChange={(evt, obj, reason) => {
+                    this.setState({ "selectedPid": !!obj ? obj['pid'] : undefined });
+                }}
+                filterOptions={(x) => x}
+                renderInput={(params) => <TextField {...params} label="Property" variant="outlined" />}
+                options={this.state.suggestedProps.map((sugg) => { return { "pid": sugg.id, "label": sugg.label }; })}
+                getOptionLabel={(opt) => opt.label}
+                id="prop-box" />
         </ListItem>;
     }
 }

@@ -1,8 +1,8 @@
 import { PropertyDB, PropertyMatch } from './propertyData';
 import { ItemDB, LinkedItemData } from './itemData'
-import {addItemClaim, addCoordClaim, addIdClaim, addReference, addString, addDateClaim} from "./write";
-import {getConstaintViolations} from "./statementData";
-import {suggestIdentifiers} from "./psychiq"
+import { addItemClaim, addCoordClaim, addIdClaim, addReference, addString, addDateClaim } from "./write";
+import { getConstaintViolations } from "./statementData";
+import { suggestIdentifiers } from "./psychiq"
 
 export enum MessageType {
     GET_QIDS,
@@ -35,7 +35,7 @@ interface GetQidsAsk {
 }
 
 export interface GetQidsReply {
-    data: {[key: string]: LinkedItemData};
+    data: { [key: string]: LinkedItemData };
 }
 
 
@@ -52,7 +52,7 @@ interface GetClaimsAsk {
 }
 
 export interface GetClaimsReply {
-    claims: {[key: string]: any};
+    claims: { [key: string]: any };
 }
 
 interface GetPropNamesAsk {
@@ -64,7 +64,7 @@ interface GetPropIconsAsk {
 }
 
 export interface GetPropNamesReply {
-    propNames: {[key: string]: string};
+    propNames: { [key: string]: string };
 }
 
 interface GetPropSuggestionsAsk {
@@ -133,7 +133,7 @@ interface GetStatementSuggestionReq {
 
 interface PortHandler {
     messageType: MessageType;
-    handler: (_:any) => void;
+    handler: (_: any) => void;
 }
 
 
@@ -156,7 +156,7 @@ export class FrontendMessageBroker {
     }
 
     openPortToBackground(): chrome.runtime.Port {
-        let port = chrome.runtime.connect({name: "www"});
+        let port = chrome.runtime.connect({ name: "www" });
         this.connected = true;
         port.onDisconnect.addListener((port) => {
             // if we disconnected then reconnect
@@ -188,11 +188,11 @@ export class FrontendMessageBroker {
     }
 
     sendFrontendRequest(msg: Message, response?: (r: any) => void) {
-        response = response ?? function (r:any) {};
+        response = response ?? function (r: any) { };
         chrome.runtime.sendMessage(msg, response);
     }
 
-    registerFrontendHandler(type: MessageType, handler: ((_:any) => void)) {
+    registerFrontendHandler(type: MessageType, handler: ((_: any) => void)) {
         this.port.onMessage.addListener((msg: Message) => {
             if (msg.type === type) {
                 handler(msg.payload);
@@ -207,11 +207,11 @@ export class FrontendMessageBroker {
     }
 
     // registers a one time request handler
-    registerFrontendMessageHandler(type: MessageType, handler: ((_:any) => void)) {
-        chrome.runtime.onMessage.addListener(function(request: Message, sender, sendResponse) {
-                if (request.type == type) {
-                    handler(request.payload);
-                }
+    registerFrontendMessageHandler(type: MessageType, handler: ((_: any) => void)) {
+        chrome.runtime.onMessage.addListener(function (request: Message, sender, sendResponse) {
+            if (request.type == type) {
+                handler(request.payload);
+            }
         });
     }
 }
@@ -253,8 +253,8 @@ export class BackendMessageBroker {
         } as Message);
     }
 
-    handleMessageBackend(msg: Message, reply?: ((response?: any) => void)){
-        switch(msg.type) {
+    handleMessageBackend(msg: Message, reply?: ((response?: any) => void)) {
+        switch (msg.type) {
             case MessageType.GET_QIDS: {
                 const payload = msg.payload as GetQidsAsk;
                 this.itemDB.lookupTitles(payload.titles, payload.wikiLanguage).then((data) => {
@@ -277,7 +277,7 @@ export class BackendMessageBroker {
                             claims
                         }
                     };
-                    if (reply) reply( response );
+                    if (reply) reply(response);
                     this.postMessage(response);
                 }).catch(this.reportError.bind(this));
                 break;
@@ -287,7 +287,7 @@ export class BackendMessageBroker {
                 const payload = msg.payload as GetPropNamesAsk;
                 const language: string = payload.language || "en";
                 this.propDB.getProperties(language).then((props) => {
-                    let propNames: {[key: string]: string} = {};
+                    let propNames: { [key: string]: string } = {};
                     props.forEach((prop) => {
                         propNames[prop.prop] = prop.name;
                     });
@@ -297,7 +297,7 @@ export class BackendMessageBroker {
                             propNames
                         }
                     };
-                    if (reply) reply( response );
+                    if (reply) reply(response);
                     this.postMessage(response);
                 }).catch(this.reportError.bind(this));
 
@@ -307,7 +307,7 @@ export class BackendMessageBroker {
             case MessageType.GET_PROP_ICONS: {
                 const payload = msg.payload as GetPropIconsAsk;
                 this.propDB.getProperties().then((props) => {
-                    let propIcons: {[key: string]: string} = {};
+                    let propIcons: { [key: string]: string } = {};
                     props.forEach((prop) => {
                         if (prop.icon) {
                             propIcons[prop.prop] = prop.icon;
@@ -319,20 +319,23 @@ export class BackendMessageBroker {
                             propIcons
                         }
                     };
-                    if (reply) reply( response );
+                    if (reply) reply(response);
                     this.postMessage(response);
                 }).catch(this.reportError.bind(this));
                 break;
             }
 
             case MessageType.GET_PROP_SUGGESTIONS: {
+                let now = Date.now();
+                if (now - lastWrite < MIN_WRITE_WAIT) break;
+
                 const payload = msg.payload as GetPropSuggestionsAsk;
                 this.propDB.suggestProperty(payload.itemQid, payload.typed, payload.mode, payload.targetQid).then((resp) => {
                     let response = {
                         type: MessageType.GET_PROP_SUGGESTIONS,
                         payload: resp
                     };
-                    if (reply) reply( response );
+                    if (reply) reply(response);
                     this.postMessage(response);
                 }).catch(this.reportError.bind(this));
                 break;
@@ -343,7 +346,7 @@ export class BackendMessageBroker {
                 let addResponse = addItemClaim(payload.sourceItemQid, payload.propId, payload.targetItemQid, payload.commentAddendum);
                 addResponse.then((resp) => {
                     if (resp && resp.success) {
-                        let claimId = resp.claim.id;                        
+                        let claimId = resp.claim.id;
                         let addRefPromise = addReference(payload.sourceUrl, claimId, payload.wikiLanguage, payload.commentAddendum);
                         addRefPromise.then((res) => {
                             // schedule this after so that the reference is present when checking for a constraint violation
@@ -360,7 +363,7 @@ export class BackendMessageBroker {
                                     } as Message);
                                 }
                             });
-                    }   );
+                        });
                     }
                     if (reply) reply({});
                     this.handleMessageBackend({
@@ -399,7 +402,7 @@ export class BackendMessageBroker {
                 result.then((resp) => {
                     const message = {
                         type: MessageType.GET_LINK_ID,
-                        payload: {match: resp}
+                        payload: { match: resp }
                     };
                     if (reply) reply(message);
                     this.postMessage(message);
@@ -415,7 +418,7 @@ export class BackendMessageBroker {
                 let addResponse = addIdClaim(payload.sourceItemQid, payload.propId, payload.targetId);
                 addResponse.then((resp) => {
                     if (resp && resp.success) {
-                        let claimId = resp.claim.id;                        
+                        let claimId = resp.claim.id;
                         addReference(payload.sourceUrl, claimId, payload.wikiLanguage);
                     }
                     if (reply) reply({});
@@ -437,7 +440,7 @@ export class BackendMessageBroker {
                 let addResponse = addCoordClaim(payload.sourceItemQid, payload.propId, payload.lat, payload.lon);
                 addResponse.then((resp) => {
                     if (resp && resp.success) {
-                        let claimId = resp.claim.id;                        
+                        let claimId = resp.claim.id;
                         addReference(payload.sourceUrl, claimId, payload.wikiLanguage);
                     }
                     if (reply) reply({});
@@ -473,7 +476,7 @@ export class BackendMessageBroker {
                             suggestions: sugg
                         }
                     };
-                    if (reply) reply( response );
+                    if (reply) reply(response);
                     this.postMessage(response);
                 }).catch(this.reportError.bind(this));
                 break;
@@ -502,14 +505,14 @@ export class BackendMessageBroker {
         }
     }
 
-    _handlePortMesage(msg:Message) {
+    _handlePortMesage(msg: Message) {
         this.handleMessageBackend(msg);
     }
 
 }
 
 var itemDB: ItemDB | null = null;
-var propDB:  PropertyDB | null = null;
+var propDB: PropertyDB | null = null;
 
 function initializeResources() {
     if (!itemDB) {
@@ -521,7 +524,7 @@ function initializeResources() {
 }
 
 export function registerBackendBroker() {
-    chrome.runtime.onConnect.addListener(function(port) {
+    chrome.runtime.onConnect.addListener(function (port) {
         initializeResources();
         if (itemDB && propDB) {
             const mb = new BackendMessageBroker(port, itemDB, propDB);

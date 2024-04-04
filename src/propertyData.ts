@@ -1,4 +1,4 @@
-import {getOrCompute, put, get} from './cache';
+import { getOrCompute, put, get } from './cache';
 import runQuery from './sparql'
 
 interface PropertyPatternData {
@@ -63,14 +63,14 @@ const LAST_QID_USE_NS = "WD_LAST_PID$";
 
 function parsePatternFetch(d: any): PropertyPatternData[] {
     let properties = [];
-    for(let prop of d.results.bindings) {
+    for (let prop of d.results.bindings) {
         let propUrl = prop.p.value;
         let splitUrl = propUrl.split("/");
         let propId = splitUrl[splitUrl.length - 1];
         let regex = prop.regexValue.value;
         let replacementValue = prop.replacementString.value;
         let caseInsensitive = prop.caseInsensitive.value;
-        const row = {regex, prop: propId, replacementValue, caseInsensitive};
+        const row = { regex, prop: propId, replacementValue, caseInsensitive };
         properties.push(row);
     }
     return properties;
@@ -78,14 +78,14 @@ function parsePatternFetch(d: any): PropertyPatternData[] {
 
 function parsePropFetch(d: any): PropertyData[] {
     let properties = [];
-    for(let prop of d.results.bindings) {
+    for (let prop of d.results.bindings) {
         let propUrl = prop.p.value;
         let splitUrl = propUrl.split("/");
         let propId = splitUrl[splitUrl.length - 1];
         let label = prop.label.value;
         let icon = prop.icon ? prop.icon.value : undefined;
         let propType = prop.type.value.split("#")[1];
-        const row = {prop: propId, name: label, icon, propType};
+        const row = { prop: propId, name: label, icon, propType };
         properties.push(row);
     }
     return properties;
@@ -106,7 +106,7 @@ export class PropertyDB {
     regex_results: Promise<CachedRegexData[]>;
 
     constructor() {
-        this.pattern_results = getOrCompute(PATTERN_CACHE_KEY, function() {
+        this.pattern_results = getOrCompute(PATTERN_CACHE_KEY, function () {
             return runQuery(patternQuery).then((res) => {
                 return parsePatternFetch(res);
             });
@@ -114,7 +114,7 @@ export class PropertyDB {
 
         // precompile all regexs
         this.regex_results = this.pattern_results.then((results) => {
-            let regexCache: CachedRegexData[] =  [];
+            let regexCache: CachedRegexData[] = [];
             for (const propData of results) {
                 try {
                     const r = new RegExp(propData.regex);
@@ -130,14 +130,14 @@ export class PropertyDB {
             return regexCache;
         });
 
-        this.prop_results = getOrCompute(PROP_CACHE_KEY, function() {
+        this.prop_results = getOrCompute(PROP_CACHE_KEY, function () {
             return runQuery(propQuery).then((res) => {
                 return parsePropFetch(res);
             });
         }, PROP_CACHE_LIFE);
 
         this.prop_types = getOrCompute(PROP_TYPE_KEY, (): (Promise<{ [pid: string]: string }>) => {
-            return this.prop_results.then(function(result: PropertyData[]): { [pid: string]: string }{
+            return this.prop_results.then(function (result: PropertyData[]): { [pid: string]: string } {
                 let out: { [pid: string]: string } = {};
                 result.forEach((row) => {
                     out[row.prop] = row.propType;
@@ -148,7 +148,7 @@ export class PropertyDB {
 
 
         this.prop_names = getOrCompute(PROP_NAME_KEY, (): (Promise<{ [pid: string]: string }>) => {
-            return this.prop_results.then(function(result: PropertyData[]): { [pid: string]: string }{
+            return this.prop_results.then(function (result: PropertyData[]): { [pid: string]: string } {
                 let out: { [pid: string]: string } = {};
                 result.forEach((row) => {
                     out[row.prop] = row.name;
@@ -157,14 +157,14 @@ export class PropertyDB {
             });
         }, PROP_CACHE_LIFE);
     }
-    
+
 
     async getProperties(language?: string): Promise<PropertyData[]> {
         // WARNING: this language code switch not currently work (just returns english)
         if (!language || language == "en") {
             return this.prop_results;
         } else {
-            return getOrCompute(PROP_CACHE_KEY + "@" + language, function() {
+            return getOrCompute(PROP_CACHE_KEY + "@" + language, function () {
                 return runQuery(propQuery).then((res) => {
                     return parsePropFetch(res);
                 });
@@ -172,7 +172,7 @@ export class PropertyDB {
         }
     }
 
-    async parseUrl(url: string): Promise<PropertyMatch|undefined> {
+    async parseUrl(url: string): Promise<PropertyMatch | undefined> {
         const results = await this.regex_results;
         for (const p of results) {
             let match = p.regex.exec(url);
@@ -180,7 +180,7 @@ export class PropertyDB {
                 let pid = p.propertyData.prop;
                 let pattern = p.propertyData.replacementValue;
                 var key: string = String(pattern);
-                for (var i = 1; i < match.length; i+=1) {
+                for (var i = 1; i < match.length; i += 1) {
                     key = key.replaceAll("\\" + i, match[i]);
                 }
                 return {
@@ -203,7 +203,7 @@ export class PropertyDB {
             lastPidSuggestion = await this.getLastQidProperty(targetQid);
         }
 
-        return fetch(full_url).then((x) =>x.json()).then((x) => {
+        return fetch(full_url).then((x) => x.json()).then((x) => {
             let allSuggestions = (x.search || []);
             let validSuggestions = []
             if (mode == "qid") {
@@ -213,7 +213,7 @@ export class PropertyDB {
             }
             if (lastPidSuggestion) {
                 let pid = lastPidSuggestion.id;
-                validSuggestions = [lastPidSuggestion].concat(validSuggestions.filter((sugg: any) => sugg.id != pid)); 
+                validSuggestions = [lastPidSuggestion].concat(validSuggestions.filter((sugg: any) => sugg.id != pid));
             }
             return {
                 timestamp: now,
@@ -223,7 +223,7 @@ export class PropertyDB {
     }
 
     async getLastQidProperty(itemQid: string): Promise<any | undefined> {
-        let pid = await get(LAST_QID_USE_NS + itemQid, 60*60*24*2);
+        let pid = await get(LAST_QID_USE_NS + itemQid, 60 * 60 * 24 * 2);
         if (pid) {
             let prop_names = await this.prop_names;
             let name = prop_names[pid];

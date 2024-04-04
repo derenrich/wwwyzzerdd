@@ -1,4 +1,4 @@
-import {retryPromise} from "./util";
+import { retryPromise } from "./util";
 
 const maxMaxAge = 60 * 60 * 24 * 3; // nothing is stored longer than 3 days
 
@@ -13,15 +13,15 @@ function now(): number {
 }
 
 function isExpired(ts: number, maxAge: number) {
-    return (now() - ts)/1000.0 >= maxAge;
+    return (now() - ts) / 1000.0 >= maxAge;
 }
 
 function getMultiple(keys: string[], maxAge: number = 3600): Promise<any[]> {
     return new Promise((resolve) => {
-        chrome.storage.local.get(keys, function(result: any) {
+        chrome.storage.local.get(keys, function (result: any) {
             let resultArr = [];
             for (let key of keys) {
-               if (key in result) {
+                if (key in result) {
                     let item = result[key] as CachedItem;
                     if (isExpired(item.fetchTime, maxAge)) {
                         resultArr.push(undefined);
@@ -69,13 +69,13 @@ export async function getOrCompute<T>(key: string, compute: () => Promise<T>, ma
     }
 }
 
-export async function getOrComputeMultiple(keys: string[], compute: ((ks:string[]) => Promise<{[key: string]: any}>), keyPrefix: string="", maxAge: number = 3600): Promise<{[key: string]: any}> {
+export async function getOrComputeMultiple(keys: string[], compute: ((ks: string[]) => Promise<{ [key: string]: any }>), keyPrefix: string = "", maxAge: number = 3600): Promise<{ [key: string]: any }> {
     const prefixedKeys = keys.map((k) => keyPrefix + k);
     let values = await getMultiple(prefixedKeys, maxAge)
-    let precomputedOut: {[key: string]: any} = {};
+    let precomputedOut: { [key: string]: any } = {};
     let missingKeys: string[] = [];
-    for (let i = 0; i < keys.length; i+=1) {
-        if(values[i] !== undefined) {
+    for (let i = 0; i < keys.length; i += 1) {
+        if (values[i] !== undefined) {
             precomputedOut[keys[i]] = values[i];
         } else {
             missingKeys.push(keys[i]);
@@ -84,17 +84,19 @@ export async function getOrComputeMultiple(keys: string[], compute: ((ks:string[
     if (missingKeys.length > 0) {
         function fn() { return compute(missingKeys); }
         return retryPromise(fn).then((values) => {
-            let out: {[key: string]: any} = {};
-            for(const v of Object.keys(values)) {
-                let c = {
-                    fetchTime: now(),
-                    data: values[v]
-                };
-                let o: { [key: string]: any; } = {};
-                o[keyPrefix + v] = c;
-                chrome.storage.local.set(o);
+            let out: { [key: string]: any } = {};
+            for (const v of Object.keys(values)) {
+                if (values[v]) {
+                    let c = {
+                        fetchTime: now(),
+                        data: values[v]
+                    };
+                    let o: { [key: string]: any; } = {};
+                    o[keyPrefix + v] = c;
+                    chrome.storage.local.set(o);
+                }
                 out[v] = values[v];
-            }            
+            }
             return Object.assign(out, precomputedOut);
         });
     } else {
@@ -103,7 +105,7 @@ export async function getOrComputeMultiple(keys: string[], compute: ((ks:string[
 }
 
 export function checkAllCaches() {
-    chrome.storage.local.get(function(result: {[key: string]: any}) {
+    chrome.storage.local.get(function (result: { [key: string]: any }) {
         let numberRemoved = 0;
         let totalNumber = 0;
         for (let key in result) {
