@@ -74,7 +74,7 @@ type QueryCatResponsePage = {
 async function getPsychiqDocument(pageId: number, wikiLanguage: string): Promise<string> {
     let categories: string[] = [];
 
-    const fetchURL = `https://${wikiLanguage}.wikipedia.org/w/api.php?action=query&format=json&pageids=${pageId}&prop=categories`;
+    const fetchURL = `https://${wikiLanguage}.wikipedia.org/w/api.php?action=query&format=json&pageids=${pageId}&prop=categories&cllimit=500`;
     let title = "";
     let continueKey: string | undefined = "";
     do {
