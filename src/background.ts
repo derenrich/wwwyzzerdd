@@ -13,7 +13,7 @@ const CLEAR_CACHE_ALARM = "clearWwwyzzerddCache";
 chrome.alarms.create(
     CLEAR_CACHE_ALARM,
     {
-        "periodInMinutes": 30
+        "periodInMinutes": 60
     }
   );
 chrome.alarms.onAlarm.addListener(function(alarmInfo) {
