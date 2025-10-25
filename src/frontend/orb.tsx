@@ -46,7 +46,6 @@ const StyledOrb = styled("span")<{
   };
 });
 
-
 interface OrbProps {
   mode: OrbMode;
   hover?: React.ReactNode;

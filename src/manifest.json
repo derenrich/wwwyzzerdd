@@ -38,7 +38,9 @@
         "storage",
         "alarms",
         "contextMenus",
-        "unlimitedStorage"
+        "unlimitedStorage",
+        "scripting",
+        "webNavigation"
     ],
     "short_name": "wwwyzzerdd",
     "background": {

@@ -1,32 +1,9 @@
-import {registerBackendBroker} from "./messageBroker";
-import {exposeWikiVariables} from "./exposeVariables";
-import {initContext} from "./context";
+/**
+ * Legacy background worker entry point (Manifest V2).
+ *
+ * The functionality previously implemented here now lives in `background.ts`,
+ * the Manifest V3 service worker. This module is intentionally empty so that
+ * any stale imports can be cleaned up without affecting runtime behaviour.
+ */
 
-chrome.runtime.onInstalled.addListener(() => {
-    console.log("Wwwyzzerdd insalled 🧙");
-});
-
-function onWikipediaLoadRegister() {
-  const filter: chrome.webNavigation.WebNavigationEventFilter = {
-      url: [
-        {
-          hostSuffix: '.wikipedia.org',
-        },
-      ],
-    };
-
-  chrome.webNavigation.onDOMContentLoaded.addListener((details: any) => {
-      let tabId = details.tabId;
-      chrome.scripting.executeScript(
-          {
-            target: {tabId: tabId},
-            func: exposeWikiVariables,
-            world: "MAIN"
-          },
-      );
-  }, filter);
-}
-
-onWikipediaLoadRegister();
-registerBackendBroker();
-initContext();
+export {};
