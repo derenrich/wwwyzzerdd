@@ -14,19 +14,22 @@ export interface SelectionData {
 }
 
 export function initContext() {
-    chrome.contextMenus.create(
+    // check if context menus are already created to avoid duplicates
+    chrome.contextMenus.removeAll(() => {
+        chrome.contextMenus.create(
+            {
+            id: "selection-string",
+            title: chrome.i18n.getMessage("parseAsString"),
+            contexts: ["selection"],
+            documentUrlPatterns: ["*://*.wikipedia.org/*"]
+            }, addListener);
+        chrome.contextMenus.create(
         {
-          id: "selection-string",
-          title: chrome.i18n.getMessage("parseAsString"),
-          contexts: ["selection"],
-          documentUrlPatterns: ["*://*.wikipedia.org/*"]
-        }, addListener);
-    chrome.contextMenus.create(
-    {
-      id: "selection-date",
-      title: chrome.i18n.getMessage("parseAsDate"),
-      contexts: ["selection"],
-      documentUrlPatterns: ["*://*.wikipedia.org/*"]
+            id: "selection-date",
+            title: chrome.i18n.getMessage("parseAsDate"),
+            contexts: ["selection"],
+            documentUrlPatterns: ["*://*.wikipedia.org/*"]
+        });
     });
 }
 

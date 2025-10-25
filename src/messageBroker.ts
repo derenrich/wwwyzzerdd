@@ -167,6 +167,7 @@ export class FrontendMessageBroker {
                     if (msg.type === handler.messageType) {
                         handler.handler(msg.payload);
                     }
+                    return true;
                 });
             }
         });
@@ -197,6 +198,7 @@ export class FrontendMessageBroker {
             if (msg.type === type) {
                 handler(msg.payload);
             }
+            return true;
         });
 
         let handlerTuple: PortHandler = {
@@ -212,6 +214,7 @@ export class FrontendMessageBroker {
             if (request.type == type) {
                 handler(request.payload);
             }
+            return true;
         });
     }
 }
@@ -507,6 +510,7 @@ export class BackendMessageBroker {
 
     _handlePortMesage(msg: Message) {
         this.handleMessageBackend(msg);
+        return true;
     }
 
 }
