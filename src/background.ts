@@ -27,7 +27,8 @@ chrome.alarms.onAlarm.addListener(function(alarmInfo) {
 
 function registerWikipediaNavigationHandler(): void {
     chrome.runtime.onInstalled.addListener(() => {
-            console.log("Wwwyzzerdd installed 🧙");
+        console.log("Wwwyzzerdd installed 🧙");
+    });
 
     const filter: chrome.webNavigation.WebNavigationEventFilter = {
         url: [
@@ -44,6 +45,4 @@ function registerWikipediaNavigationHandler(): void {
             world: "MAIN",
         });
     }, filter);
-    });
-
 }
