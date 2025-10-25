@@ -181,17 +181,12 @@ function boot() {
   }
 
   if (!isExposed()) {
-    console.log("Exposing wiki variables...why weren't they already exposed?");
-    let func = exposeWikiVariables.toString();
-
-    const j = document.createElement("script");
-    const f = document.getElementsByTagName("script")[0];
-    if (f && f.parentNode) {
-      j.textContent = "let ww_bootFunc = " + func + "\n; ww_bootFunc();";
-      f.parentNode.insertBefore(j, f);
-      f.parentNode.removeChild(j);
-    }
-    (window as any).booted = true;
+    console.warn(
+      "Wiki variables not yet exposed. The background script should inject them via chrome.scripting.executeScript."
+    );
+    // Retry after a short delay to allow background script injection to complete
+    setTimeout(boot, 300);
+    return;
   }
 
   const wikiNamespace =
