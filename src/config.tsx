@@ -1,128 +1,164 @@
-import Switch from '@mui/material/Switch';
-import Button from '@mui/material/Button';
+import Switch from "@mui/material/Switch";
+import Button from "@mui/material/Button";
 
-import FormGroup from '@mui/material/FormGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import CircularProgress from '@mui/material/CircularProgress';
+import FormGroup from "@mui/material/FormGroup";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import CircularProgress from "@mui/material/CircularProgress";
 
-import React, { Component } from 'react';
+import React, { Component } from "react";
 import ReactDom from "react-dom";
 
 export const CONFIG_KEY = "WYZRD_CONFIG";
 
 const DEFAULT_VALUE: ConfigObject = {
-    showOrbs: true,
-    allowAnon: false,
-    usePsychiq: true,
-    syncd: false
-}
+  showOrbs: true,
+  allowAnon: false,
+  usePsychiq: true,
+  syncd: false,
+};
 
 export function getConfig(): Promise<ConfigObject> {
-    return new Promise<ConfigObject>(function (resolve, reject) {
-        chrome.storage.sync.get(CONFIG_KEY,
-            function(result: any) {
-                if (result[CONFIG_KEY]) {
-                    resolve(result[CONFIG_KEY]);
-                } else {
-                    // initialize the config
+  return new Promise<ConfigObject>(function (resolve, reject) {
+    chrome.storage.sync.get(CONFIG_KEY, function (result: any) {
+      if (result[CONFIG_KEY]) {
+        resolve(result[CONFIG_KEY]);
+      } else {
+        // initialize the config
 
-                    chrome.storage.sync.set({
-                        [CONFIG_KEY]: DEFAULT_VALUE
-                    });
-                    resolve(DEFAULT_VALUE);
-                }
+        chrome.storage.sync.set({
+          [CONFIG_KEY]: DEFAULT_VALUE,
         });
+        resolve(DEFAULT_VALUE);
+      }
     });
+  });
 }
 
 export interface ConfigObject {
-    syncd: boolean;
-    showOrbs?: boolean;
-    allowAnon?: boolean;
-    usePsychiq?:  boolean;
+  syncd: boolean;
+  showOrbs?: boolean;
+  allowAnon?: boolean;
+  usePsychiq?: boolean;
 }
 
 class Config extends Component<{}, ConfigObject> {
-    constructor(props: {}) {
-        super(props);
-        this.state = {
-            syncd: false
-        };
-        this.updateConfig();
+  constructor(props: {}) {
+    super(props);
+    this.state = {
+      syncd: false,
+    };
+    this.updateConfig();
+  }
+
+  updateConfig() {
+    getConfig().then((conf) => {
+      this.setState(conf);
+      this.setState({
+        syncd: true,
+      });
+    });
+  }
+
+  handleShowOrbChange(evt: React.ChangeEvent<{}>, checked: boolean) {
+    const update = {
+      showOrbs: checked,
+    };
+    let newState = Object.assign(this.state, update);
+
+    chrome.storage.sync.set(
+      {
+        [CONFIG_KEY]: newState,
+      },
+      () => this.updateConfig()
+    );
+  }
+
+  handleAllowAnonChange(evt: React.ChangeEvent<{}>, checked: boolean) {
+    const update = {
+      allowAnon: checked,
+    };
+    let newState = Object.assign(this.state, update);
+
+    chrome.storage.sync.set(
+      {
+        [CONFIG_KEY]: newState,
+      },
+      () => this.updateConfig()
+    );
+  }
+
+  handleUsePsychiqChange(evt: React.ChangeEvent<{}>, checked: boolean) {
+    const update = {
+      usePsychiq: checked,
+    };
+    let newState = Object.assign(this.state, update);
+
+    chrome.storage.sync.set(
+      {
+        [CONFIG_KEY]: newState,
+      },
+      () => this.updateConfig()
+    );
+  }
+
+  render() {
+    if (this.state.syncd) {
+      return (
+        <React.Fragment>
+          <FormGroup>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={this.state.showOrbs !== false}
+                  onChange={this.handleShowOrbChange.bind(this)}
+                />
+              }
+              label={chrome.i18n.getMessage("showOrbs")}
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={this.state.allowAnon === true}
+                  onChange={this.handleAllowAnonChange.bind(this)}
+                />
+              }
+              label={chrome.i18n.getMessage("allowAnon")}
+            />
+            {/* disabled for now */}
+            <FormControlLabel
+              control={
+                <Switch
+                  disabled
+                  checked={false}
+                  onChange={this.handleUsePsychiqChange.bind(this)}
+                />
+              }
+              label={chrome.i18n.getMessage("loadSuggestions")}
+            />
+            <Button
+              variant="contained"
+              onClick={() => {
+                chrome.storage.local.clear();
+              }}
+            >
+              {chrome.i18n.getMessage("clearCache")}
+            </Button>
+          </FormGroup>
+        </React.Fragment>
+      );
+    } else {
+      return <CircularProgress />;
     }
-
-    updateConfig() {
-        getConfig().then((conf) => {
-            this.setState(conf);
-            this.setState({
-                syncd: true
-            });
-        });
-    }
-
-    handleShowOrbChange(evt: React.ChangeEvent<{}>, checked: boolean) {
-        const update = {
-            showOrbs: checked
-        }
-        let newState = Object.assign(this.state, update);
-
-        chrome.storage.sync.set({
-            [CONFIG_KEY]: newState
-        }, () => this.updateConfig());
-
-    }
-
-    handleAllowAnonChange(evt: React.ChangeEvent<{}>, checked: boolean) {
-        const update = {
-            allowAnon: checked
-        }
-        let newState = Object.assign(this.state, update);
-
-        chrome.storage.sync.set({
-            [CONFIG_KEY]: newState
-        }, () => this.updateConfig());
-
-    }
-
-    handleUsePsychiqChange(evt: React.ChangeEvent<{}>, checked: boolean) {
-        const update = {
-            usePsychiq: checked
-        }
-        let newState = Object.assign(this.state, update);
-
-        chrome.storage.sync.set({
-            [CONFIG_KEY]: newState
-        }, () => this.updateConfig());
-
-    }
-
-
-    render() {
-        if (this.state.syncd) {
-            return <React.Fragment>
-            <FormGroup>
-                <FormControlLabel control={<Switch checked={this.state.showOrbs !== false} onChange={this.handleShowOrbChange.bind(this)} />} label={chrome.i18n.getMessage("showOrbs")} />
-                <FormControlLabel control={<Switch checked={this.state.allowAnon === true} onChange={this.handleAllowAnonChange.bind(this)} />} label={chrome.i18n.getMessage("allowAnon")} />
-                <FormControlLabel control={<Switch checked={this.state.usePsychiq !== false} onChange={this.handleUsePsychiqChange.bind(this)} />} label={chrome.i18n.getMessage("loadSuggestions")} />
-
-                <Button variant="contained" onClick={() => {chrome.storage.local.clear()}}>
-                    {chrome.i18n.getMessage("clearCache")}
-                </Button>
-            </FormGroup>
-            </React.Fragment>;
-        } else {
-            return <CircularProgress />;
-        }
-    }
+  }
 }
 
 function boot() {
-    const settingDiv = document.getElementById("settings");
-    if (settingDiv) {
-        ReactDom.render(<Config />, settingDiv);
-    }
+  const settingDiv = document.getElementById("settings");
+  if (settingDiv) {
+    ReactDom.render(<Config />, settingDiv);
+  }
 }
 
-if (typeof window !== 'undefined') {
-    window.onload = boot;
+if (typeof window !== "undefined") {
+  window.onload = boot;
 }
