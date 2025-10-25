@@ -1,386 +1,404 @@
-import { withStyles, WithStyles } from '@material-ui/core/styles';
-import {styles} from "./styles";
-import {CloseParam, PropTuple} from "./common";
-import {AddStringReq, FrontendMessageBroker, MessageType} from "../messageBroker";
-import React, { ChangeEvent, Component } from 'react';
-import {getSourceUrl} from "./common";
-import ListItem, { ListItemProps } from '@material-ui/core/ListItem';
-import ListItemIcon from '@material-ui/core/ListItemIcon';
-import ListItemText from '@material-ui/core/ListItemText';
-import LinkIcon from '@material-ui/icons/Link';
-import Select from '@material-ui/core/Select';
-import MenuItem from '@material-ui/core/MenuItem';
-import FormControl from '@material-ui/core/FormControl';
-import InputLabel  from '@material-ui/core/InputLabel';
-import Card from '@material-ui/core/Card';
-import CardHeader from '@material-ui/core/CardHeader';
-import CardContent from '@material-ui/core/CardContent';
-import List from '@material-ui/core/List';
-import Button from '@material-ui/core/Button';
-import { Suggester, SuggesterMode } from './suggester';
-import AddIcon from '@material-ui/icons/Add';
-import { ParsedDate } from '~parseString';
+import { styles } from "./styles";
+import { CloseParam, PropTuple } from "./common";
+import {
+  AddStringReq,
+  FrontendMessageBroker,
+  MessageType,
+} from "../messageBroker";
+import React, { useCallback, useMemo, useState } from "react";
+import { getSourceUrl } from "./common";
+import ListItem from "@mui/material/ListItem";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import LinkIcon from "@mui/icons-material/Link";
+import Select, { SelectChangeEvent } from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Card from "@mui/material/Card";
+import CardHeader from "@mui/material/CardHeader";
+import CardContent from "@mui/material/CardContent";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import Button from "@mui/material/Button";
+import { Suggester, SuggesterMode } from "./suggester";
+import AddIcon from "@mui/icons-material/Add";
+import { ParsedDate } from "~parseString";
 
-
- interface ItemWindowProps extends CloseParam, WithStyles<typeof styles> {
-     broker: FrontendMessageBroker;
-     qid: string;
-     pageQid?: string;
-     label?: string;
-     description?: string;
-     existingProps: PropTuple[];
-     wikiLanguage?: string;
- }
-
- interface ItemWindowState {
-     addMode: boolean;
- }
-
- export const ItemWindow = withStyles(styles)(
-    class extends Component<ItemWindowProps, ItemWindowState> {
-        constructor(props: ItemWindowProps) {
-            super(props);
-            this.state = {
-                addMode: false,
-            }
-        }
-
-
-        addMode = () => {
-            this.setState({
-                addMode: true
-            });
-        };
-
-
-        close = () => {
-            !!this.props.close ? this.props.close() : null;
-        }
-
-        add (pid?: string): void {
-            if (pid && this.props.pageQid) {
-                this.props.broker.sendMessage({
-                    type: MessageType.SET_PROP_QID,
-                    payload: {
-                        sourceItemQid: this.props.pageQid,
-                        propId: pid,
-                        targetItemQid: this.props.qid,
-                        sourceUrl: getSourceUrl(),
-                        wikiLanguage: this.props.wikiLanguage
-                    }
-                });
-                this.close();
-            }
-        }
-
-        render() {
-            let propItems = this.props.existingProps.map((prop) => {
-                return <ListItem>
-                    <ListItemIcon>
-                      <LinkIcon />
-                    </ListItemIcon>
-                    <ListItemText primary={prop.propName ?? ""} secondary={prop.propId} />
-                </ListItem>;
-            });
-
-            const qidLink = <React.Fragment>
-                <a href={`https://www.wikidata.org/wiki/${this.props.qid}`}>{this.props.qid}</a>
-                {" "}·{" "}
-                {this.props.description ?? "«no description»"}
-            </React.Fragment>;
-
-            return <Card elevation={3} className={this.props.classes.card}>
-            <CardHeader title={this.props.label ?? "«no label»"} subheader={qidLink}/>
-            <CardContent>
-            <List dense component="nav" >
-            {propItems}
-            {this.state.addMode ?
-            <Suggester
-                mode={SuggesterMode.QID_SUGGEST}
-                targetQid={this.props.pageQid || ""}
-                objectQid={this.props.qid}
-                broker={this.props.broker}
-                onSubmit={this.add.bind(this)} />  :
-            <ListItem button onClick={this.addMode}>
-                <ListItemIcon>
-                  <AddIcon />
-                </ListItemIcon>
-                <ListItemText primary={chrome.i18n.getMessage("addStatement")} />
-            </ListItem>
-            }
-             </List>
-            </CardContent>
-        </Card>;
-
-        }
-    }
-)
-
-
-interface LinkWindowProps extends CloseParam, WithStyles<typeof styles> {
-    pageQid?: string;
-    broker: FrontendMessageBroker;
-    pid: string;
-    identifier: string;
-    linked: boolean;
-    propNames: {[key: string]: string};
-
+interface ItemWindowProps extends CloseParam {
+  broker: FrontendMessageBroker;
+  qid: string;
+  pageQid?: string;
+  label?: string;
+  description?: string;
+  existingProps: PropTuple[];
+  wikiLanguage?: string;
 }
 
-export const LinkWindow = withStyles(styles)(
-    class extends Component<LinkWindowProps, {}> {
-        constructor(props: LinkWindowProps) {
-            super(props);
-        }
+export const ItemWindow: React.FC<ItemWindowProps> = (props) => {
+  const {
+    broker,
+    close,
+    description,
+    existingProps,
+    label,
+    pageQid,
+    qid,
+    wikiLanguage,
+  } = props;
 
-        link (): void {
-            if (!this.props.linked && !!this.props.pageQid) {
-                this.props.broker.sendMessage({
-                    type: MessageType.SET_PROP_ID,
-                    payload: {
-                        sourceItemQid: this.props.pageQid,
-                        propId: this.props.pid,
-                        targetId: this.props.identifier,
-                        sourceUrl: getSourceUrl()
-                    }
-                });
-                this.close();
-            }
-        }
+  const [isAdding, setIsAdding] = useState(false);
 
-        close = () => {
-            !!this.props.close ? this.props.close() : null;
-        }
+  const handleClose = useCallback(() => {
+    close?.();
+  }, [close]);
 
-        render() {
-        const pidLink = <React.Fragment>
-            <a href={`https://www.wikidata.org/wiki/Property:${this.props.pid}`}>{this.props.pid}</a>
-            {" "}·{" "}
-            {this.props.propNames[this.props.pid || ""] ?? "«" + chrome.i18n.getMessage("noDescription") + "»"}
-        </React.Fragment>;
+  const handleStartAdd = useCallback(() => {
+    setIsAdding(true);
+  }, []);
 
-        return <Card elevation={3} className={this.props.classes.card}>
-            <CardHeader title={this.props.identifier ?? "«" + chrome.i18n.getMessage("noLabel")  + "»"} subheader={pidLink}/>
-            {!this.props.linked ?
-            <CardContent>
-                <Button style={{width: "100%"}} startIcon={<AddIcon />} variant="contained" color="primary" onClick={this.link.bind(this)}>Link</Button>
-            </CardContent> : null
-            }
-        </Card>;
-        }
-    });
-
-interface CoordLinkWindowProps extends CloseParam, WithStyles<typeof styles> {
-    pageQid?: string;
-    broker: FrontendMessageBroker;
-    pid: string;
-    lat: number;
-    lon: number;
-    linked: boolean;
-    propNames: {[key: string]: string};
-}
-
-export const CoordLinkWindow = withStyles(styles)(
-    class extends Component<CoordLinkWindowProps, {}> {
-    constructor(props: CoordLinkWindowProps) {
-        super(props);
-    }
-
-    link (): void {
-        if (!this.props.linked && !!this.props.pageQid) {
-            this.props.broker.sendMessage({
-                type: MessageType.SET_PROP_COORD,
-                payload: {
-                    sourceItemQid: this.props.pageQid,
-                    propId: this.props.pid,
-                    lat: this.props.lat,
-                    lon: this.props.lon,
-                    sourceUrl: getSourceUrl()
-                }
-            });
-            this.close();
-        }
-    }
-
-    close = () => {
-        !!this.props.close ? this.props.close() : null;
-    }
-
-    render() {
-    const pidLink = <React.Fragment>
-        <a href={`https://www.wikidata.org/wiki/Property:${this.props.pid}`}>{this.props.pid}</a>
-        {" "}·{" "}
-        {this.props.propNames[this.props.pid || ""] ?? "«no description»"}
-    </React.Fragment>;
-
-    let coordString = this.props.lat + ", " + this.props.lon;
-
-    return <Card elevation={3} className={this.props.classes.card}>
-        <CardHeader title={coordString} subheader={pidLink}/>
-        {!this.props.linked ?
-        <CardContent>
-            <Button style={{width: "100%"}} startIcon={<AddIcon />} variant="contained" color="primary" onClick={this.link.bind(this)}>Link</Button>
-        </CardContent> : null
-        }
-    </Card>;
-    }
-});
-
-
-interface SpanWindowProps extends CloseParam, WithStyles<typeof styles> {
-    pageQid: string;
-    broker: FrontendMessageBroker;
-    spanText: string;
-    wikiLanguage: string;
-}
-
-interface SpanWindowState {
-    field: string;
-    language: string;
-}
-
-
-export const SpanWindow = withStyles(styles)(class extends Component<SpanWindowProps, SpanWindowState> {
-    constructor(props: SpanWindowProps) {
-        super(props);
-        this.state = {
-            field: "alias",
-            language: this.props.wikiLanguage
-        };
-    }
-
-    link (): void {
-        let payload: AddStringReq = {
-            sourceItemQid: this.props.pageQid,
+  const handleAdd = useCallback(
+    (pid?: string) => {
+      if (pid && pageQid) {
+        broker.sendMessage({
+          type: MessageType.SET_PROP_QID,
+          payload: {
+            sourceItemQid: pageQid,
+            propId: pid,
+            targetItemQid: qid,
             sourceUrl: getSourceUrl(),
-            wikiLanguage: this.props.wikiLanguage,
-            language: this.state.language,
-            field: this.state.field,
-            text: this.props.spanText
-        }
-        this.props.broker.sendMessage({
-            type: MessageType.ADD_STRING,
-            payload
+            wikiLanguage,
+          },
         });
-        this.close();
-    }
+        handleClose();
+      }
+    },
+    [broker, handleClose, pageQid, qid, wikiLanguage]
+  );
 
-    close = () => {
-        !!this.props.close ? this.props.close() : null;
-    }
+  const propItems = useMemo(
+    () =>
+      existingProps.map((prop) => (
+        <ListItem key={prop.propId}>
+          <ListItemIcon>
+            <LinkIcon />
+          </ListItemIcon>
+          <ListItemText primary={prop.propName ?? ""} secondary={prop.propId} />
+        </ListItem>
+      )),
+    [existingProps]
+  );
 
+  const qidLink = (
+    <React.Fragment>
+      <a href={`https://www.wikidata.org/wiki/${qid}`}>{qid}</a> ·{" "}
+      {description ?? "«no description»"}
+    </React.Fragment>
+  );
 
-    changeField(evt: any, child: any) {
-        let fieldValue = evt.target.value;
-        this.setState({
-            field: fieldValue
-        });
-    } 
-
-    changeLang(evt: any, child: any) {
-        let langValue = evt.target.value;
-        this.setState({
-            language: langValue
-        });
-    }
-
-    render() {
-        return <Card elevation={3} className={this.props.classes.card}>
-            <CardHeader title={`“${this.props.spanText}”`} subheader={"string"}/>
-            <CardContent style={{"paddingTop": "0px"}}>
-                <FormControl style={{width: "50%"}}>
-                    <InputLabel>Field</InputLabel>
-                    <Select label="field" defaultValue="alias" onChange={this.changeField.bind(this)}>
-                        <MenuItem value="label">{chrome.i18n.getMessage("label")}</MenuItem>
-                        <MenuItem value="description">{chrome.i18n.getMessage("description")}</MenuItem>
-                        <MenuItem value="alias">{chrome.i18n.getMessage("alias")}</MenuItem>
-                    </Select>
-                </FormControl>
-                <FormControl style={{width: "50%"}}>
-                    <InputLabel>{chrome.i18n.getMessage("language")}</InputLabel>
-                    <Select defaultValue={this.props.wikiLanguage} label="language" onChange={this.changeLang.bind(this)}>
-                        <MenuItem value="ar">Arabic</MenuItem>
-                        <MenuItem value="be">Belarusian</MenuItem>
-                        <MenuItem value="cs">Czech</MenuItem>
-                        <MenuItem value="de">German</MenuItem>
-                        <MenuItem value="en">English</MenuItem>
-                        <MenuItem value="es">Spanish</MenuItem>
-                        <MenuItem value="fr">French</MenuItem>
-                        <MenuItem value="ja">Japanese</MenuItem>
-                        <MenuItem value="pt">Portuguese</MenuItem>
-                        <MenuItem value="ru">Russian</MenuItem>
-                        <MenuItem value="sr">Serbian</MenuItem>
-                        <MenuItem value="zh">Chinese</MenuItem>
-                    </Select>
-                </FormControl>
-                <Button style={{width: "100%", marginTop: "1em"}} startIcon={<AddIcon />} variant="contained" color="primary" onClick={this.link.bind(this)}>Add</Button>
-            </CardContent>
-        </Card>;
-    }
-});
-
-
-interface SpanDateWindowProps extends CloseParam, WithStyles<typeof styles> {
-    pageQid: string;
-    broker: FrontendMessageBroker;
-    date: ParsedDate;
-    wikiLanguage: string;
-}
-
-interface SpanDateWindowState {
-    prop?: string;
-    addMode: boolean;
-}
-
-export const SpanDateWindow = withStyles(styles)(class extends Component<SpanDateWindowProps, SpanDateWindowState> {
-    constructor(props: SpanDateWindowProps) {
-        super(props);
-        this.state = {addMode: false};
-    }
-    close = () => {
-        !!this.props.close ? this.props.close() : null;
-    }
-
-    addMode = () => {
-        this.setState({
-            addMode: true
-        });
-    };
-
-    add (pid?: string): void {
-        if (pid && this.props.pageQid) {
-            this.props.broker.sendMessage({
-                type: MessageType.SET_PROP_DATE,
-                payload: {
-                    sourceItemQid: this.props.pageQid,
-                    propId: pid,
-                    date: this.props.date.value,
-                    sourceUrl: getSourceUrl(),
-                    wikiLanguage: this.props.wikiLanguage
-                }
-            });
-            this.close();
-        }
-    }
-
-    render() {
-        return <Card elevation={3} className={this.props.classes.card}>
-            <CardHeader title={`${this.props.date.renderedText}`} subheader={"date"}/>
-            <CardContent style={{"paddingTop": "0px"}}>
-            {this.state.addMode ?
+  return (
+    <Card elevation={3} sx={styles.card}>
+      <CardHeader title={label ?? "«no label»"} subheader={qidLink} />
+      <CardContent>
+        <List dense component="nav">
+          {propItems}
+          {isAdding ? (
             <Suggester
-                targetQid={this.props.pageQid}
-                mode={SuggesterMode.DATE_SUGGEST}
-                broker={this.props.broker}
-                onSubmit={this.add.bind(this)} />  :
-            <ListItem button onClick={this.addMode}>
-                <ListItemIcon>
-                  <AddIcon />
-                </ListItemIcon>
-                <ListItemText primary={chrome.i18n.getMessage("addStatement")} />
-            </ListItem>
-            }
-            </CardContent>
-        </Card>;
+              mode={SuggesterMode.QID_SUGGEST}
+              targetQid={pageQid || ""}
+              objectQid={qid}
+              broker={broker}
+              onSubmit={handleAdd}
+            />
+          ) : (
+            <ListItemButton onClick={handleStartAdd}>
+              <ListItemIcon>
+                <AddIcon />
+              </ListItemIcon>
+              <ListItemText primary={chrome.i18n.getMessage("addStatement")} />
+            </ListItemButton>
+          )}
+        </List>
+      </CardContent>
+    </Card>
+  );
+};
+
+interface LinkWindowProps extends CloseParam {
+  pageQid?: string;
+  broker: FrontendMessageBroker;
+  pid: string;
+  identifier: string;
+  linked: boolean;
+  propNames: { [key: string]: string };
+}
+
+export const LinkWindow: React.FC<LinkWindowProps> = (props) => {
+  const { broker, close, identifier, linked, pageQid, pid, propNames } = props;
+
+  const handleClose = useCallback(() => {
+    close?.();
+  }, [close]);
+
+  const handleLink = useCallback(() => {
+    if (!linked && pageQid) {
+      broker.sendMessage({
+        type: MessageType.SET_PROP_ID,
+        payload: {
+          sourceItemQid: pageQid,
+          propId: pid,
+          targetId: identifier,
+          sourceUrl: getSourceUrl(),
+        },
+      });
+      handleClose();
     }
-});
+  }, [broker, handleClose, identifier, linked, pageQid, pid]);
+
+  const pidLink = (
+    <React.Fragment>
+      <a href={`https://www.wikidata.org/wiki/Property:${pid}`}>{pid}</a> ·{" "}
+      {propNames[pid || ""] ??
+        "«" + chrome.i18n.getMessage("noDescription") + "»"}
+    </React.Fragment>
+  );
+
+  return (
+    <Card elevation={3} sx={styles.card}>
+      <CardHeader
+        title={identifier ?? "«" + chrome.i18n.getMessage("noLabel") + "»"}
+        subheader={pidLink}
+      />
+      {!linked ? (
+        <CardContent>
+          <Button
+            sx={{ width: "100%" }}
+            startIcon={<AddIcon />}
+            variant="contained"
+            color="primary"
+            onClick={handleLink}
+          >
+            Link
+          </Button>
+        </CardContent>
+      ) : null}
+    </Card>
+  );
+};
+
+interface CoordLinkWindowProps extends CloseParam {
+  pageQid?: string;
+  broker: FrontendMessageBroker;
+  pid: string;
+  lat: number;
+  lon: number;
+  linked: boolean;
+  propNames: { [key: string]: string };
+}
+
+export const CoordLinkWindow: React.FC<CoordLinkWindowProps> = (props) => {
+  const { broker, close, lat, linked, lon, pageQid, pid, propNames } = props;
+
+  const handleClose = useCallback(() => {
+    close?.();
+  }, [close]);
+
+  const handleLink = useCallback(() => {
+    if (!linked && pageQid) {
+      broker.sendMessage({
+        type: MessageType.SET_PROP_COORD,
+        payload: {
+          sourceItemQid: pageQid,
+          propId: pid,
+          lat,
+          lon,
+          sourceUrl: getSourceUrl(),
+        },
+      });
+      handleClose();
+    }
+  }, [broker, handleClose, lat, linked, lon, pageQid, pid]);
+
+  const pidLink = (
+    <React.Fragment>
+      <a href={`https://www.wikidata.org/wiki/Property:${pid}`}>{pid}</a> ·{" "}
+      {propNames[pid || ""] ?? "«no description»"}
+    </React.Fragment>
+  );
+
+  const coordString = `${lat}, ${lon}`;
+
+  return (
+    <Card elevation={3} sx={styles.card}>
+      <CardHeader title={coordString} subheader={pidLink} />
+      {!linked ? (
+        <CardContent>
+          <Button
+            sx={{ width: "100%" }}
+            startIcon={<AddIcon />}
+            variant="contained"
+            color="primary"
+            onClick={handleLink}
+          >
+            Link
+          </Button>
+        </CardContent>
+      ) : null}
+    </Card>
+  );
+};
+
+interface SpanWindowProps extends CloseParam {
+  pageQid: string;
+  broker: FrontendMessageBroker;
+  spanText: string;
+  wikiLanguage: string;
+}
+
+export const SpanWindow: React.FC<SpanWindowProps> = (props) => {
+  const { broker, close, pageQid, spanText, wikiLanguage } = props;
+
+  const [field, setField] = useState("alias");
+  const [language, setLanguage] = useState(wikiLanguage);
+
+  const handleClose = useCallback(() => {
+    close?.();
+  }, [close]);
+
+  const handleFieldChange = useCallback((event: SelectChangeEvent<string>) => {
+    setField(event.target.value);
+  }, []);
+
+  const handleLanguageChange = useCallback(
+    (event: SelectChangeEvent<string>) => {
+      setLanguage(event.target.value);
+    },
+    []
+  );
+
+  const handleLink = useCallback(() => {
+    const payload: AddStringReq = {
+      sourceItemQid: pageQid,
+      sourceUrl: getSourceUrl(),
+      wikiLanguage,
+      language,
+      field,
+      text: spanText,
+    };
+    broker.sendMessage({
+      type: MessageType.ADD_STRING,
+      payload,
+    });
+    handleClose();
+  }, [broker, field, handleClose, language, pageQid, spanText, wikiLanguage]);
+
+  return (
+    <Card elevation={3} sx={styles.card}>
+      <CardHeader title={`“${spanText}”`} subheader="string" />
+      <CardContent sx={{ paddingTop: 0 }}>
+        <FormControl sx={{ width: "50%" }}>
+          <InputLabel>Field</InputLabel>
+          <Select label="field" value={field} onChange={handleFieldChange}>
+            <MenuItem value="label">{chrome.i18n.getMessage("label")}</MenuItem>
+            <MenuItem value="description">
+              {chrome.i18n.getMessage("description")}
+            </MenuItem>
+            <MenuItem value="alias">{chrome.i18n.getMessage("alias")}</MenuItem>
+          </Select>
+        </FormControl>
+        <FormControl sx={{ width: "50%" }}>
+          <InputLabel>{chrome.i18n.getMessage("language")}</InputLabel>
+          <Select
+            value={language}
+            label="language"
+            onChange={handleLanguageChange}
+          >
+            <MenuItem value="ar">Arabic</MenuItem>
+            <MenuItem value="be">Belarusian</MenuItem>
+            <MenuItem value="cs">Czech</MenuItem>
+            <MenuItem value="de">German</MenuItem>
+            <MenuItem value="en">English</MenuItem>
+            <MenuItem value="es">Spanish</MenuItem>
+            <MenuItem value="fr">French</MenuItem>
+            <MenuItem value="ja">Japanese</MenuItem>
+            <MenuItem value="pt">Portuguese</MenuItem>
+            <MenuItem value="ru">Russian</MenuItem>
+            <MenuItem value="sr">Serbian</MenuItem>
+            <MenuItem value="zh">Chinese</MenuItem>
+          </Select>
+        </FormControl>
+        <Button
+          sx={{ width: "100%", marginTop: "1em" }}
+          startIcon={<AddIcon />}
+          variant="contained"
+          color="primary"
+          onClick={handleLink}
+        >
+          Add
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};
+
+interface SpanDateWindowProps extends CloseParam {
+  pageQid: string;
+  broker: FrontendMessageBroker;
+  date: ParsedDate;
+  wikiLanguage: string;
+}
+
+export const SpanDateWindow: React.FC<SpanDateWindowProps> = (props) => {
+  const { broker, close, date, pageQid, wikiLanguage } = props;
+  const [isAdding, setIsAdding] = useState(false);
+
+  const handleClose = useCallback(() => {
+    close?.();
+  }, [close]);
+
+  const handleStartAdd = useCallback(() => {
+    setIsAdding(true);
+  }, []);
+
+  const handleAdd = useCallback(
+    (pid?: string) => {
+      if (pid && pageQid) {
+        broker.sendMessage({
+          type: MessageType.SET_PROP_DATE,
+          payload: {
+            sourceItemQid: pageQid,
+            propId: pid,
+            date: date.value,
+            sourceUrl: getSourceUrl(),
+            wikiLanguage,
+          },
+        });
+        handleClose();
+      }
+    },
+    [broker, date.value, handleClose, pageQid, wikiLanguage]
+  );
+
+  return (
+    <Card elevation={3} sx={styles.card}>
+      <CardHeader title={date.renderedText} subheader="date" />
+      <CardContent sx={{ paddingTop: 0 }}>
+        {isAdding ? (
+          <Suggester
+            targetQid={pageQid}
+            mode={SuggesterMode.DATE_SUGGEST}
+            broker={broker}
+            onSubmit={handleAdd}
+          />
+        ) : (
+          <ListItemButton onClick={handleStartAdd}>
+            <ListItemIcon>
+              <AddIcon />
+            </ListItemIcon>
+            <ListItemText primary={chrome.i18n.getMessage("addStatement")} />
+          </ListItemButton>
+        )}
+      </CardContent>
+    </Card>
+  );
+};

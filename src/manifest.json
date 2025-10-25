@@ -1,5 +1,5 @@
 {
-    "manifest_version": 2,
+    "manifest_version": 3,
     "name": "__MSG_extName__",
     "version": "0.1.3.0",
     "description": "__MSG_extDesc__",
@@ -7,18 +7,17 @@
     "icons": {
         "128": "./icon/wwwyzzerdd-128.png"
     },
-    "browser_action": {
-        "browser_style": true,
+    "action": {
         "default_title": "Wwwyzzerdd",
         "default_popup": "config.html",
-        "default_icon": "./icon/wwwyzzerdd.png"
+        "default_icon": {
+            "128": "./icon/wwwyzzerdd.png"
+        }
     },
     "options_ui": {
-        "browser_style": true,
         "open_in_tab": false,
         "page": "config.html"
     },
-    "commands": {},
     "content_scripts": [
         {
             "matches": [
@@ -33,37 +32,24 @@
             "run_at": "document_idle"
         }
     ],
-    "event_rules": [],
-    "externally_connectable": {
-        "matches": []
-    },
-    "file_browser_handlers": [],
-    "file_system_provider_capabilities": {
-        "configurable": false,
-        "multiple_mounts": false,
-        "source": "file"
-    },
     "homepage_url": "https://github.com/derenrich/wwwyzzerdd",
     "offline_enabled": false,
     "permissions": [
         "storage",
         "alarms",
         "contextMenus",
-        "unlimitedStorage",
+        "unlimitedStorage"
+    ],
+    "short_name": "wwwyzzerdd",
+    "background": {
+        "service_worker": "background.ts",
+        "type": "module"
+    },
+    "host_permissions": [
         "https://www.wikidata.org/*",
         "https://*.wikipedia.org/*",
         "https://*.toolforge.org/*"
     ],
-    "requirements": {},
-    "sandbox": {},
-    "short_name": "wwwyzzerdd",
-    "storage": {},
-    "web_accessible_resources": [],
-    "background": {
-        "scripts": [
-            "background.ts"
-        ]
-    },
     "browser_specific_settings": {
         "gecko": {
             "id": "{81937705-39a0-413a-b105-f69b046eeaef}"

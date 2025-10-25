@@ -1,10 +1,10 @@
 import React, { Component, ReactPortal } from 'react';
-import Portal from '@material-ui/core/Portal';
-import Snackbar from '@material-ui/core/Snackbar';
+import Portal from '@mui/material/Portal';
+import Snackbar from '@mui/material/Snackbar';
 import {FrontendMessageBroker, registerFrontendBroker, MessageType, ReportError} from "../messageBroker";
 import {StatementSuggestions} from "../psychiq";
 import {CONFIG_KEY, ConfigObject, getConfig} from "../config"
-import { Typography } from '@material-ui/core';
+import { Typography } from '@mui/material';
 import {QidData, PropTuple, SpanField, renderSpanField} from "./common";
 import {SuggestedClaimsWindow} from "./suggested_claims";
 import {Orb, OrbMode} from "./orb";

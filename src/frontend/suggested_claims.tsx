@@ -1,123 +1,147 @@
-import HelpIcon from '@material-ui/icons/Help';
-import IconButton from '@material-ui/core/IconButton';
-import { withStyles, WithStyles } from '@material-ui/core/styles';
-import {FrontendMessageBroker, MessageType} from "../messageBroker";
-import {StatementSuggestions} from "../psychiq";
-import React, { Component } from 'react';
-import {styles} from "./styles";
-import {CloseParam, QidData, getSourceUrl} from "./common";
-import { Checkbox, FormControlLabel, FormGroup, Typography } from '@material-ui/core';
-import Card from '@material-ui/core/Card';
-import CardHeader from '@material-ui/core/CardHeader';
-import CardContent from '@material-ui/core/CardContent';
-import Button from '@material-ui/core/Button';
-import Tooltip from '@material-ui/core/Tooltip';
-import AddIcon from '@material-ui/icons/Add';
+import HelpIcon from "@mui/icons-material/Help";
+import AddIcon from "@mui/icons-material/Add";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import CardHeader from "@mui/material/CardHeader";
+import { Checkbox, FormControlLabel, FormGroup } from "@mui/material";
+import Tooltip from "@mui/material/Tooltip";
+import React, { useCallback, useMemo, useState } from "react";
+import { FrontendMessageBroker, MessageType } from "../messageBroker";
+import { StatementSuggestions } from "../psychiq";
+import { CloseParam, QidData, getSourceUrl } from "./common";
+import { styles } from "./styles";
 
-
-interface SuggestedClaimsWindowProps extends CloseParam, WithStyles<typeof styles> {
-    pageQid?: string;
-    suggestedClaims: StatementSuggestions[];
-    propNames: {[key: string]: string};
-    qidMapping: {[key: string]: QidData};
-    claims: {[key: string]: any};
-    broker: FrontendMessageBroker;
-    wikiLanguage?: string;
-    claimExists: (pid: string, qid: string) => boolean;
+interface SuggestedClaimsWindowProps extends CloseParam {
+  pageQid?: string;
+  suggestedClaims: StatementSuggestions[];
+  propNames: { [key: string]: string };
+  qidMapping: { [key: string]: QidData };
+  claims: { [key: string]: any };
+  broker: FrontendMessageBroker;
+  wikiLanguage?: string;
+  claimExists: (pid: string, qid: string) => boolean;
 }
 
-interface SuggestedClaimsWindowState {
-    statements: string[];
-}
+export const SuggestedClaimsWindow: React.FC<SuggestedClaimsWindowProps> = (
+  props
+) => {
+  const [statements, setStatements] = useState<string[]>([]);
 
-export const SuggestedClaimsWindow = withStyles(styles)(
-    class extends Component<SuggestedClaimsWindowProps, SuggestedClaimsWindowState> {
-        constructor(props: SuggestedClaimsWindowProps) {
-            super(props);
-            this.state = {
-                statements: []
-            };
+  const {
+    close: closeWindow,
+    propNames,
+    qidMapping,
+    claimExists,
+    suggestedClaims,
+    broker,
+    pageQid,
+    wikiLanguage,
+  } = props;
+
+  const handleClose = useCallback(() => {
+    closeWindow?.();
+  }, [closeWindow]);
+
+  const getPropName = useCallback(
+    (pid: string): string => {
+      return propNames[pid] ?? pid;
+    },
+    [propNames]
+  );
+
+  const getQidName = useCallback(
+    (qid: string): string => {
+      for (const data of Object.values(qidMapping)) {
+        if (data.qid === qid) {
+          return data.label ?? qid;
         }
+      }
+      return qid;
+    },
+    [qidMapping]
+  );
 
-        close = () => {
-            !!this.props.close ? this.props.close() : null;
+  const handleClickStatement = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
+      const value = event.target.value;
+      setStatements((current) => {
+        if (checked) {
+          return current.concat(value);
         }
+        return current.filter((entry) => entry !== value);
+      });
+    },
+    []
+  );
 
-        getPropName(pid: string): string {
-            return this.props.propNames[pid] ?? pid;
-        }
+  const visibleClaims = useMemo(() => {
+    return suggestedClaims
+      .filter((claim) => claim.pid !== "unknown")
+      .slice(0, 5);
+  }, [suggestedClaims]);
 
-        getQidName(qid: string): string {
-            // yes this is O(n) ...
-            for (let data of Object.values(this.props.qidMapping)) {
-                if (data.qid == qid) {
-                    return data.label ?? qid;
-                }
+  const renderSuggestedClaims = () => (
+    <FormGroup sx={styles.suggestedStatementsBody}>
+      {visibleClaims.map((claim) => {
+        const linked = claimExists(claim.pid, claim.qid);
+        const value = `${claim.pid}-${claim.qid}`;
+        return (
+          <FormControlLabel
+            key={value}
+            disabled={linked}
+            control={
+              <Checkbox
+                onChange={handleClickStatement}
+                value={value}
+                defaultChecked={linked}
+              />
             }
-            return qid;
-        }
+            label={`${getPropName(claim.pid)} ${getQidName(claim.qid)}`}
+          />
+        );
+      })}
+    </FormGroup>
+  );
 
-        clickStatement(event: React.ChangeEvent<HTMLInputElement>, checked: boolean): void {
-            let value = event.target.value;
-            if (checked) {
-                this.setState((state) => {
-                    return {
-                        statements: state.statements.concat(value)
-                    }
-                });
-            } else {
-                this.setState((state) => {
-                    return {
-                        statements: state.statements.filter(v => v != value)
-                    }
-            }   );
-            }
-        }
+  const handleSave = useCallback(() => {
+    statements.forEach((statement) => {
+      const [pid, targetQid] = statement.split("-");
+      broker.sendMessage({
+        type: MessageType.SET_PROP_QID,
+        payload: {
+          sourceItemQid: pageQid,
+          propId: pid,
+          targetItemQid: targetQid,
+          sourceUrl: getSourceUrl(),
+          wikiLanguage,
+          commentAddendum: "via psychiq",
+        },
+      });
+    });
+    handleClose();
+  }, [broker, handleClose, pageQid, statements, wikiLanguage]);
 
-        renderSuggestedClaims(): React.ReactNode {
-            let claims = this.props.suggestedClaims.filter((r) => r.pid != "unknown").slice(0, 5);
-            return <FormGroup className={this.props.classes.suggestedStatementsBody}>
-                {claims.map((c) => {
-                    let linked = this.props.claimExists(c.pid, c.qid);
-                    return <FormControlLabel
-                        control={<Checkbox  onChange={this.clickStatement.bind(this)} value={c.pid + "-" + c.qid} defaultChecked={linked}/>}
-                        disabled={linked}
-                        label={this.getPropName(c.pid) + " " + this.getQidName(c.qid)} />
-                })}
-            </FormGroup>
+  return (
+    <Card elevation={3} sx={styles.card}>
+      <CardHeader
+        title={chrome.i18n.getMessage("suggestedStatements")}
+        action={
+          <Tooltip
+            placement="right-start"
+            title={chrome.i18n.getMessage("suggestedStatementsDesc")}
+            arrow
+          >
+            <HelpIcon />
+          </Tooltip>
         }
-
-        save(): void {
-            this.state.statements.forEach((statement) => {
-                let [pid, targetQid] = statement.split("-");
-                this.props.broker.sendMessage({
-                    type: MessageType.SET_PROP_QID,
-                    payload: {
-                        sourceItemQid: this.props.pageQid,
-                        propId: pid,
-                        targetItemQid: targetQid,
-                        sourceUrl: getSourceUrl(),
-                        wikiLanguage: this.props.wikiLanguage,
-                        commentAddendum: "via psychiq"
-                    }
-                });
-            });
-            this.close();
-        }
-
-        render() {
-            return <Card elevation={3} className={this.props.classes.card}>
-                <CardHeader title={chrome.i18n.getMessage("suggestedStatements")} action={
-                    <Tooltip placement='right-start' title={chrome.i18n.getMessage("suggestedStatementsDesc")} arrow>
-                    <HelpIcon />
-                  </Tooltip>
-                }/>
-                <CardContent className={this.props.classes.titleCardContent}>
-                    {this.renderSuggestedClaims()}
-                    <Button onClick={this.save.bind(this)} variant="outlined" startIcon={<AddIcon />}>
-                        Save
-                    </Button>
-                </CardContent>
-            </Card>;
-        }
-});
+      />
+      <CardContent sx={styles.titleCardContent}>
+        {renderSuggestedClaims()}
+        <Button onClick={handleSave} variant="outlined" startIcon={<AddIcon />}>
+          Save
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};

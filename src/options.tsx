@@ -1,64 +1,63 @@
 import { render } from "react-dom";
-import React, { Component } from 'react';
-import { withStyles, createStyles, WithStyles } from '@material-ui/core/styles';
-import FormLabel from '@material-ui/core/FormLabel';
-import FormControl from '@material-ui/core/FormControl';
-import FormGroup from '@material-ui/core/FormGroup';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import FormHelperText from '@material-ui/core/FormHelperText';
-import Switch from '@material-ui/core/Switch';
-import CircularProgress from '@material-ui/core/CircularProgress';
-import {Settings, getSettings, setSettings} from "./settings"
+import React, { useCallback, useEffect, useState } from "react";
+import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Switch from "@mui/material/Switch";
+import CircularProgress from "@mui/material/CircularProgress";
+import { Settings, getSettings, setSettings } from "./settings";
 
+export const Options: React.FC = () => {
+  const [settings, setSettingsState] = useState<Settings>();
 
-const styles = createStyles({
+  useEffect(() => {
+    let isMounted = true;
+    getSettings().then((fetchedSettings) => {
+      if (isMounted) {
+        setSettingsState(fetchedSettings);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
-});
+  const handleRunOnLoadChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>, checked: boolean) => {
+      if (!settings) {
+        return;
+      }
+      const nextSettings = {
+        ...settings,
+        runOnLoad: checked,
+      };
+      void setSettings(nextSettings);
+      setSettingsState(nextSettings);
+    },
+    [settings]
+  );
 
-interface State { //extends WithStyles<typeof styles> {
-    settings?: Settings;
-}
+  if (!settings) {
+    return (
+      <div>
+        <CircularProgress />
+      </div>
+    );
+  }
 
-export const Options = withStyles(styles)(
-    class extends Component<{}, State> {
-
-        constructor(props: {}) {
-            super(props);
-            this.state = {
-                settings: undefined
-            };
-
-            getSettings().then((settings) => {
-                this.setState({settings: settings})
-            });
+  return (
+    <FormControl component="fieldset">
+      <FormControlLabel
+        control={
+          <Switch
+            name="runOnLoad"
+            checked={settings.runOnLoad}
+            onChange={handleRunOnLoadChange}
+          />
         }
-
-        setRunOnLoad = (evt:any) => {
-            if (this.state.settings) {
-                let settings = this.state.settings;
-                settings.runOnLoad = evt.target.checked;
-                setSettings(settings)
-                this.setState({settings: settings})
-            }
-        }
-
-        render() {
-            if (!this.state || !this.state.settings) {
-                return <div> <CircularProgress /></div>;
-            } else {
-            return <FormControl component="fieldset">
-              <FormControlLabel
-                control={<Switch name="runOnLoad" />}
-                checked={this.state.settings.runOnLoad}
-                label="Run On Load"
-                onChange={this.setRunOnLoad.bind(this)}
-              />
-                </FormControl>;
-            }
-        }
-    }
-);
-
-
+        label="Run On Load"
+      />
+    </FormControl>
+  );
+};
 
 render(<Options />, document.getElementById("root"));
