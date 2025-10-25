@@ -1,9 +1,9 @@
-import Switch from '@material-ui/core/Switch';
-import Button from '@material-ui/core/Button';
+import Switch from '@mui/material/Switch';
+import Button from '@mui/material/Button';
 
-import FormGroup from '@material-ui/core/FormGroup';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import CircularProgress from '@material-ui/core/CircularProgress';
+import FormGroup from '@mui/material/FormGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import React, { Component } from 'react';
 import ReactDom from "react-dom";

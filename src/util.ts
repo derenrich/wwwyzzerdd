@@ -24,7 +24,7 @@ export async function retryPromise<T>(fn: () => Promise<T>): Promise<T> {
     }
 
     // attempts 4 times (final time we get the Exception)
-    const result = await tryCall(0) || await tryCall(1) || await tryCall(2);
+    const result = (await tryCall(0)) || (await tryCall(1)) || (await tryCall(2));
     if (result == undefined) {
         try {
             return await fn();

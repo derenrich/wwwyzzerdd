@@ -20,9 +20,11 @@
         "check": "tsc --noEmit"
     },
     "dependencies": {
-        "@material-ui/core": "^4.12.4",
-        "@material-ui/icons": "^4.11.3",
-        "@material-ui/lab": "^4.0.0-alpha.61",
+        "@emotion/react": "^11.14.0",
+        "@emotion/styled": "^11.14.1",
+        "@mui/icons-material": "^7.3.4",
+        "@mui/lab": "^7.0.1-beta.18",
+        "@mui/material": "^7.3.4",
         "@parcel/config-webextension": "^2.8.2",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",

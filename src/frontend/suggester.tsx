@@ -1,11 +1,11 @@
 import { FrontendMessageBroker, MessageType } from "../messageBroker";
 import React, { Component } from 'react';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemIcon from '@material-ui/core/ListItemIcon';
-import Autocomplete from '@material-ui/lab/Autocomplete';
-import IconButton from '@material-ui/core/IconButton';
-import TextField from '@material-ui/core/TextField';
-import AddIcon from '@material-ui/icons/Add';
+import ListItem from '@mui/material/ListItem';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import Autocomplete from '@mui/material/Autocomplete';
+import IconButton from '@mui/material/IconButton';
+import TextField from '@mui/material/TextField';
+import AddIcon from '@mui/icons-material/Add';
 import { ParsedDate } from "~parseString";
 
 
@@ -89,30 +89,32 @@ export class Suggester extends Component<SuggesterProps, SuggesterState> {
     }
 
     render() {
-        return <ListItem>
-            <ListItemIcon>
-                <IconButton onClick={this.submit.bind(this)}>
-                    <AddIcon />
-                </IconButton>
-            </ListItemIcon>
-            <Autocomplete
-                fullWidth
-                autoHighlight
-                autoSelect
-                openOnFocus
-                onInputChange={(evt, value, reason) => {
-                    this.setState({
-                        typed: value
-                    });
-                }}
-                onChange={(evt, obj, reason) => {
-                    this.setState({ "selectedPid": !!obj ? obj['pid'] : undefined });
-                }}
-                filterOptions={(x) => x}
-                renderInput={(params) => <TextField {...params} label="Property" variant="outlined" />}
-                options={this.state.suggestedProps.map((sugg) => { return { "pid": sugg.id, "label": sugg.label }; })}
-                getOptionLabel={(opt) => opt.label}
-                id="prop-box" />
-        </ListItem>;
+        return (
+            <ListItem>
+                <ListItemIcon>
+                    <IconButton onClick={this.submit.bind(this)} size="large">
+                        <AddIcon />
+                    </IconButton>
+                </ListItemIcon>
+                <Autocomplete
+                    fullWidth
+                    autoHighlight
+                    autoSelect
+                    openOnFocus
+                    onInputChange={(evt, value, reason) => {
+                        this.setState({
+                            typed: value
+                        });
+                    }}
+                    onChange={(evt, obj, reason) => {
+                        this.setState({ "selectedPid": !!obj ? obj['pid'] : undefined });
+                    }}
+                    filterOptions={(x) => x}
+                    renderInput={(params) => <TextField {...params} label="Property" variant="outlined" />}
+                    options={this.state.suggestedProps.map((sugg) => { return { "pid": sugg.id, "label": sugg.label }; })}
+                    getOptionLabel={(opt) => opt.label}
+                    id="prop-box" />
+            </ListItem>
+        );
     }
 }
