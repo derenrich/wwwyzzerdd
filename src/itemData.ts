@@ -1,7 +1,7 @@
 import { getOrComputeMultiple } from "./cache";
 
 //TODO: stop always getting all the languages
-const GET_ENTITIES_URL="https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&languages=pt|en|ar|be|cs|de|es|fr|ja|ru|sr|zh"
+const GET_ENTITIES_URL = "https://www.wikidata.org/w/api.php?action=wbgetentities&format=json&languages=pt|en|ar|be|cs|de|es|fr|ja|ru|sr|zh|mul"
 const REQ_LIMIT = 50;
 const SOURCE_PROPS = ['info', 'descriptions', 'aliases', 'labels', 'claims'].join("|");
 const LINKED_PROPS = ['labels', 'descriptions', 'sitelinks'].join('|');
@@ -14,7 +14,7 @@ export interface LinkedItemData {
     description: string | undefined;
 }
 
-function getQidsFromTitles(titles: string[], wikiLanguage: string, respond?: QidCallback): Promise<{[key: string]: LinkedItemData }> {
+function getQidsFromTitles(titles: string[], wikiLanguage: string, respond?: QidCallback): Promise<{ [key: string]: LinkedItemData }> {
     // TODO: handle pipes in titles
     let concatTitleChunk = encodeURIComponent(titles.join("|"));
     let site = wikiLanguage + "wiki";
@@ -33,15 +33,15 @@ function getQidsFromTitles(titles: string[], wikiLanguage: string, respond?: Qid
         } else {
             const entities = data['entities'];
             let missingKeys: string[] = [];
-            let out: {[key: string]: LinkedItemData} = {};
+            let out: { [key: string]: LinkedItemData } = {};
             for (let qid of Object.keys(entities)) {
                 const ent = entities[qid];
                 if ("missing" in ent) {
                     missingKeys.push(ent.title);
                 } else {
                     let title = ent["sitelinks"][site].title;
-                    let label = (ent["labels"][lang] || {})["value"];
-                    let description = (ent["descriptions"][lang] || {})["value"];
+                    let label = (ent["labels"][lang] || ent["labels"]["mul"] || {})["value"];
+                    let description = (ent["descriptions"][lang] || ent["descriptions"]["mul"] || {})["value"];
                     let linkData: LinkedItemData = {
                         qid,
                         label,
@@ -62,7 +62,7 @@ function getQidsFromTitles(titles: string[], wikiLanguage: string, respond?: Qid
 }
 
 // get the title/desc from qid
-function getDataFromQids(qids: string[], respond?: QidCallback): Promise<{[key: string]: LinkedItemData }> {
+function getDataFromQids(qids: string[], respond?: QidCallback): Promise<{ [key: string]: LinkedItemData }> {
     let concatQidChunk = qids.join("|");
     let targetUrl = GET_ENTITIES_URL + "&props=" + encodeURIComponent(LINKED_PROPS) + "&ids=" + concatQidChunk;
     let site = "enwiki";
@@ -79,11 +79,11 @@ function getDataFromQids(qids: string[], respond?: QidCallback): Promise<{[key: 
             throw new Error();
         } else {
             const entities = data['entities'];
-            let out: {[key: string]: LinkedItemData} = {};
+            let out: { [key: string]: LinkedItemData } = {};
             for (let qid of Object.keys(entities)) {
                 const ent = entities[qid];
-                let label = (ent["labels"][lang] || {})["value"];
-                let description = (ent["descriptions"][lang] || {})["value"];
+                let label = (ent["labels"][lang] || ent["labels"]["mul"] || {})["value"];
+                let description = (ent["descriptions"][lang] || ent["descriptions"]["mul"] || {})["value"];
                 let linkData: LinkedItemData = {
                     qid,
                     label,
@@ -119,8 +119,8 @@ function getQidFromTitle(title: string, wikiLanguage: string): Promise<LinkedIte
                 if (("missing" in ent)) {
                     break;
                 }
-                let label = (ent["labels"][lang] || {})["value"];
-                let description = (ent["descriptions"][lang] || {})["value"];
+                let label = (ent["labels"][lang] || ent["labels"]["mul"] || {})["value"];
+                let description = (ent["descriptions"][lang] || ent["descriptions"]["mul"] || {})["value"];
 
                 if ("sitelinks" in ent) {
                     return {
@@ -135,10 +135,9 @@ function getQidFromTitle(title: string, wikiLanguage: string): Promise<LinkedIte
     });
 }
 
-function getContentFromQids(qids: string[]): Promise<{[key: string]: any}> {
+function getContentFromQids(qids: string[]): Promise<{ [key: string]: any }> {
     let concatQids = qids.join("|");
     let site = "enwiki";
-    let language = "en";
     let targetUrl = GET_ENTITIES_URL + "&props=" + encodeURIComponent(SOURCE_PROPS) + "&sites=" + encodeURIComponent(site) + "&ids=" + concatQids;
     return fetch(targetUrl, {
         method: 'GET',
@@ -166,9 +165,9 @@ export class ItemDB {
 
     }
 
-    async lookupTitles(titles: string[], wikiLanguageOpt?: string, respond?: QidCallback): Promise<{[key: string]: LinkedItemData}> {
+    async lookupTitles(titles: string[], wikiLanguageOpt?: string, respond?: QidCallback): Promise<{ [key: string]: LinkedItemData }> {
         let uniqTitles = Array.from(new Set(titles)).filter(x => !!x);
-        let out: {[key: string]: LinkedItemData} = {};
+        let out: { [key: string]: LinkedItemData } = {};
         let wikiLanguage = wikiLanguageOpt || "en";
         for (let i = 0; i < uniqTitles.length; i += REQ_LIMIT) {
             let titleChunk = uniqTitles.slice(i, i + REQ_LIMIT);
@@ -182,9 +181,9 @@ export class ItemDB {
     }
 
     // same as lookup titles but given qids instead of titles
-    async lookupQids(qids: string[], respond?: QidCallback): Promise<{[key: string]: LinkedItemData}> {
+    async lookupQids(qids: string[], respond?: QidCallback): Promise<{ [key: string]: LinkedItemData }> {
         let uniqQids = Array.from(new Set(qids));
-        let out: {[key: string]: LinkedItemData} = {};
+        let out: { [key: string]: LinkedItemData } = {};
         for (let i = 0; i < uniqQids.length; i += REQ_LIMIT) {
             let qidChunk = uniqQids.slice(i, i + REQ_LIMIT);
             let batch = await getOrComputeMultiple(qidChunk, getDataFromQids, "qid2title_", TITLE_CACHE_SEC);
@@ -193,10 +192,10 @@ export class ItemDB {
         return out;
     }
 
-    async lookupQidContent(qids: string[], skipCache: boolean | undefined = false): Promise<{[key: string]: string}> {
+    async lookupQidContent(qids: string[], skipCache: boolean | undefined = false): Promise<{ [key: string]: string }> {
         // remove duplicates
         let uniqQids = Array.from(new Set(qids));
-        let out: {[key: string]: any} = {};
+        let out: { [key: string]: any } = {};
         for (let i = 0; i < uniqQids.length; i += REQ_LIMIT) {
             let qidChunk = uniqQids.slice(i, i + REQ_LIMIT);
             let cacheTime = skipCache ? 0 : STATEMENT_CACHE_SEC;

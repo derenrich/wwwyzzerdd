@@ -142,45 +142,75 @@ const MIN_WRITE_WAIT = 300;
 let lastWrite = Date.now();
 
 export class FrontendMessageBroker {
-    port: chrome.runtime.Port;
+    port: chrome.runtime.Port | null;
     connected: boolean;
     handlers: PortHandler[];
 
     constructor() {
-        this.port = this.openPortToBackground();
-        this.connected = true;
+        this.port = null;
+        this.connected = false;
         this.handlers = [];
-        this.port.onDisconnect.addListener((d) => {
-            this.connected = false;
-        });
+        this.openPortToBackground();
+
+        if (typeof window !== 'undefined') {
+            window.addEventListener('pageshow', (event) => {
+                if (event.persisted) {
+                    this.connected = false;
+                    if (this.port) {
+                        try {
+                            this.port.disconnect();
+                        } catch (e) {}
+                        this.port = null;
+                    }
+                    this.openPortToBackground();
+                }
+            });
+        }
     }
 
-    openPortToBackground(): chrome.runtime.Port {
-        let port = chrome.runtime.connect({ name: "www" });
-        this.connected = true;
-        port.onDisconnect.addListener((port) => {
-            // if we disconnected then reconnect
-            this.openPortToBackground();
-            // after reconnecting we need to re-enable the listeners
+    openPortToBackground(): chrome.runtime.Port | null {
+        try {
+            let port = chrome.runtime.connect({ name: "www" });
+            this.connected = true;
+            this.port = port;
+            port.onDisconnect.addListener((p) => {
+                let err = chrome.runtime.lastError;
+                if (err) {
+                    console.debug("Wwwyzzerdd port disconnected:", err.message);
+                }
+                this.connected = false;
+                this.port = null;
+            });
+            
             for (let handler of this.handlers) {
-                this.port.onMessage.addListener((msg: Message) => {
+                port.onMessage.addListener((msg: Message) => {
                     if (msg.type === handler.messageType) {
                         handler.handler(msg.payload);
                     }
                     return true;
                 });
             }
-        });
-        this.port = port;
-        return port;
+            return port;
+        } catch (e) {
+            console.error("Wwwyzzerdd: failed to open port.", e);
+            return null;
+        }
     }
 
     postMessage(msg: any) {
-        if (this.connected) {
-            this.port.postMessage(msg);
-        } else {
-            console.log("connection lost, trying again");
-            this.openPortToBackground().postMessage(msg);
+        if (!this.connected || !this.port) {
+            this.openPortToBackground();
+        }
+        if (this.port) {
+            try {
+                this.port.postMessage(msg);
+            } catch (e) {
+                this.connected = false;
+                let newPort = this.openPortToBackground();
+                if (newPort) {
+                    newPort.postMessage(msg);
+                }
+            }
         }
     }
 
@@ -190,16 +220,22 @@ export class FrontendMessageBroker {
 
     sendFrontendRequest(msg: Message, response?: (r: any) => void) {
         response = response ?? function (r: any) { };
-        chrome.runtime.sendMessage(msg, response);
+        try {
+            chrome.runtime.sendMessage(msg, response);
+        } catch (e) {
+            console.error("Wwwyzzerdd: sendFrontendRequest failed", e);
+        }
     }
 
     registerFrontendHandler(type: MessageType, handler: ((_: any) => void)) {
-        this.port.onMessage.addListener((msg: Message) => {
-            if (msg.type === type) {
-                handler(msg.payload);
-            }
-            return true;
-        });
+        if (this.port) {
+            this.port.onMessage.addListener((msg: Message) => {
+                if (msg.type === type) {
+                    handler(msg.payload);
+                }
+                return true;
+            });
+        }
 
         let handlerTuple: PortHandler = {
             messageType: type,
@@ -233,6 +269,10 @@ export class BackendMessageBroker {
 
         this.connected = true;
         this.port.onDisconnect.addListener((d) => {
+            let err = chrome.runtime.lastError;
+            if (err) {
+                console.debug("Wwwyzzerdd port disconnected:", err.message);
+            }
             this.connected = false;
         });
         chrome.runtime.onMessage.addListener(this.handleOneTimeRequest.bind(this));
