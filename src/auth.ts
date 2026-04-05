@@ -2,21 +2,21 @@ import { getOrCompute } from "./cache";
 
 async function getCSRF(): Promise<string> {
     return fetch("https://www.wikidata.org/w/api.php?action=query&meta=tokens&format=json")
-        .catch(function(err) {
+        .catch(function (err) {
             console.log('Fetch Error', err);
         })
         .then(
-            function(response) {
+            function (response) {
                 if (!response) {
                     return;
                 }
                 if (response.status !== 200) {
                     console.log('Looks like there was a problem. Status Code: ' +
-                                response.status);
+                        response.status);
                     return;
                 }
 
-                return response.json().then(function(data: any) {
+                return response.json().then(function (data: any) {
                     if ("error" in data) {
                         throw new Error("unable to get token");
                     }
