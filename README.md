@@ -1,6 +1,6 @@
 # Wwwyzzerdd for Wikidata
 
-Easily edit and view the information in wikidata from Wikipedia
+Easily edit and view the information in wikidata from Wikipedia. This tool has been used to make ~600 thousand edits to Wikidata.
 
 Definitely still in beta. Use at your own risk. Audit all the edits you make.
 
