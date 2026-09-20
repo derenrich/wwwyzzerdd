@@ -45,6 +45,25 @@ export async function addClaim(entity: string, property: string, value: any, com
     }, 2);
 }
 
+export async function removeClaim(claimId: string, commentAddendum?: string): Promise<any> {
+    let base_url = "https://www.wikidata.org/w/api.php?action=wbremoveclaims&format=json&tags=wwwyzzerdd&";
+    let token = await checkedGetToken();
+    let getArgs = `claim=${encodeURIComponent(claimId)}`;
+    let summary = encodeURIComponent(commentText + (commentAddendum ? " (" + commentAddendum + ")" : ""));
+    let args = `token=${token}&summary=${summary}`;
+
+    return retryWikimediaPromise(() => {
+        return fetch(base_url + getArgs, {
+            method: 'POST',
+            body: args,
+            headers: {
+                "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+                "accept": "application/json, text/javascript, */*; q=0.01"
+            }
+        }).then((res) => res.json());
+    }, 2);
+}
+
 export async function addCoordClaim(entity: string, property: string, lat: number, lon: number): Promise<any> {
 
 }

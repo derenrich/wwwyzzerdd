@@ -1,6 +1,6 @@
 import { PropertyDB, PropertyMatch } from './propertyData';
 import { ItemDB, LinkedItemData } from './itemData'
-import { addItemClaim, addCoordClaim, addIdClaim, addReference, addString, addDateClaim, addUrlClaim } from "./write";
+import { addItemClaim, addCoordClaim, addIdClaim, addReference, addString, addDateClaim, addUrlClaim, removeClaim } from "./write";
 import { getConstaintViolations } from "./statementData";
 import { suggestIdentifiers } from "./psychiq"
 
@@ -23,7 +23,8 @@ export enum MessageType {
     ADD_STRING,
     SET_PROP_DATE,
     SET_PROP_URL,
-    PUSH_CONSTRAINT_VIOLATION
+    PUSH_CONSTRAINT_VIOLATION,
+    REMOVE_CLAIM
 }
 
 export interface Message {
@@ -127,6 +128,11 @@ interface AddPropertyUrlReq {
     commentAddendum?: string;
 }
 
+export interface RemoveClaimReq {
+    claimId: string;
+    sourceItemQid?: string;
+    commentAddendum?: string;
+}
 
 export interface AddStringReq {
     sourceItemQid: string;
@@ -412,6 +418,7 @@ export class BackendMessageBroker {
                                         payload: {
                                             pid: payload.propId,
                                             targetQid: payload.targetItemQid,
+                                            claimId: claimId,
                                             violation: violation
                                         }
                                     } as Message);
@@ -569,6 +576,27 @@ export class BackendMessageBroker {
                             qid: payload.sourceItemQid
                         }
                     });
+                }).catch(this.reportError.bind(this));
+                break;
+            }
+
+            case MessageType.REMOVE_CLAIM: {
+                const payload = msg.payload as RemoveClaimReq;
+                let removeResponse = removeClaim(payload.claimId, payload.commentAddendum);
+                removeResponse.then((resp) => {
+                    if (resp && resp.error) {
+                        this.reportError(resp.error.info || "Failed to remove claim");
+                        return;
+                    }
+                    if (reply) reply(resp || {});
+                    if (payload.sourceItemQid) {
+                        this.handleMessageBackend({
+                            type: MessageType.GET_CLAIMS,
+                            payload: {
+                                qid: payload.sourceItemQid
+                            }
+                        });
+                    }
                 }).catch(this.reportError.bind(this));
                 break;
             }

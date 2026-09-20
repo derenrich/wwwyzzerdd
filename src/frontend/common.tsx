@@ -24,6 +24,14 @@ export function renderSpanField(sf: SpanField | string): string {
 export interface PropTuple {
     propId: string;
     propName?: string;
+    claimId?: string;
+}
+
+export interface ViolationInfo {
+    violation: string;
+    claimId?: string;
+    pid: string;
+    qid: string;
 }
 
 export function getSourceUrl(): string {

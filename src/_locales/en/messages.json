@@ -130,5 +130,17 @@
     "constraintViolation": {
         "message": "constraint violation",
         "description": "Message indicating that a 'constraint' (as in https://www.wikidata.org/wiki/Help:Property_constraints_portal) has been violated and that there is a problem."
+    },
+    "undo": {
+        "message": "Undo",
+        "description": "Button to undo an added statement."
+    },
+    "removeStatement": {
+        "message": "Remove statement",
+        "description": "Button to remove a statement from the item."
+    },
+    "statementRemoved": {
+        "message": "Statement removed",
+        "description": "Notification message indicating that a statement was successfully removed."
     }
 }

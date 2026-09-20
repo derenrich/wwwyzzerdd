@@ -9,8 +9,14 @@ import {
 } from "../messageBroker";
 import { StatementSuggestions } from "../psychiq";
 import { CONFIG_KEY, ConfigObject, getConfig } from "../config";
-import { Typography } from "@mui/material";
-import { QidData, PropTuple, SpanField, renderSpanField } from "./common";
+import { Alert, Button, Typography } from "@mui/material";
+import {
+  QidData,
+  PropTuple,
+  SpanField,
+  ViolationInfo,
+  renderSpanField,
+} from "./common";
 import { SuggestedClaimsWindow } from "./suggested_claims";
 import { Orb, OrbMode } from "./orb";
 import {
@@ -22,6 +28,7 @@ import {
   SpanUrlWindow,
 } from "./windows";
 import { insertSpan } from "./insertSpan";
+import { formatViolationSummary } from "../util";
 import { SelectionData } from "~context";
 import { ParsedDate } from "~parseString";
 
@@ -125,7 +132,9 @@ interface HolderState {
   titleBox?: HTMLElement;
   booted: boolean;
   claims: { [key: string]: any };
-  violations: { [key: string]: string };
+  violations: { [key: string]: ViolationInfo };
+  violationNotice?: ViolationInfo;
+  successMessage?: string;
   propNames: { [key: string]: string };
   propIcons: { [key: string]: string };
   qidMapping: { [key: string]: QidData };
@@ -366,13 +375,24 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
       let pid = payload.pid as string;
       let qid = payload.targetQid as string;
       let violation = payload.violation as string;
+      let claimId = (payload.claimId as string) || this.getClaimId(pid, qid);
 
-      let data: { [key: string]: string } = {};
-      data[pid + "-" + qid] = violation;
+      let key = pid + "-" + qid;
+      let info: ViolationInfo = {
+        violation,
+        claimId,
+        pid,
+        qid,
+      };
 
       this.setState(function (prevState) {
-        let newViolations = Object.assign({}, prevState.violations, data);
-        return { violations: newViolations };
+        let newViolations = Object.assign({}, prevState.violations, {
+          [key]: info,
+        });
+        return {
+          violations: newViolations,
+          violationNotice: info,
+        };
       });
     }
   }
@@ -418,8 +438,32 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
   }
 
   handleClaims(payload: any) {
-    this.setState({
-      claims: payload.claims,
+    this.setState((prevState) => {
+      let nextViolations = { ...prevState.violations };
+      for (let key of Object.keys(nextViolations)) {
+        let vInfo = nextViolations[key];
+        let pid = vInfo.pid;
+        let qid = vInfo.qid;
+        let stillExists = false;
+        for (let entityKey of Object.keys(payload.claims || {})) {
+          let entityClaims = payload.claims[entityKey]?.claims;
+          if (entityClaims && entityClaims[pid]) {
+            for (let st of entityClaims[pid]) {
+              if (st.mainsnak?.datavalue?.value?.id === qid) {
+                stillExists = true;
+                break;
+              }
+            }
+          }
+        }
+        if (!stillExists) {
+          delete nextViolations[key];
+        }
+      }
+      return {
+        claims: payload.claims,
+        violations: nextViolations,
+      };
     });
   }
 
@@ -840,12 +884,69 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
     return false;
   }
 
-  mapProps(props: string[]): PropTuple[] {
+  getClaimId(propId: string, targetQid: string): string | undefined {
+    let d = this.state.claims;
+    for (let k of Object.keys(d)) {
+      let claims = d[k]?.claims;
+      if (claims && claims[propId]) {
+        for (let statement of claims[propId]) {
+          if (
+            statement.rank !== "deprecated" &&
+            statement.mainsnak?.datatype === "wikibase-item" &&
+            statement.mainsnak?.datavalue?.value?.id === targetQid
+          ) {
+            return statement.id;
+          }
+        }
+      }
+    }
+    let key = propId + "-" + targetQid;
+    if (this.state.violations && this.state.violations[key]?.claimId) {
+      return this.state.violations[key].claimId;
+    }
+    return undefined;
+  }
+
+  mapProps(props: string[], targetQid?: string): PropTuple[] {
     return props.map((p) => {
       return {
         propId: p,
         propName: this.state.propNames[p] ?? undefined,
+        claimId: targetQid ? this.getClaimId(p, targetQid) : undefined,
       };
+    });
+  }
+
+  handleRemoveStatement(propId: string, targetQid: string, claimId?: string) {
+    let resolvedClaimId = claimId || this.getClaimId(propId, targetQid);
+    if (!resolvedClaimId) {
+      console.warn("Could not find claim ID to remove for", propId, targetQid);
+      return;
+    }
+
+    let key = propId + "-" + targetQid;
+    this.setState((prevState) => {
+      let nextViolations = { ...prevState.violations };
+      delete nextViolations[key];
+      return {
+        violations: nextViolations,
+        violationNotice:
+          prevState.violationNotice?.claimId === resolvedClaimId ||
+          (prevState.violationNotice?.pid === propId &&
+            prevState.violationNotice?.qid === targetQid)
+            ? undefined
+            : prevState.violationNotice,
+        successMessage:
+          chrome.i18n.getMessage("statementRemoved") || "Statement removed",
+      };
+    });
+
+    this.broker.sendMessage({
+      type: MessageType.REMOVE_CLAIM,
+      payload: {
+        claimId: resolvedClaimId,
+        sourceItemQid: this.state.curPageQid,
+      },
     });
   }
 
@@ -1066,7 +1167,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
     link: LinkedElement
   ): React.ReactNode {
     let matchedProps: string[] = !qidData ? [] : this.getProps(qidData.qid);
-    let propTuples = this.mapProps(matchedProps);
+    let propTuples = this.mapProps(matchedProps, qidData?.qid);
     let mode =
       !this.state.booted || !this.state.curPageQid
         ? OrbMode.Unknown
@@ -1082,7 +1183,7 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         let key = prop + "-" + qidData.qid;
         if (key in this.state.violations) {
           mode = OrbMode.Violation;
-          violationText = this.state.violations[key];
+          violationText = this.state.violations[key].violation;
         }
       }
     }
@@ -1103,7 +1204,11 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
       ) : null;
 
     let warningText = violationText ? (
-      <span dangerouslySetInnerHTML={{ __html: violationText ?? "" }} />
+      <span
+        dangerouslySetInnerHTML={{
+          __html: formatViolationSummary(violationText),
+        }}
+      />
     ) : null;
 
     return (
@@ -1123,6 +1228,8 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
                 label={qidData.label}
                 description={qidData.description}
                 existingProps={propTuples}
+                violations={this.state.violations}
+                onRemoveClaim={this.handleRemoveStatement.bind(this)}
               />
             }
           />
@@ -1252,6 +1359,79 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         {this.state.titleBox && this.usePsychiq()
           ? this.renderTitleBoxPortal()
           : null}
+        <Snackbar
+          open={!!this.state.violationNotice}
+          autoHideDuration={12000}
+          onClose={() => this.setState({ violationNotice: undefined })}
+          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+          sx={{ maxWidth: 640 }}
+        >
+          <Alert
+            severity="warning"
+            variant="filled"
+            onClose={() => this.setState({ violationNotice: undefined })}
+            action={
+              <Button
+                color="inherit"
+                size="small"
+                sx={{
+                  fontWeight: "bold",
+                  ml: 1,
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                }}
+                onClick={() => {
+                  if (this.state.violationNotice) {
+                    this.handleRemoveStatement(
+                      this.state.violationNotice.pid,
+                      this.state.violationNotice.qid,
+                      this.state.violationNotice.claimId
+                    );
+                    this.setState({ violationNotice: undefined });
+                  }
+                }}
+              >
+                {chrome.i18n.getMessage("undo") || "Undo"}
+              </Button>
+            }
+            sx={{
+              width: "100%",
+              maxHeight: "140px",
+              alignItems: "center",
+              boxShadow: 4,
+              "& .MuiAlert-message": {
+                overflowY: "auto",
+                maxHeight: "95px",
+                fontSize: "0.85rem",
+                lineHeight: 1.35,
+                wordBreak: "break-word",
+              },
+              "& a": {
+                color: "inherit",
+                textDecoration: "underline",
+                fontWeight: "bold",
+              },
+              "& ul, & ol": {
+                display: "none",
+              },
+            }}
+          >
+            <span
+              dangerouslySetInnerHTML={{
+                __html: formatViolationSummary(
+                  this.state.violationNotice?.violation ?? ""
+                ),
+              }}
+            />
+          </Alert>
+        </Snackbar>
+        <Snackbar
+          open={!!this.state.successMessage}
+          autoHideDuration={4000}
+          onClose={() => this.setState({ successMessage: undefined })}
+          message={this.state.successMessage || ""}
+          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        />
         <Snackbar
           open={!!this.state.errorMessage}
           autoHideDuration={6000}

@@ -1,5 +1,5 @@
 import { styles } from "./styles";
-import { CloseParam, PropTuple } from "./common";
+import { CloseParam, PropTuple, ViolationInfo } from "./common";
 import {
   AddStringReq,
   FrontendMessageBroker,
@@ -22,6 +22,10 @@ import CardContent from "@mui/material/CardContent";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import Button from "@mui/material/Button";
+import Alert from "@mui/material/Alert";
+import IconButton from "@mui/material/IconButton";
+import Typography from "@mui/material/Typography";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { Suggester, SuggesterMode } from "./suggester";
 import AddIcon from "@mui/icons-material/Add";
 import { ParsedDate } from "~parseString";
@@ -34,6 +38,8 @@ interface ItemWindowProps extends CloseParam {
   description?: string;
   existingProps: PropTuple[];
   wikiLanguage?: string;
+  violations?: { [key: string]: ViolationInfo };
+  onRemoveClaim?: (propId: string, targetQid: string, claimId?: string) => void;
 }
 
 export const ItemWindow: React.FC<ItemWindowProps> = (props) => {
@@ -46,6 +52,8 @@ export const ItemWindow: React.FC<ItemWindowProps> = (props) => {
     pageQid,
     qid,
     wikiLanguage,
+    violations,
+    onRemoveClaim,
   } = props;
 
   const [isAdding, setIsAdding] = useState(false);
@@ -77,17 +85,84 @@ export const ItemWindow: React.FC<ItemWindowProps> = (props) => {
     [broker, handleClose, pageQid, qid, wikiLanguage]
   );
 
+  const handleRemove = useCallback(
+    (pid: string, claimId?: string) => {
+      onRemoveClaim?.(pid, qid, claimId);
+      handleClose();
+    },
+    [onRemoveClaim, qid, handleClose]
+  );
+
+  const itemViolations = useMemo(() => {
+    if (!violations) return [];
+    let list: ViolationInfo[] = [];
+    for (let prop of existingProps) {
+      let key = prop.propId + "-" + qid;
+      if (violations[key]) {
+        list.push(violations[key]);
+      }
+    }
+    return list;
+  }, [violations, existingProps, qid]);
+
   const propItems = useMemo(
     () =>
-      existingProps.map((prop) => (
-        <ListItem key={prop.propId}>
-          <ListItemIcon>
-            <LinkIcon />
-          </ListItemIcon>
-          <ListItemText primary={prop.propName ?? ""} secondary={prop.propId} />
-        </ListItem>
-      )),
-    [existingProps]
+      existingProps.map((prop) => {
+        let hasViolation = !!(
+          violations && prop.propId + "-" + qid in violations
+        );
+        let canRemove = !!(onRemoveClaim && (prop.claimId || hasViolation));
+        let violationClaimId = violations?.[prop.propId + "-" + qid]?.claimId;
+        return (
+          <ListItem
+            key={prop.propId}
+            secondaryAction={
+              canRemove ? (
+                <IconButton
+                  edge="end"
+                  aria-label={
+                    chrome.i18n.getMessage("removeStatement") ||
+                    "Remove statement"
+                  }
+                  title={
+                    chrome.i18n.getMessage("removeStatement") ||
+                    "Remove statement"
+                  }
+                  size="small"
+                  onClick={() =>
+                    handleRemove(prop.propId, prop.claimId || violationClaimId)
+                  }
+                >
+                  <DeleteOutlineIcon fontSize="small" />
+                </IconButton>
+              ) : undefined
+            }
+          >
+            <ListItemIcon>
+              <LinkIcon color={hasViolation ? "warning" : "inherit"} />
+            </ListItemIcon>
+            <ListItemText
+              primary={prop.propName ?? ""}
+              secondary={
+                <React.Fragment>
+                  <span>{prop.propId}</span>
+                  {hasViolation ? (
+                    <Typography
+                      component="span"
+                      variant="caption"
+                      color="warning.main"
+                      sx={{ ml: 1, fontWeight: 600 }}
+                    >
+                      ({chrome.i18n.getMessage("constraintViolation") || "violation"})
+                    </Typography>
+                  ) : null}
+                </React.Fragment>
+              }
+            />
+          </ListItem>
+        );
+      }),
+    [existingProps, violations, qid, onRemoveClaim, handleRemove]
   );
 
   const qidLink = (
@@ -101,6 +176,51 @@ export const ItemWindow: React.FC<ItemWindowProps> = (props) => {
     <Card elevation={3} sx={styles.card}>
       <CardHeader title={label ?? "«no label»"} subheader={qidLink} />
       <CardContent>
+        {itemViolations.map((v) => (
+          <Alert
+            key={v.pid}
+            severity="warning"
+            sx={{
+              mb: 1.5,
+              maxHeight: "220px",
+              overflowY: "auto",
+              "& a": {
+                color: "inherit",
+                textDecoration: "underline",
+                fontWeight: 600,
+              },
+              "& ul, & ol": {
+                margin: "4px 0",
+                paddingLeft: "20px",
+                maxHeight: "90px",
+                overflowY: "auto",
+              },
+              "& li": {
+                fontSize: "0.8rem",
+                lineHeight: 1.3,
+              },
+            }}
+            action={
+              onRemoveClaim ? (
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => handleRemove(v.pid, v.claimId)}
+                >
+                  {chrome.i18n.getMessage("undo") || "Undo"}
+                </Button>
+              ) : undefined
+            }
+          >
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              {chrome.i18n.getMessage("constraintViolation") ||
+                "Constraint Violation"}
+            </Typography>
+            <Typography variant="caption" display="block">
+              <span dangerouslySetInnerHTML={{ __html: v.violation }} />
+            </Typography>
+          </Alert>
+        ))}
         <List dense component="nav">
           {propItems}
           {isAdding ? (

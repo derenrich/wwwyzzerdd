@@ -126,3 +126,22 @@ export function formatDisplayUrl(url: string, maxLength: number = 45): string {
         return clean;
     }
 }
+
+/**
+ * Formats a constraint violation HTML message for toast and compact UI display:
+ * - Extracts the primary introductory explanation preceding any <ul> or <ol> list
+ * - Strips redundant wrapping paragraph tags
+ * - Replaces trailing colon with a period
+ */
+export function formatViolationSummary(html: string): string {
+    if (!html) return "";
+    let listIndex = html.search(/<[uo]l/i);
+    if (listIndex !== -1) {
+        let summary = html.substring(0, listIndex).trim();
+        summary = summary.replace(/<\/?p[^>]*>/gi, " ").trim();
+        if (summary.length > 10) {
+            return summary.replace(/:\s*$/, ".");
+        }
+    }
+    return html.replace(/<\/?p[^>]*>/gi, " ").trim();
+}
