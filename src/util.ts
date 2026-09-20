@@ -5,7 +5,7 @@ const wikiLinkRegex = new RegExp("^https?:\/\/([a-z]+)\.(?:m\.)?wikipedia\.org\/
 
 export function getWikiLanguage(url: string): string | undefined {
     let m = wikiLinkRegex.exec(url);
-    if(m && m.length > 1) {
+    if (m && m.length > 1) {
         const lang = m[1].toLowerCase();
         return lang;
     }
@@ -19,6 +19,8 @@ export async function retryPromise<T>(fn: () => Promise<T>): Promise<T> {
             return await fn();
         } catch (e) {
             console.log(`error on try ${callNum}`, e);
+            // backoff
+            await new Promise(resolve => setTimeout(resolve, 2000 * (callNum + 1)));
             return undefined;
         }
     }

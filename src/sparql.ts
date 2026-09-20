@@ -1,11 +1,11 @@
-import {retryPromise} from "./util"
+import { retryPromise } from "./util"
 
 const URL = "https://query.wikidata.org/sparql?format=json";
 
 export default function runQuery(query: string): Promise<any> {
-  const targetUrl = URL + "&query=" + encodeURIComponent(query);
-  
-  const getter = function() {
+    const targetUrl = URL + "&query=" + encodeURIComponent(query);
+
+    const getter = function () {
         return fetch(targetUrl, {
             method: 'GET',
             cache: 'no-cache',
@@ -15,7 +15,7 @@ export default function runQuery(query: string): Promise<any> {
         }).then((d) => {
             if (d.error) {
                 console.error(d.error);
-                throw new Error(d.error);
+                throw new Error(`SPARQL Service Error: ${d.error}`);
             } else {
                 return d;
             }

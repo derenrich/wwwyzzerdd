@@ -44,18 +44,18 @@ WHERE {
 const propQuery = `
 SELECT distinct ?p ?label ?icon ?type
 WHERE {
+  ?p wikibase:propertyType ?type.
   ?p wdt:P31/wdt:P279* wd:Q18616576.
   ?p rdfs:label ?label.
   OPTIONAL {   ?p wdt:P2910 ?icon. }
-  ?p wikibase:propertyType ?type.
   FILTER(LANG(?label) = "en").
 }
 `
 
-const PATTERN_CACHE_KEY = "WD_PROP_PATTERN_CACHE_KEY";
-const PROP_CACHE_KEY = "WD_PROP_CACHE_KEY";
-const PROP_TYPE_KEY = "WD_PROP_TYPE_KEY";
-const PROP_NAME_KEY = "WD_PROP_NAME_KEY";
+const PATTERN_CACHE_KEY = "WD_PROP_PATTERN_CACHE_KEY_V2";
+const PROP_CACHE_KEY = "WD_PROP_CACHE_KEY_V2";
+const PROP_TYPE_KEY = "WD_PROP_TYPE_KEY_V2";
+const PROP_NAME_KEY = "WD_PROP_NAME_KEY_V2";
 const PROP_CACHE_LIFE = 60 * 60; // 1 hr cache time
 
 const LAST_QID_USE_NS = "WD_LAST_PID$";
@@ -63,6 +63,9 @@ const LAST_QID_USE_NS = "WD_LAST_PID$";
 
 function parsePatternFetch(d: any): PropertyPatternData[] {
     let properties = [];
+    if (!d || !d.results || !d.results.bindings || d.results.bindings.length === 0) {
+        throw new Error("Wikidata SPARQL returned no properties for pattern fetch!");
+    }
     for (let prop of d.results.bindings) {
         let propUrl = prop.p.value;
         let splitUrl = propUrl.split("/");
@@ -78,6 +81,9 @@ function parsePatternFetch(d: any): PropertyPatternData[] {
 
 function parsePropFetch(d: any): PropertyData[] {
     let properties = [];
+    if (!d || !d.results || !d.results.bindings || d.results.bindings.length === 0) {
+        throw new Error("Wikidata SPARQL returned no properties!");
+    }
     for (let prop of d.results.bindings) {
         let propUrl = prop.p.value;
         let splitUrl = propUrl.split("/");
