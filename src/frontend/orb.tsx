@@ -22,8 +22,10 @@ const StyledOrb = styled("span")<{
   let baseStyles = styles.orb;
 
   let modeStyles = {};
-  if (mode === OrbMode.Unknown || hidden) {
+  if (hidden) {
     modeStyles = styles.hiddenOrb;
+  } else if (mode === OrbMode.Unknown) {
+    modeStyles = styles.unknownOrb;
   } else if (mode === OrbMode.Unlinked) {
     modeStyles = styles.disconnectedOrb;
   } else if (mode === OrbMode.Linked) {

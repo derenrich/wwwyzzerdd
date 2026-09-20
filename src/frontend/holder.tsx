@@ -806,16 +806,18 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         ? OrbMode.Linked
         : OrbMode.Unlinked;
 
+    let validProps = Array.from(
+      new Set(
+        matchedProps
+          .map((p) => this.state.propNames[p] || "")
+          .filter((p) => p.length > 0)
+      )
+    );
+
     let hoverText =
-      matchedProps.length > 0 ? (
+      validProps.length > 0 ? (
         <Typography>
-          {Array.from(
-            new Set(
-              matchedProps
-                .map((p) => this.state.propNames[p] || "")
-                .filter((p) => p.length > 0)
-            )
-          ).join(" & ")}
+          {validProps.join(" & ")}
         </Typography>
       ) : null;
 
@@ -902,16 +904,18 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
       }
     }
 
+    let validProps = Array.from(
+      new Set(
+        matchedProps
+          .map((p) => this.state.propNames[p] || "")
+          .filter((p) => p.length > 0)
+      )
+    );
+
     let hoverText =
-      matchedProps.length > 0 ? (
+      validProps.length > 0 ? (
         <Typography>
-          {Array.from(
-            new Set(
-              matchedProps
-                .map((p) => this.state.propNames[p] || "")
-                .filter((p) => p.length > 0)
-            )
-          ).join(" & ")}
+          {validProps.join(" & ")}
         </Typography>
       ) : null;
 

@@ -14,6 +14,7 @@ export const styles = {
     fontSize: "smaller",
     fontStyle: "normal",
     fontWeight: "normal",
+    transition: "color 0.4s ease, filter 0.4s ease",
     "&:hover": {
       filter: "contrast(500%) blur(1px) saturate(150%)",
     },
@@ -49,6 +50,9 @@ export const styles = {
   loadingOrb: {
     color: "#562bdb",
     animation: `${pulseAnimation} 2s infinite`,
+  },
+  unknownOrb: {
+    color: "#ffc107",
   },
   hiddenOrb: {
     display: "none",
