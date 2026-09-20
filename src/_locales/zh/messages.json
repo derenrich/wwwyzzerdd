@@ -41,6 +41,9 @@
     "parseAsLink": {
         "message": "解析为外部链接"
     },
+    "parseAsUrl": {
+        "message": "解析为URL"
+    },
     "parseAsCoordinate": {
         "message": "解析为坐标"
     },

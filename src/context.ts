@@ -4,7 +4,8 @@ import { parseDate } from "./parseString";
 
 export enum SelectionType {
     STRING_SELECTION,
-    DATE_SELECTION
+    DATE_SELECTION,
+    URL_SELECTION
 }
 
 export interface SelectionData {
@@ -28,6 +29,13 @@ export function initContext() {
             id: "selection-date",
             title: chrome.i18n.getMessage("parseAsDate"),
             contexts: ["selection"],
+            documentUrlPatterns: ["*://*.wikipedia.org/*"]
+        });
+        chrome.contextMenus.create(
+        {
+            id: "link-url",
+            title: chrome.i18n.getMessage("parseAsUrl") || "Parse as URL",
+            contexts: ["link"],
             documentUrlPatterns: ["*://*.wikipedia.org/*"]
         });
     });
@@ -65,6 +73,18 @@ function addListener() {
                 }
                 if (tab && tab.id) {
                     chrome.tabs.sendMessage(tab.id, {type: MessageType.SET_PARSE_DATA, payload}, {frameId: info.frameId});
+                }
+                break;
+            case "link-url":
+                if (tab && tab.id && info.linkUrl) {
+                    let payload: SelectionData = {
+                        selectionType: SelectionType.URL_SELECTION,
+                        text: info.selectionText ?? "",
+                        payload: {
+                            url: info.linkUrl
+                        }
+                    };
+                    chrome.tabs.sendMessage(tab.id, {type: MessageType.SET_PARSE_URL, payload}, {frameId: info.frameId});
                 }
                 break;
         }

@@ -41,6 +41,9 @@
     "parseAsLink": {
         "message": "נתח כקישור חיצוני"
     },
+    "parseAsUrl": {
+        "message": "נתח כ-URL"
+    },
     "parseAsCoordinate": {
         "message": "נתח כקואורדינטה"
     },

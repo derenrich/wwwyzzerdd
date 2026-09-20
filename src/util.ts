@@ -74,3 +74,55 @@ export async function retryWikimediaPromise(fn: () => Promise<any>, retriesLeft?
         });
     });
 }
+
+/**
+ * Abbreviates and cleans up a URL for UI display:
+ * - Drops http:// or https:// protocol
+ * - Drops leading www. from hostname
+ * - Drops trailing slash
+ * - Shortens deep paths to hostname/…/slug if too long
+ * - Truncates with ellipsis if still exceeding maxLength
+ */
+export function formatDisplayUrl(url: string, maxLength: number = 45): string {
+    try {
+        let parsed = new URL(url);
+        let host = parsed.host.replace(/^www\./i, "");
+        let path = parsed.pathname;
+
+        if ((path === "/" || path === "") && !parsed.search && !parsed.hash) {
+            return host;
+        }
+
+        path = path.replace(/\/+$/, "");
+        let queryAndHash = parsed.search + parsed.hash;
+        let full = host + path + queryAndHash;
+
+        if (full.length <= maxLength) {
+            return full;
+        }
+
+        let segments = path.split("/").filter(Boolean);
+        if (segments.length > 1) {
+            let last = segments[segments.length - 1];
+            let candidate = `${host}/…/${last}`;
+            if (candidate.length <= maxLength) {
+                return candidate;
+            }
+            let available = maxLength - host.length - 4;
+            if (available > 5) {
+                return `${host}/…/${last.slice(0, available)}…`;
+            }
+        }
+
+        return full.slice(0, maxLength - 1) + "…";
+    } catch {
+        let clean = url
+            .replace(/^https?:\/\//i, "")
+            .replace(/^www\./i, "")
+            .replace(/\/+$/, "");
+        if (clean.length > maxLength) {
+            return clean.slice(0, maxLength - 1) + "…";
+        }
+        return clean;
+    }
+}

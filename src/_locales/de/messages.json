@@ -41,6 +41,9 @@
     "parseAsLink": {
         "message": "Als externen Link parsen"
     },
+    "parseAsUrl": {
+        "message": "Als URL parsen"
+    },
     "parseAsCoordinate": {
         "message": "Als Koordinate parsen"
     },

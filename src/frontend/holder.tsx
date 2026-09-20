@@ -19,6 +19,7 @@ import {
   CoordLinkWindow,
   SpanWindow,
   SpanDateWindow,
+  SpanUrlWindow,
 } from "./windows";
 import { insertSpan } from "./insertSpan";
 import { SelectionData } from "~context";
@@ -85,6 +86,11 @@ interface DateSpan {
   date: ParsedDate;
 }
 
+interface UrlSpan {
+  element: HTMLElement;
+  url: string;
+}
+
 interface ExternalLinkedElement {
   element: HTMLElement;
   pid: string;
@@ -111,6 +117,7 @@ interface HolderState {
   errorMessage?: string;
   textSpans: TextSpan[];
   dateSpans: DateSpan[];
+  urlSpans: UrlSpan[];
   wikiLinks: LinkedElement[];
   wikidataLinks: LinkedElement[];
   externalLinks: ExternalLinkedElement[];
@@ -129,12 +136,17 @@ interface HolderState {
 
 export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
   broker: FrontendMessageBroker;
+  lastRightClickedAnchor: HTMLAnchorElement | null = null;
+  handleContextMenuBound: (event: MouseEvent) => void;
 
   constructor(props: HolderProps) {
     super(props);
+    this.handleContextMenuBound = this.handleContextMenu.bind(this);
+    document.addEventListener("contextmenu", this.handleContextMenuBound, true);
     this.state = {
       textSpans: [],
       dateSpans: [],
+      urlSpans: [],
       wikiLinks: [],
       wikidataLinks: [],
       coordLinks: [],
@@ -188,6 +200,10 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
     this.broker.registerFrontendMessageHandler(
       MessageType.SET_PARSE_DATE,
       this.handleContextParseDate.bind(this)
+    );
+    this.broker.registerFrontendMessageHandler(
+      MessageType.SET_PARSE_URL,
+      this.handleContextParseUrl.bind(this)
     );
     this.broker.registerFrontendMessageHandler(
       MessageType.PUSH_CONSTRAINT_VIOLATION,
@@ -259,6 +275,62 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
       let elm = insertSpan(selectionData);
       if (elm) {
         this.addTextSpan(elm, selectionData.text);
+      }
+    } catch (e) {
+      if (e instanceof Error) {
+        this.errorMessage(e.message);
+      } else if (typeof e === "string") {
+        this.errorMessage(e);
+      }
+    }
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener(
+      "contextmenu",
+      this.handleContextMenuBound,
+      true
+    );
+  }
+
+  handleContextMenu(event: MouseEvent) {
+    let target = event.target as HTMLElement | null;
+    let anchor = target?.closest("a");
+    if (anchor) {
+      this.lastRightClickedAnchor = anchor as HTMLAnchorElement;
+    }
+  }
+
+  handleContextParseUrl(msg: any) {
+    let selectionData: SelectionData = msg;
+    let url = selectionData.payload?.url ?? selectionData.text;
+    if (!url) return;
+
+    try {
+      let anchor = this.lastRightClickedAnchor;
+      if (
+        !anchor ||
+        (anchor.href !== url && anchor.getAttribute("href") !== url)
+      ) {
+        let anchors = Array.from(document.querySelectorAll("a"));
+        anchor =
+          anchors.find(
+            (a) => a.href === url || a.getAttribute("href") === url
+          ) || this.lastRightClickedAnchor;
+      }
+
+      if (anchor) {
+        let container = anchor.parentElement?.querySelector(
+          ":scope > .ww-url-container"
+        ) as HTMLElement | null;
+        if (!container) {
+          container = document.createElement("span");
+          container.className = "ww-url-container";
+          anchor.insertAdjacentElement("afterend", container);
+        }
+        this.addUrlSpan(container, url);
+      } else {
+        throw new Error("Could not find hyperlink on page.");
       }
     } catch (e) {
       if (e instanceof Error) {
@@ -368,6 +440,20 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
         textSpans: state.textSpans.concat({
           element: elm,
           text: text.trim(),
+        }),
+      };
+    });
+  }
+
+  addUrlSpan(elm: HTMLElement, url: string) {
+    this.setState(function (state: HolderState) {
+      if (state.urlSpans.some((s) => s.element === elm && s.url === url)) {
+        return null as any;
+      }
+      return {
+        urlSpans: state.urlSpans.concat({
+          element: elm,
+          url: url.trim(),
         }),
       };
     });
@@ -513,6 +599,55 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
             ) {
               let propDt = statement.mainsnak.datavalue.value;
               if (this.compareDates(propDt, date.value)) {
+                matchedProps.push(prop);
+              }
+            }
+          }
+        }
+      }
+    }
+    return matchedProps;
+  }
+
+  compareUrls(u1Str: string, u2Str: string): boolean {
+    if (u1Str === u2Str) return true;
+    try {
+      let u1 = new URL(u1Str);
+      let u2 = new URL(u2Str);
+      let p1 = u1.pathname.replace(/\/+$/, "");
+      let p2 = u2.pathname.replace(/\/+$/, "");
+      return (
+        u1.host.toLowerCase() === u2.host.toLowerCase() &&
+        p1 === p2 &&
+        u1.search === u2.search &&
+        u1.hash === u2.hash
+      );
+    } catch {
+      return (
+        u1Str.trim().replace(/\/+$/, "").toLowerCase() ===
+        u2Str.trim().replace(/\/+$/, "").toLowerCase()
+      );
+    }
+  }
+
+  getUrlSpanFields(url: string): string[] {
+    let matchedProps: string[] = [];
+    let d = this.state.claims;
+    for (let k of Object.keys(d)) {
+      let claims = d[k].claims;
+      for (let prop of Object.keys(claims)) {
+        for (let statementV of Object.values(claims[prop])) {
+          let statement = statementV as any;
+          if (
+            statement.rank != "deprecated" &&
+            statement.mainsnak.datatype == "url"
+          ) {
+            if (
+              statement.mainsnak.datavalue &&
+              statement.mainsnak.datavalue.value
+            ) {
+              let propUrl = statement.mainsnak.datavalue.value as string;
+              if (this.compareUrls(propUrl, url)) {
                 matchedProps.push(prop);
               }
             }
@@ -840,6 +975,54 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
     );
   }
 
+  renderUrlSpanPortal(span: UrlSpan): React.ReactNode {
+    let matchedProps = this.getUrlSpanFields(span.url);
+    let propTuples = this.mapProps(matchedProps);
+
+    let mode =
+      !this.state.booted || !this.state.curPageQid
+        ? OrbMode.Unknown
+        : !span
+        ? OrbMode.Unknown
+        : matchedProps.length > 0
+        ? OrbMode.Linked
+        : OrbMode.Unlinked;
+
+    let validProps = Array.from(
+      new Set(
+        matchedProps
+          .map((p) => this.state.propNames[p] || "")
+          .filter((p) => p.length > 0)
+      )
+    );
+
+    let hoverText =
+      validProps.length > 0 ? (
+        <Typography>
+          {validProps.join(" & ")}
+        </Typography>
+      ) : null;
+
+    return (
+      <Portal container={span.element}>
+        <Orb
+          mode={mode}
+          hidden={this.orbsHidden()}
+          hover={hoverText}
+          popover={
+            <SpanUrlWindow
+              wikiLanguage={this.props.wikiLanguage ?? "en"}
+              pageQid={this.state.curPageQid ?? ""}
+              broker={this.broker}
+              url={span.url}
+              existingProps={propTuples}
+            />
+          }
+        />
+      </Portal>
+    );
+  }
+
   renderTextSpanPortal(span: TextSpan): React.ReactNode {
     let matchedFields = this.getSpanFields(span.text);
 
@@ -1060,6 +1243,10 @@ export class WwwyzzerddHolder extends Component<HolderProps, HolderState> {
 
         {this.state.dateSpans.map((span) => {
           return this.renderDateSpanPortal(span);
+        })}
+
+        {this.state.urlSpans.map((span) => {
+          return this.renderUrlSpanPortal(span);
         })}
 
         {this.state.titleBox && this.usePsychiq()
