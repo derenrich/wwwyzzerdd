@@ -15,10 +15,9 @@ You can find wwwyzzerdd in the browser extension stores
 
 ## Known issues
 
-* Implement case-insensitive external property matching
-* Doesn't warn you when you add bad statements (e.g. that violate constraints)
+* Only warns you when you add bad statements after the fact (e.g. that violate constraints)
 * Doesn't let you undo
-* Doesn't let you link dates/numbers/etc
+* Doesn't let you link numbers/etc
 
 
 ## Usage
