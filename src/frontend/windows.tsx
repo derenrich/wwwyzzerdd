@@ -7,6 +7,7 @@ import {
 } from "../messageBroker";
 import React, { useCallback, useMemo, useState } from "react";
 import { getSourceUrl } from "./common";
+import { formatDisplayUrl } from "../util";
 import ListItem from "@mui/material/ListItem";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
@@ -321,6 +322,7 @@ export const SpanWindow: React.FC<SpanWindowProps> = (props) => {
             <MenuItem value="es">Spanish</MenuItem>
             <MenuItem value="fr">French</MenuItem>
             <MenuItem value="ja">Japanese</MenuItem>
+            <MenuItem value="mul">Multiple languages</MenuItem>
             <MenuItem value="pt">Portuguese</MenuItem>
             <MenuItem value="ru">Russian</MenuItem>
             <MenuItem value="sr">Serbian</MenuItem>
@@ -398,6 +400,116 @@ export const SpanDateWindow: React.FC<SpanDateWindowProps> = (props) => {
             <ListItemText primary={chrome.i18n.getMessage("addStatement")} />
           </ListItemButton>
         )}
+      </CardContent>
+    </Card>
+  );
+};
+
+interface SpanUrlWindowProps extends CloseParam {
+  pageQid: string;
+  broker: FrontendMessageBroker;
+  url: string;
+  wikiLanguage: string;
+  existingProps?: PropTuple[];
+}
+
+export const SpanUrlWindow: React.FC<SpanUrlWindowProps> = (props) => {
+  const { broker, close, existingProps, pageQid, url, wikiLanguage } = props;
+  const [isAdding, setIsAdding] = useState(!existingProps || existingProps.length === 0);
+
+  const handleClose = useCallback(() => {
+    close?.();
+  }, [close]);
+
+  const handleStartAdd = useCallback(() => {
+    setIsAdding(true);
+  }, []);
+
+  const handleAdd = useCallback(
+    (pid?: string) => {
+      if (pid && pageQid) {
+        broker.sendMessage({
+          type: MessageType.SET_PROP_URL,
+          payload: {
+            sourceItemQid: pageQid,
+            propId: pid,
+            url: url,
+            sourceUrl: getSourceUrl(),
+            wikiLanguage,
+          },
+        });
+        handleClose();
+      }
+    },
+    [broker, handleClose, pageQid, url, wikiLanguage]
+  );
+
+  const propItems = useMemo(() => {
+    return (existingProps || []).map((prop) => {
+      return (
+        <ListItem key={prop.propId}>
+          <ListItemIcon>
+            <LinkIcon />
+          </ListItemIcon>
+          <ListItemText
+            primary={prop.propName ?? ""}
+            secondary={
+              <a
+                href={`https://www.wikidata.org/wiki/Property:${prop.propId}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {prop.propId}
+              </a>
+            }
+          />
+        </ListItem>
+      );
+    });
+  }, [existingProps]);
+
+  const displayUrl = useMemo(() => formatDisplayUrl(url, 45), [url]);
+
+  return (
+    <Card elevation={3} sx={styles.card}>
+      <CardHeader
+        title={
+          <span
+            style={{
+              fontSize: "1.1rem",
+              lineHeight: 1.35,
+              wordBreak: "break-word",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+            title={url}
+          >
+            {displayUrl}
+          </span>
+        }
+        subheader="URL"
+      />
+      <CardContent sx={{ paddingTop: 0 }}>
+        <List dense component="nav">
+          {propItems}
+          {isAdding ? (
+            <Suggester
+              targetQid={pageQid}
+              mode={SuggesterMode.URL_SUGGEST}
+              broker={broker}
+              onSubmit={handleAdd}
+            />
+          ) : (
+            <ListItemButton onClick={handleStartAdd}>
+              <ListItemIcon>
+                <AddIcon />
+              </ListItemIcon>
+              <ListItemText primary={chrome.i18n.getMessage("addStatement")} />
+            </ListItemButton>
+          )}
+        </List>
       </CardContent>
     </Card>
   );

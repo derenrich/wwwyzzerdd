@@ -1,6 +1,6 @@
 import { PropertyDB, PropertyMatch } from './propertyData';
 import { ItemDB, LinkedItemData } from './itemData'
-import { addItemClaim, addCoordClaim, addIdClaim, addReference, addString, addDateClaim } from "./write";
+import { addItemClaim, addCoordClaim, addIdClaim, addReference, addString, addDateClaim, addUrlClaim } from "./write";
 import { getConstaintViolations } from "./statementData";
 import { suggestIdentifiers } from "./psychiq"
 
@@ -19,8 +19,10 @@ export enum MessageType {
     REPORT_ERROR,
     SET_PARSE_DATA,
     SET_PARSE_DATE,
+    SET_PARSE_URL,
     ADD_STRING,
     SET_PROP_DATE,
+    SET_PROP_URL,
     PUSH_CONSTRAINT_VIOLATION
 }
 
@@ -114,6 +116,15 @@ interface AddPropertyDateReq {
     date: any;
     sourceUrl: string;
     wikiLanguage?: string;
+}
+
+interface AddPropertyUrlReq {
+    sourceItemQid: string;
+    propId: string;
+    url: string;
+    sourceUrl: string;
+    wikiLanguage?: string;
+    commentAddendum?: string;
 }
 
 
@@ -426,6 +437,28 @@ export class BackendMessageBroker {
                     if (resp && resp.success) {
                         let claimId = resp.claim.id;
                         addReference(payload.sourceUrl, claimId, payload.wikiLanguage);
+                    }
+                    if (reply) reply({});
+                    this.handleMessageBackend({
+                        type: MessageType.GET_CLAIMS,
+                        payload: {
+                            qid: payload.sourceItemQid
+                        }
+                    });
+                }).catch(this.reportError.bind(this));
+                break;
+            }
+
+            case MessageType.SET_PROP_URL: {
+                let now = Date.now();
+                if (now - lastWrite < MIN_WRITE_WAIT) break;
+                lastWrite = Date.now();
+                const payload = msg.payload as AddPropertyUrlReq;
+                let addResponse = addUrlClaim(payload.sourceItemQid, payload.propId, payload.url, payload.commentAddendum);
+                addResponse.then((resp) => {
+                    if (resp && resp.success) {
+                        let claimId = resp.claim.id;
+                        addReference(payload.sourceUrl, claimId, payload.wikiLanguage, payload.commentAddendum);
                     }
                     if (reply) reply({});
                     this.handleMessageBackend({

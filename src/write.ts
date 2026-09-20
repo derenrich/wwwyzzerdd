@@ -20,6 +20,10 @@ export async function addIdClaim(entity: string, property: string, value: string
     return addClaim(entity, property, value);
 }
 
+export async function addUrlClaim(entity: string, property: string, url: string, commentAddendum?: string): Promise<any> {
+    return addClaim(entity, property, url, commentAddendum);
+}
+
 export async function addClaim(entity: string, property: string, value: any, commentAddendum?: string): Promise<any> {
     let base_url = "https://www.wikidata.org/w/api.php?action=wbcreateclaim&format=json&snaktype=value&tags=wwwyzzerdd&";
     let token = await checkedGetToken();

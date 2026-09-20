@@ -41,6 +41,9 @@
     "parseAsLink": {
         "message": "Analizar como enlace externo"
     },
+    "parseAsUrl": {
+        "message": "Analizar como URL"
+    },
     "parseAsCoordinate": {
         "message": "Analizar como coordenada"
     },

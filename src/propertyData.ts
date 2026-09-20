@@ -23,11 +23,12 @@ interface PropertyData {
 
 export interface PropertySuggestions {
     timestamp: number;
-    suggestions: string[];
+    suggestions: any[];
 }
 
 const ITEM_PROP_TYPE = "WikibaseItem";
 const DATE_PROP_TYPE = "Time";
+const URL_PROP_TYPE = "Url";
 
 const patternQuery = `
 SELECT ?p ?regexValue (COALESCE(?replacement, "\\\\1") as ?replacementString) (COALESCE(?q = wd:Q55121183, false) as ?caseInsensitive)
@@ -209,13 +210,39 @@ export class PropertyDB {
             lastPidSuggestion = await this.getLastQidProperty(targetQid);
         }
 
-        return fetch(full_url).then((x) => x.json()).then((x) => {
+        return fetch(full_url).then((x) => x.json()).then(async (x) => {
             let allSuggestions = (x.search || []);
             let validSuggestions = []
             if (mode == "qid") {
                 validSuggestions = allSuggestions.filter((sugg: any) => propTypes[sugg.id] == ITEM_PROP_TYPE);
             } else if (mode == "date") {
                 validSuggestions = allSuggestions.filter((sugg: any) => propTypes[sugg.id] == DATE_PROP_TYPE);
+            } else if (mode == "url") {
+                validSuggestions = allSuggestions.filter((sugg: any) => propTypes[sugg.id] == URL_PROP_TYPE || sugg.id === "P856");
+
+                let propNames = await this.prop_names;
+                if (typed !== "") {
+                    let lowerTyped = typed.toLowerCase();
+                    for (let [pid, pType] of Object.entries(propTypes)) {
+                        if (pType === URL_PROP_TYPE) {
+                            let name = propNames[pid];
+                            if (name && (name.toLowerCase().includes(lowerTyped) || pid.toLowerCase() === lowerTyped)) {
+                                if (!validSuggestions.some((s: any) => s.id === pid)) {
+                                    validSuggestions.push({ id: pid, label: name });
+                                }
+                            }
+                        }
+                    }
+                }
+
+                let p856Label = propNames["P856"] || "official website";
+                let p856Matches = typed === "" || p856Label.toLowerCase().includes(typed.toLowerCase()) || "p856".includes(typed.toLowerCase());
+                if (p856Matches && !validSuggestions.some((s: any) => s.id === "P856")) {
+                    validSuggestions.unshift({
+                        id: "P856",
+                        label: p856Label
+                    });
+                }
             }
             if (lastPidSuggestion) {
                 let pid = lastPidSuggestion.id;

@@ -11,7 +11,8 @@ import { ParsedDate } from "~parseString";
 
 export enum SuggesterMode {
     QID_SUGGEST,
-    DATE_SUGGEST
+    DATE_SUGGEST,
+    URL_SUGGEST
 }
 
 interface SuggesterProps {
@@ -70,13 +71,19 @@ export class Suggester extends Component<SuggesterProps, SuggesterState> {
     }
 
     suggest() {
+        let mode = "qid";
+        if (this.props.mode === SuggesterMode.DATE_SUGGEST) {
+            mode = "date";
+        } else if (this.props.mode === SuggesterMode.URL_SUGGEST) {
+            mode = "url";
+        }
         this.props.broker.sendMessage({
             type: MessageType.GET_PROP_SUGGESTIONS,
             payload: {
                 itemQid: this.props.targetQid,
                 targetQid: this.props.objectQid, // yes the variable naming here is bad (sorry)
                 typed: this.state.typed,
-                mode: this.props.mode == SuggesterMode.QID_SUGGEST ? "qid" : "date"
+                mode: mode
             }
         });
     }

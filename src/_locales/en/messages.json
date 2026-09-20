@@ -57,6 +57,10 @@
         "description": "Option offering to let the user parse the selected text as a hyperlink (external implies that it's not to a link on Wikipedia)."        
 
     },
+    "parseAsUrl": {
+        "message": "Parse as URL",
+        "description": "Option offering to let the user parse the clicked link as a URL."
+    },
     "parseAsCoordinate": {
         "message": "Parse As Coordinate",
         "description": "Option offering to let the user parse the selected text as a GPS coordinate (lattitude/longitude)."        

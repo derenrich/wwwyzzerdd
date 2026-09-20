@@ -41,6 +41,9 @@
     "parseAsLink": {
         "message": "تحليل كرابط خارجي"
     },
+    "parseAsUrl": {
+        "message": "تحليل كعنوان URL"
+    },
     "parseAsCoordinate": {
         "message": "تحليل كمنسق"
     },
